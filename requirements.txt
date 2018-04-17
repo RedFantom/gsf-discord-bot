@@ -1,0 +1,10 @@
+pillow
+opencv-python
+numpy
+pytesseract
+discord.py
+requests
+dateparser
+pandas
+semantic_version
+pygithub
