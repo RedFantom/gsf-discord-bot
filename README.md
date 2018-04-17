@@ -1,1 +1,1 @@
-# gsf-discord-bot
+# GSF Discord Bot
