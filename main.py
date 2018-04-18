@@ -4,14 +4,21 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
+import asyncio
 # Project Modules
 from database import DatabaseHandler
 from bot import DiscordBot
+from server import Server
 
 
 if __name__ == '__main__':
+    loop = asyncio.get_event_loop()
     database = DatabaseHandler()
     with open("discord", "r") as fi:
         token = fi.readlines()[0].strip()
     bot = DiscordBot(database)
-    bot.run(token)
+    server = Server(database, "127.0.0.1", 64731)
+    loop.create_task(server.start())
+    loop.create_task(bot.bot.start(token))
+    loop.run_forever()
+    database.db.close()

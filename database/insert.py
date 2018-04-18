@@ -12,12 +12,8 @@ UPDATE_HOME = """
     UPDATE User SET home = '{discord}' WHERE id = '{home}';
 """
 
-INSERT_USER_HOME = """
-    INSERT INTO User(id, home) VALUES ('{discord}', '{server}');
-"""
-
 INSERT_SERVERS = """
-    INSERT INTO Server(id, name, region) VALUES 
+    INSERT OR IGNORE INTO Server(id, name, region) VALUES 
         ('SA', 'Satele Shan', 'USA'),
         ('SF', 'Star Forge', 'USA'),
         ('TH', 'Tulak Hord', 'EUR'),

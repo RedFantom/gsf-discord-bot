@@ -9,7 +9,8 @@ from random import SystemRandom
 from discord.ext import commands
 # Project Modules
 from database import DatabaseHandler
-from utils import setup_logger
+from bot import messages
+from utils import setup_logger, generate_tag, hash_auth
 
 
 class DiscordBot(object):
@@ -38,25 +39,12 @@ class DiscordBot(object):
             self.logger.debug("Logged in as {}, {}".format(self.bot.user.id, self.bot.user.name))
 
         @self.bot.command(pass_context=True)
-        async def echo(context, arg):
-            """Callback for command 'echo'"""
-            self.logger.debug("Command: echo. Arguments: {}".format(arg))
-            self.logger.debug("Channel: {}".format(context.message.channel))
-            await self.bot.send_typing(context.message.channel)
-            await self.bot.send_message(context.message.channel, arg)
-
-        @self.bot.command(pass_context=True)
         async def register(context: commands.Context):
             """Register a new Discord User into the server"""
             code = str(SystemRandom().randint(self.LOWER, self.UPPER))
-            message = "Welcome! Enter this code into the GSF Parser to authenticate:```\n{}```".format(code)
+            message = messages.WELCOME.format(code)
             await self.bot.send_message(context.message.author, message)
-            self.db.insert_user(context.message.author, code)
-
-        @self.bot.command(pass_context=True)
-        async def overview(context: commands.Context, *args):
-            """Send an overview of a certain data set"""
-            await self.bot.send_message(context.message.channel, "This should be an overview.")
+            self.db.insert_user(generate_tag(context.message.author), hash_auth(code))
 
     def run(self, token: str):
         """Run the Bot loop"""

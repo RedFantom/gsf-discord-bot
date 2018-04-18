@@ -6,6 +6,7 @@ Copyright (C) 2018 RedFantom
 import os
 import logging
 from datetime import datetime
+from hashlib import sha256
 
 
 DATE_FORMAT = "%Y-%m-%d|%H:%M:%S.%f"
@@ -17,6 +18,13 @@ SERVERS = {
     "DM": "Darth Malgus",
     "TL": "The Leviathan"
 }
+
+
+def hash_auth(auth: str):
+    """Securely hash an authentication code"""
+    hasher = sha256()
+    hasher.update(auth.encode("utf-8"))
+    return hasher.hexdigest()
 
 
 def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger:
@@ -47,4 +55,4 @@ def datetime_to_str(dt: datetime)->str:
 def str_to_datetime(dt: str)->datetime:
     if isinstance(dt, datetime):
         return dt
-    return datetime.strptime(dt, DATE_FORMAT)
+    return datetime.strptime(dt.strip(), DATE_FORMAT)

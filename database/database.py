@@ -52,11 +52,18 @@ class DatabaseHandler(object):
 
     def exec_command(self, command: str):
         """Execute a command on the database"""
+        self.debug("Acquiring database lock.")
         self._db_lock.acquire()
-        with self.cursor as cursor:
-            cursor.execute(command)
-            self.debug("Executed command: {}".format(command))
+        try:
+            with self.cursor as cursor:
+                self.debug("Executing command: {}".format(command))
+                cursor.execute(command)
+                self.debug("Executed command: {}".format(command))
+        except sql.OperationalError as e:
+            self.logger.error("Execution of command failed: {}.".format(e))
+        self.db.commit()
         self._db_lock.release()
+        self.debug("Database lock released.")
 
     def exec_query(self, query: str):
         """Execute a query on the database and return results"""
@@ -84,11 +91,10 @@ class DatabaseHandler(object):
         command = insert.INSERT_CHARACTER.format(name=name, server=server, faction=faction, owner=owner)
         self.exec_command(command)
 
-    def insert_user(self, user_id: str, home: str = None):
+    def insert_user(self, user_id: str, code: str):
         """Insert a new Discord user into the database"""
-        command = insert.INSERT_USER.format(user_id)
-        if home is None:
-            command = insert.INSERT_USER_HOME.format(user_id, home)
+        self.info("Inserting a new user into the Database: {}".format(user_id))
+        command = insert.INSERT_USER.format(discord=user_id, code=code)
         self.exec_command(command)
 
     def insert_match(self, server: str, start: (datetime, str)):
@@ -135,7 +141,7 @@ class DatabaseHandler(object):
     def get_auth_code(self, discord: str):
         """Return the authentication code for a given Discord user"""
         result = self.exec_query(select.GET_AUTH_CODE.format(discord=discord))
-        if result == 0:
+        if len(result) == 0:
             return None
         auth, = result[0]
         return auth
