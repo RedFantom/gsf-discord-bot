@@ -102,3 +102,6 @@ ENV/
 
 # PyCharm
 /.idea
+
+# Project Files
+discord

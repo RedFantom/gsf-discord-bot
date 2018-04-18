@@ -20,14 +20,17 @@ owner - User ID - REFERENCES User.id
 ```sqlite
 id - Unique Discord User ID - TEXT PRIMARY KEY
 home - Server three-letter code - TEXT
+code - Authentication code - TEXT
 ```
 
 ### Match
 ```sqlite
 id - Match ID - INTEGER PRIMARY KEY
 server - Server three-letter code - TEXT
-time - Timestamp of match start - TEXT
+start - Timestamp of match start - TEXT
+end - Timestamp of match end - TEXT
 score - Result score ("{empire}-{republic}") - TEXT
+map - '{type}-{map}' - TEXT
 ```
 
 ### Result

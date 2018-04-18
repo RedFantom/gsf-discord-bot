@@ -16,7 +16,8 @@ CREATE_TABLE_SERVER = """
 CREATE_TABLE_USER = """
     CREATE TABLE IF NOT EXISTS User(
         id TEXT PRIMARY KEY,
-        home TEXT REFERENCES Server.id
+        home TEXT REFERENCES Server(id),
+        code TEXT
     );
 """
 
@@ -24,25 +25,27 @@ CREATE_TABLE_CHARACTER = """
     CREATE TABLE IF NOT EXISTS Character(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
-        server TEXT REFERENCES Server.id NOT NULL,
+        server TEXT REFERENCES Server(id) NOT NULL,
         faction TEXT NOT NULL,
-        owner INTEGER REFERENCES User.id NOT NULL
+        owner INTEGER REFERENCES User(id) NOT NULL
     );
 """
 
 CREATE_TABLE_MATCH = """
     CREATE TABLE IF NOT EXISTS 'Match'(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-        server TEXT REFERENCES Server.id NOT NULL,
-        time TEXT,
-        score TEXT
+        server TEXT REFERENCES Server(id) NOT NULL,
+        start TEXT NOT NULL,
+        end TEXT,
+        score TEXT,
+        map TEXT
     );
 """
 
 CREATE_TABLE_RESULT = """
     CREATE TABLE IF NOT EXISTS Match(
-        match INTEGER REFERENCES Match.id,
-        char INTEGER REFERENCES Character.id,
+        match INTEGER REFERENCES Match(id),
+        char INTEGER REFERENCES Character(id),
         assists INTEGER,
         damage INTEGER,
         deaths INTEGER,
