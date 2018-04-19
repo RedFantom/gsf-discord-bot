@@ -8,6 +8,10 @@ INSERT_USER = """
     INSERT INTO User(id, code) VALUES ('{discord}', '{code}');
 """
 
+UPDATE_CODE = """
+    UPDATE User SET code = '{code}' WHERE id = '{discord}';
+"""
+
 UPDATE_HOME = """
     UPDATE User SET home = '{discord}' WHERE id = '{home}';
 """

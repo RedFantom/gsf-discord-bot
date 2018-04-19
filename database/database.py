@@ -97,6 +97,12 @@ class DatabaseHandler(object):
         command = insert.INSERT_USER.format(discord=user_id, code=code)
         self.exec_command(command)
 
+    def update_auth_code(self, user_id: str, code: str):
+        """Update the authentication code of a user in the database"""
+        self.info("Updating authentication code of {}.".format(user_id))
+        command = insert.UPDATE_CODE.format(discord=user_id, code=code)
+        self.exec_command(command)
+
     def insert_match(self, server: str, start: (datetime, str)):
         """Insert a new match into the database"""
         start = datetime_to_str(start)

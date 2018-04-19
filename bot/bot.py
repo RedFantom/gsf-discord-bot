@@ -4,13 +4,13 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from random import SystemRandom
 # Packages
 from discord.ext import commands
+from discord import User as DiscordUser, Channel
 # Project Modules
 from database import DatabaseHandler
 from bot import messages
-from utils import setup_logger, generate_tag, hash_auth
+from utils import setup_logger, generate_tag, hash_auth, generate_code
 
 
 class DiscordBot(object):
@@ -18,8 +18,6 @@ class DiscordBot(object):
 
     PREFIX = "$"
     DESCRIPTION = "GSF-Parser based Discord Bot"
-
-    LOWER, UPPER = 100000, 999999
 
     def __init__(self, database: DatabaseHandler):
         """
@@ -41,11 +39,37 @@ class DiscordBot(object):
         @self.bot.command(pass_context=True)
         async def register(context: commands.Context):
             """Register a new Discord User into the server"""
-            code = str(SystemRandom().randint(self.LOWER, self.UPPER))
-            message = messages.WELCOME.format(code)
-            await self.bot.send_message(context.message.author, message)
-            self.db.insert_user(generate_tag(context.message.author), hash_auth(code))
+            self.register_user(context.message.author, context.message.channel)
+
+        @self.bot.command(pass_context=True)
+        async def forgot_code(context: commands.Context):
+            """Request a new authentication code from the server"""
+            self.forgot_code(context.message.author, context.message.channel)
 
     def run(self, token: str):
         """Run the Bot loop"""
         self.bot.run(token)
+
+    async def register_user(self, user: DiscordUser, channel: Channel):
+        """Register a new user into the database"""
+        tag = generate_tag(user)
+        if self.db.get_auth_code(tag) is not None:
+            self.bot.send_message(channel, messages.ALREADY_REGISTERED)
+            return
+        code = generate_code()
+        message = messages.UPON_REGISTER.format(code)
+        await self.bot.send_message(user, message)
+        self.logger.info("Registering new user {}.".format(tag))
+        self.db.insert_user(generate_tag(user), hash_auth(code))
+        self.bot.send_message(channel, messages.UPON_REGISTER_PUBLIC.format(user))
+
+    async def forgot_code(self, user: DiscordUser, channel: Channel):
+        """Generate a new access code for the user"""
+        tag = generate_tag(user)
+        if self.db.get_auth_code(tag) is None:
+            self.bot.send_message(channel, messages.NOT_REGISTERED.format(user))
+            return
+        self.logger.info("Generating new access code for {}.".format(tag))
+        code = generate_code()
+        self.db.update_auth_code(tag, code)
+        self.bot.send_message(user, messages.NEW_CODE.format(code))
