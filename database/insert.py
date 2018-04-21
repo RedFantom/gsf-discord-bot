@@ -18,11 +18,11 @@ UPDATE_HOME = """
 
 INSERT_SERVERS = """
     INSERT OR IGNORE INTO Server(id, name, region) VALUES 
-        ('SA', 'Satele Shan', 'USA'),
-        ('SF', 'Star Forge', 'USA'),
-        ('TH', 'Tulak Hord', 'EUR'),
-        ('DM', 'Darth Malgus', 'EUR'),
-        ('TL', 'The Leviathan', 'EUR');
+        ('SA', 'Satele Shan', 'NA'),
+        ('SF', 'Star Forge', 'NA'),
+        ('TH', 'Tulak Hord', 'EU'),
+        ('DM', 'Darth Malgus', 'EU'),
+        ('TL', 'The Leviathan', 'EU');
 """
 
 INSERT_CHARACTER = """

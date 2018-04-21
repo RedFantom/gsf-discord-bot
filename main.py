@@ -20,5 +20,9 @@ if __name__ == '__main__':
     server = Server(database, "127.0.0.1", 64731)
     loop.create_task(server.start())
     loop.create_task(bot.bot.start(token))
-    loop.run_forever()
-    database.db.close()
+    try:
+        loop.run_forever()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        database.db.close()

@@ -10,7 +10,7 @@ import logging
 from contextlib import closing
 from datetime import datetime
 # Project Modules
-from database import create, insert, select
+from database import create, insert, select, delete
 from utils import setup_logger, datetime_to_str
 
 
@@ -69,9 +69,9 @@ class DatabaseHandler(object):
         """Execute a query on the database and return results"""
         self._db_lock.acquire()
         with self.cursor as cursor:
+            self.debug("Executing query: {}".format(query))
             cursor.execute(query)
             results = cursor.fetchall()
-            self.debug("Executed query: {}".format(query))
             self.debug("Query results: {}".format(results))
         self._db_lock.release()
         return results
@@ -151,3 +151,39 @@ class DatabaseHandler(object):
             return None
         auth, = result[0]
         return auth
+
+    def get_character_ids(self, discord: str):
+        """Return a list of all character IDs of a Discord user"""
+        result = self.exec_query(select.GET_CHARACTER_IDS.format(discord_id=discord))
+        characters = list()
+        for char, in result:
+            characters.append(char)
+        return characters
+
+    def delete_user(self, tag: str):
+        """Delete a Discord User from the database"""
+        self.logger.info("Removing {} from database.".format(tag))
+        characters = self.get_character_ids(tag)
+        for character in characters:
+            self.exec_command(delete.DELETE_RESULTS_CHARACTER.format(char_id=character))
+        self.exec_command(delete.DELETE_CHARACTERS.format(discord_id=tag))
+        self.exec_command(delete.DELETE_USER.format(discord_id=tag))
+
+    def get_user_in_database(self, tag: str)->bool:
+        """Return whether a certain Discord user is in the database"""
+        result = self.exec_query(select.GET_USER_ID.format(discord_id=tag))
+        return len(result) != 0
+
+    def get_character_owner(self, server: str, name: str):
+        """Return the owner tag of a given character"""
+        result = self.exec_query(select.GET_CHARACTER_OWNER.format(name=name, server=server))
+        if len(result) == 0:
+            return None
+        tag, = result
+        return tag
+
+    def get_server_in_database(self, server: str):
+        """Return whether a server is present in the database"""
+        query = "SELECT id FROM Server WHERE 'name' = '{server}' OR id = '{server}';"
+        result = self.exec_query(query)
+        return len(result) != 0
