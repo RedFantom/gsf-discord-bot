@@ -22,6 +22,7 @@ INVALID_COMMAND = "{}, that is not a valid command. Please check the `manual` " 
 UNREGISTER = "I have deleted all of your data from the database."
 UNREGISTER_PUBLIC = "{}, you are now no longer registered."
 UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
+UNKNOWN_DATE_FORMAT = "I do not recognize that date format. Please use YYYY-MM-DD."
 
 CHARACTER_OWNER = "{} owns that character."
 
@@ -60,3 +61,13 @@ SF - Star Forge - {star_forge}
 SA - Satele Shan - {satele_shan}
 ```
 """
+
+MATCH_COUNT_DAY = """
+On {}, I registered the following amount of matches on each server:
+```python
+{}
+```
+"""
+
+NOT_IMPLEMENTED = "Sorry, that feature has not yet been implemented. " \
+                  "Poke RedFantom if you would like to see it sooner."

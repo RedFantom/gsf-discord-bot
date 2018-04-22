@@ -9,7 +9,11 @@ GET_CHARACTER_ID = """
 """
 
 GET_MATCH_ID = """
-    SELECT id FROM 'Match' WHERE start = '{start}' AND server = '{server}';
+    SELECT id FROM 'Match' 
+    WHERE 
+      server = '{server}' AND
+      date = '{date}' AND
+      idfmt = '{idfmt}';
 """
 
 GET_AUTH_CODE = """
@@ -25,4 +29,9 @@ GET_USER_ID = "SELECT id FROM 'User' WHERE id = '{discord_id}';"
 GET_CHARACTER_OWNER = """
     SELECT 'User'.id FROM 'User', 'Character' 
     WHERE  'Character'.name = '{name}' AND 'Character'.server = '{server}';
+"""
+
+GET_MATCHES_COUNT_FOR_DAY_BY_SERVER = """
+    SELECT server, COUNT(id) FROM Match
+    WHERE date = '{date}' GROUP BY server;
 """

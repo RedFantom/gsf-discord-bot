@@ -11,7 +11,8 @@ from contextlib import closing
 from datetime import datetime
 # Project Modules
 from database import create, insert, select, delete
-from utils import setup_logger, datetime_to_str
+from utils import setup_logger
+from utils.utils import DATE_FORMAT
 
 
 class DatabaseHandler(object):
@@ -103,30 +104,37 @@ class DatabaseHandler(object):
         command = insert.UPDATE_CODE.format(discord=user_id, code=code)
         self.exec_command(command)
 
-    def insert_match(self, server: str, start: (datetime, str)):
+    def insert_match(self, server: str, date: str, start: str, id_fmt: str):
         """Insert a new match into the database"""
-        start = datetime_to_str(start)
-        command = insert.INSERT_MATCH.format(server=server, start=start)
+        command = insert.INSERT_MATCH.format(
+            server=server, start=start, date=date, idfmt=id_fmt)
         self.exec_command(command)
 
-    def update_match(self, start: datetime, server: str,
-                     score: str = None, map: str = None, end: datetime = None):
+    def update_match(self, server: str, date: str, start: str, id_fmt: str,
+                     score: str = None, map: str = None, end: str = None):
         """Insert the match score into the database"""
+        if self.get_match_id(server, date, id_fmt) is None:
+            self.insert_match(server, date, start, id_fmt)
+        match = self.get_match_id(server, date, id_fmt)
         commands = list()
+        kwargs = {
+            "match": match,
+            "map": map,
+            "score": score,
+            "end": end
+        }
         if score is not None:
-            commands.append(insert.UPDATE_MATCH_SCORE.format(score=score, start=start, server=server))
+            commands.append(insert.UPDATE_MATCH_SCORE.format(**kwargs))
         if end is not None:
-            end = datetime_to_str(end)
-            commands.append(insert.UPDATE_MATCH_END.format(end=end, start=start, server=server))
+            commands.append(insert.UPDATE_MATCH_END.format(**kwargs))
         if map is not None:
-            commands.append(insert.UPDATE_MATCH_MAP.format(map=map, start=start, server=server))
+            commands.append(insert.UPDATE_MATCH_MAP.format(**kwargs))
         for command in commands:
             self.exec_command(command)
 
-    def insert_result(self, character: str, server: str, start: datetime,
+    def insert_result(self, character: str, server: str, date: str, start: str, id_fmt: str,
                       assists: int, damage: int, deaths: int):
         """Insert the result of a given character into the database"""
-        start = datetime_to_str(start)
         self.debug("Inserting result of {} on server {} for match start {}.".format(character, server, start))
         query = select.GET_CHARACTER_ID.format(name=character, server=server)
         result = self.exec_query(query)
@@ -134,15 +142,22 @@ class DatabaseHandler(object):
             self.error("Character '{}' is not known on this server '{}'.".format(character, server))
             return False
         character_id = result[0][0]
-        query = select.GET_MATCH_ID.format(server=server, start=start)
-        result = self.exec_query(query)
-        if len(result) == 0:
-            self.insert_match(server, start)
+        if self.get_match_id(server, date, id_fmt) is None:
+            self.insert_match(server, date, start, id_fmt)
             result = self.exec_query(query)
-        match_id = result[0][0]
+        match_id, = result[0]
         command = insert.INSERT_RESULT.format(
             match=match_id, char=character_id, assists=assists, damage=damage, deaths=deaths)
         self.exec_command(command)
+
+    def get_match_id(self, server: str, date: str, id_fmt: str):
+        """Return the match ID from the database"""
+        query = select.GET_MATCH_ID.format(server=server, date=date, idfmt=id_fmt)
+        result = self.exec_query(query)
+        if len(result) == 0:
+            return None
+        match, = result[0]
+        return match
 
     def get_auth_code(self, discord: str):
         """Return the authentication code for a given Discord user"""
@@ -187,3 +202,13 @@ class DatabaseHandler(object):
         query = "SELECT id FROM Server WHERE 'name' = '{server}' OR id = '{server}';"
         result = self.exec_query(query)
         return len(result) != 0
+
+    def get_matches_count_by_day(self, day: (datetime, str)):
+        """Return a dictionary of server: match_count"""
+        day = day.strftime(DATE_FORMAT) if isinstance(day, datetime) else day
+        query = select.GET_MATCHES_COUNT_FOR_DAY_BY_SERVER.format(date=day)
+        results = self.exec_query(query)
+        servers = dict()
+        for server, count in results:
+            servers[server] = count
+        return servers

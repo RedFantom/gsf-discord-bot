@@ -10,7 +10,8 @@ from datetime import datetime
 from hashlib import sha256
 
 
-DATE_FORMAT = "%Y-%m-%d|%H:%M:%S.%f"
+DATE_FORMAT = "%Y-%m-%d"
+TIME_FORMAT = "%H:%M"
 
 SERVERS = {
     "SA": "Satele Shan",
@@ -56,7 +57,13 @@ def datetime_to_str(dt: datetime)->str:
     return dt.strftime(DATE_FORMAT)
 
 
-def str_to_datetime(dt: str)->datetime:
+def str_to_date(dt: str)->datetime:
     if isinstance(dt, datetime):
         return dt
     return datetime.strptime(dt.strip(), DATE_FORMAT)
+
+
+def str_to_time(dt: str)->datetime:
+    if isinstance(dt, datetime):
+        return dt
+    return datetime.strptime(dt.strip(), TIME_FORMAT)

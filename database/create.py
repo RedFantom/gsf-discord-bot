@@ -23,7 +23,7 @@ CREATE_TABLE_USER = """
 
 CREATE_TABLE_CHARACTER = """
     CREATE TABLE IF NOT EXISTS Character(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         name TEXT NOT NULL,
         server TEXT REFERENCES Server(id) NOT NULL,
         faction TEXT NOT NULL,
@@ -35,10 +35,13 @@ CREATE_TABLE_MATCH = """
     CREATE TABLE IF NOT EXISTS 'Match'(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         server TEXT REFERENCES Server(id) NOT NULL,
+        idfmt TEXT NOT NULL,
+        date TEXT NOT NULL,
         start TEXT NOT NULL,
         end TEXT,
         score TEXT,
-        map TEXT
+        map TEXT,
+        UNIQUE (server, date, idfmt)
     );
 """
 

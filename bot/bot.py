@@ -5,6 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import requests
+from datetime import datetime
 # Packages
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
@@ -12,6 +13,7 @@ from discord import User as DiscordUser, Channel, Message
 from database import DatabaseHandler
 from bot.messages import *
 from utils import setup_logger, generate_tag, hash_auth, generate_code
+from utils.utils import DATE_FORMAT
 
 
 class DiscordBot(object):
@@ -48,8 +50,18 @@ class DiscordBot(object):
         "unregister": ((0,), "unregister_user"),
         "forgot_code": ((0,), "forgot_code"),
         # Data Retrieval
-        "overview": ((0, 1, 2), "build_overview"),
+        "overview": ((1, 2), "build_overview"),
         "character": ((2,), "find_character_owner"),
+    }
+
+    SERVERS = ("the_leviathan", "star_forge", "satele_shan", "darth_malgus", "tulak_hord")
+
+    SERVER_NAMES = {
+        "DM": "Darth Malgus",
+        "SF": "Star Forge",
+        "SA": "Satele Shan",
+        "TL": "The Leviathan",
+        "TH": "Tulak Hord"
     }
 
     def __init__(self, database: DatabaseHandler):
@@ -129,7 +141,7 @@ class DiscordBot(object):
                 servers[server] = status
             if "class=\"status\"" in line:
                 status = line.split(">")[2].split("<")[0].lower().replace("up", "online").replace("down", "offline")
-        for server in ("the_leviathan", "darth_malgus", "tulak_hord", "satele_shan", "star_forge"):
+        for server in self.SERVERS:
             if server in servers:
                 continue
             servers[server] = "offline"
@@ -153,7 +165,7 @@ class DiscordBot(object):
         self.logger.info("Registering new user {}.".format(tag))
         self.db.insert_user(generate_tag(user), hash_auth(code))
         self.logger.debug("Sending public registration message to {}.".format(channel.name))
-        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC.format(user))
+        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC.format(user.mention))
 
     async def unregister_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Remove a user fully from the database"""
@@ -184,7 +196,30 @@ class DiscordBot(object):
         Build an overview of a specified type by retrieving data from
         the database and summarizing and formatting it.
         """
-        pass
+        overview = args[0]
+        if overview == "day":
+            await self.day_overview(channel, args)
+        else:
+            await self.bot.send_message(channel, NOT_IMPLEMENTED)
+
+    async def day_overview(self, channel: Channel, args: tuple):
+        """Send an overview for a specific day"""
+        if len(args) == 1:
+            day = datetime.now().strftime(DATE_FORMAT)
+        else:
+            day = args[1]
+            try:
+                datetime.strptime(day, DATE_FORMAT)
+            except ValueError:
+                await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
+                return
+        servers = {server: 0 for server in self.SERVER_NAMES.keys()}
+        servers.update(self.db.get_matches_count_by_day(day))
+        message = str()
+        for server, count in servers.items():
+            message += "{}: {}\n".format(server, count)
+        message = MATCH_COUNT_DAY.format(day, message)
+        await self.bot.send_message(channel, message)
 
     async def find_character_owner(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the owner of a character to the channel"""

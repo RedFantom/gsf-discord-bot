@@ -8,7 +8,7 @@ import asyncio
 from ast import literal_eval
 import traceback
 # Project Modules
-from utils import setup_logger, str_to_datetime
+from utils import setup_logger
 from database import DatabaseHandler
 from utils import hash_auth
 
@@ -31,13 +31,22 @@ class Server(object):
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """Handle a single Client that wants to send a command"""
+        data, count = "", 0
         self.logger.debug("Client accepted.")
-        data = await reader.read(100)
+        while len(data) == 0:
+            await asyncio.sleep(0.1)
+            data = await reader.read(100)
+            data = data.decode().replace("+", "")
+            if count > 20:
+                return
         self.logger.debug("Data read: {}".format(data))
-        data = data.decode()
         self.logger.debug("Received message from client: {}".format(data.strip()))
         elements = data.split("_")
-        (discord, auth, command), args = elements[0:3], tuple(elements[3:])
+        try:
+            (discord, auth, command), args = elements[0:3], tuple(elements[3:])
+        except ValueError:
+            self.logger.error("Invalid amount of elements: {}".format(elements))
+            return
         if self.authenticate(discord, auth) is False:
             self.logger.info("User {} failed to authenticate.".format(discord))
             writer.write(b"unauth")
@@ -48,6 +57,7 @@ class Server(object):
             except Exception:
                 self.logger.error("Error occurred while processing command: {}".format(traceback.format_exc()))
             writer.write(b"ack")
+            self.logger.debug("Request complete, sent acknowledgement.")
         await writer.drain()
         writer.close()
 
@@ -73,45 +83,40 @@ class Server(object):
         code = self.db.get_auth_code(discord)
         return code == hash_auth(auth)
 
-    def process_match_start(self, server: str, time: str):
+    def process_match_start(self, server: str, date: str, time: str, id_fmt: str):
         """Insert a new match into the database"""
         self.logger.debug("Inserting new match into database: {}, {}".format(server, time))
-        time = str_to_datetime(time)
-        self.db.insert_match(server, time)
+        self.db.insert_match(server, date, time, id_fmt)
 
-    def process_result(self, server: str, start: str, character: str,
+    def process_result(self, server: str, date: str, start: str, id_fmt: str, character: str,
                        assists: str, damage: str, deaths: str):
         """Insert a character result into the database"""
         self.logger.debug("Inserting new result into database: {}".format(
             server, start, character, assists, damage, deaths))
-        start = str_to_datetime(start)
         assists, damage, deaths = map(int, (assists, damage, deaths))
-        self.db.insert_result(character, server, start, assists, damage, deaths)
+        self.db.insert_result(character, server, date, start, id_fmt, assists, damage, deaths)
 
-    def process_map(self, server: str, start: str, map: str):
+    def process_map(self, server: str, date: str, start: str, id_fmt: str, map: str):
         """Insert the map of a match into the database"""
         self.logger.debug("Updating map in database: {}".format(server, start, map))
         map_eval = literal_eval(map)
         if not isinstance(map_eval, tuple) and len(map_eval) == 2:
             self.logger.error("Invalid map tuple received: {}.".format(map_eval))
             return False
-        start = str_to_datetime(start)
-        self.db.update_match(start, server, map=map)
+        self.db.update_match(server, date, start, id_fmt, map=map)
 
-    def process_score(self, server: str, start: str, score: str):
+    def process_score(self, server: str, date: str, start: str, id_fmt: str, score: str):
         """Insert the score of a match into the database"""
         self.logger.debug("Updating score in database: {}".format(server, start, score))
-        start = str_to_datetime(start)
         if len(score.split("-")) != 2:
             self.logger.error("Invalid score tuple received: {}.".format(score))
             return False
-        self.db.update_match(start, server, score=score)
+        self.db.update_match(server, date, start, id_fmt, score=score)
 
-    def process_end(self, server: str, start: str, end: str):
+    def process_end(self, server: str, date: str, start: str, id_fmt: str, end: str):
         """Insert the end time of a match into the database"""
         self.logger.debug("Updating end in database: {}".format(server, start, end))
-        start, end = map(str_to_datetime, (start, end))
-        self.db.update_match(start, server, end=end)
+        self.db.update_match(server, date, start, id_fmt, end=end)
 
     def process_character(self, server: str, faction: str, name: str, discord: str):
         """Insert a new character into the database for a Discord user"""

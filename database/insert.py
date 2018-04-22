@@ -26,28 +26,28 @@ INSERT_SERVERS = """
 """
 
 INSERT_CHARACTER = """
-    INSERT INTO Character(name, server, faction, owner) VALUES 
+    INSERT OR IGNORE INTO Character(name, server, faction, owner) VALUES 
         ('{name}', '{server}', '{faction}', '{owner}');
 """
 
 INSERT_MATCH = """
-    INSERT INTO Match(server, start) values 
-        ('{server}', '{start}');
+    INSERT OR IGNORE INTO 'Match'('server', 'date', 'start', 'idfmt') values 
+        ('{server}', '{date}', '{start}', '{idfmt}');
 """
 
 UPDATE_MATCH_SCORE = """
-    UPDATE 'Match' SET score = '{score}' WHERE start = '{start}' AND server = '{server}'; 
+    UPDATE Match SET score = '{score}' WHERE id = {match}; 
 """
 
 UPDATE_MATCH_END = """
-    UPDATE 'Match' SET 'end' = '{end}' WHERE start = '{start}' AND server = '{server}';
+    UPDATE Match SET end = '{end}' WHERE id = {match};
 """
 
 UPDATE_MATCH_MAP = """
-    UPDATE 'Match' SET 'map' = '{map}' WHERE start = '{start}' AND server = '{server}';
+    UPDATE 'Match' SET map = '{map}' WHERE 'id' = {match};
 """
 
 INSERT_RESULT = """
-    INSERT INTO Result('match', char, assists, damage, deaths) VALUES 
+    INSERT INTO Result(match, char, assists, damage, deaths) VALUES 
         ({match}, {char}, {assists}, {damage}, {deaths});
 """
