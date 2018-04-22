@@ -129,6 +129,10 @@ class DiscordBot(object):
                 servers[server] = status
             if "class=\"status\"" in line:
                 status = line.split(">")[2].split("<")[0].lower().replace("up", "online").replace("down", "offline")
+        for server in ("the_leviathan", "darth_malgus", "tulak_hord", "satele_shan", "star_forge"):
+            if server in servers:
+                continue
+            servers[server] = "offline"
         self.logger.debug("Server statuses: {}".format(servers))
         await self.bot.send_message(channel, SERVERS.format(**servers))
 
