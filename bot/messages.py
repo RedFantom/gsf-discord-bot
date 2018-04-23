@@ -28,7 +28,7 @@ UNREGISTER_PUBLIC = "{}, you are now no longer registered."
 UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
 UNKNOWN_DATE_FORMAT = "I do not recognize that date format. Please use YYYY-MM-DD."
 
-CHARACTER_OWNER = "{} owns that character."
+CHARACTER_OWNER = "`{}` owns that character."
 
 MANUAL = """
 Hello! I am the GSF Parser-based Discord Bot. I am capable of 

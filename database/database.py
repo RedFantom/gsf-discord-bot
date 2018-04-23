@@ -195,7 +195,7 @@ class DatabaseHandler(object):
         result = self.exec_query(select.GET_CHARACTER_OWNER.format(name=name, server=server))
         if len(result) == 0:
             return None
-        tag, = result
+        tag, = result[0]
         return tag
 
     def get_server_in_database(self, server: str):

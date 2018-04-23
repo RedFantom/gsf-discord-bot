@@ -195,7 +195,7 @@ class DiscordBot(object):
         if len(args) == 0:
             day = datetime.now().strftime(DATE_FORMAT)
         else:
-            day = args[1]
+            day, = args
             try:
                 datetime.strptime(day, DATE_FORMAT)
             except ValueError:
