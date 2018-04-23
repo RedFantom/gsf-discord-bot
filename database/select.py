@@ -35,3 +35,8 @@ GET_MATCHES_COUNT_FOR_DAY_BY_SERVER = """
     SELECT server, COUNT(id) FROM Match
     WHERE date = '{date}' GROUP BY server;
 """
+
+GET_MATCHES_FOR_DAY_FOR_SERVER = """
+    SELECT start, end, map, score FROM Match
+    WHERE server = '{server}' AND date = '{date}';
+"""

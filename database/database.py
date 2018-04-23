@@ -8,9 +8,10 @@ from threading import Lock
 import sqlite3 as sql
 import logging
 from contextlib import closing
-from datetime import datetime
+from datetime import datetime, timedelta
 # Project Modules
 from database import create, insert, select, delete
+from database.servers import SERVERS, SERVER_NAMES
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 
@@ -212,3 +213,28 @@ class DatabaseHandler(object):
         for server, count in results:
             servers[server] = count
         return servers
+
+    def get_matches_count_by_period(self, start: datetime, end: datetime):
+        """Return a dictionary of server: match_count for a given period"""
+        servers = {server: 0 for server in SERVER_NAMES.keys()}
+        while start < end:
+            match_count = self.get_matches_count_by_day(start)
+            for server in servers.keys():
+                servers[server] += match_count[server] if server in match_count else 0
+            start += timedelta(days=1)
+        return servers
+
+    def get_matches_count_by_week(self):
+        """Return a dictionary of server: match_count for this week"""
+        today = datetime.now().date()
+        servers = {server: 0 for server in SERVER_NAMES.keys()}
+        for i in range(7):
+            current = today - timedelta(days=i)
+            match_count = self.get_matches_count_by_day(current)
+            for server in servers.keys():
+                servers[server] += match_count[server] if server in match_count else 0
+        return servers
+
+    def get_matches_by_day_by_server(self, server: str, date: str):
+        """Return a list of matches for a given server"""
+        return self.exec_query(select.GET_MATCHES_FOR_DAY_FOR_SERVER.format(server=server, date=date))

@@ -6,11 +6,12 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 import requests
 from datetime import datetime
+from ast import literal_eval
 # Packages
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
 # Project Modules
-from database import DatabaseHandler
+from database import DatabaseHandler, SERVERS, SERVER_NAMES
 from bot.messages import *
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT
@@ -28,9 +29,14 @@ class DiscordBot(object):
 
     :overview {type}: Send a public message into the channel where the
         user issued the command, tagging the user for notification.
-        :user:
-        :day:
-        :week:
+
+        :user {name} {day}: Display the results of this user for each
+            match played on a given day. If day is not given, then
+            today is assumed.
+        :day {date} {server}:
+        :week: Display the amount of matches per server for the last
+            seven days
+        :period {start} {end}:
         :server:
 
     :unregister: Remove the user who issued the command fully from the
@@ -50,18 +56,11 @@ class DiscordBot(object):
         "unregister": ((0,), "unregister_user"),
         "forgot_code": ((0,), "forgot_code"),
         # Data Retrieval
-        "overview": ((1, 2), "build_overview"),
-        "character": ((2,), "find_character_owner"),
-    }
-
-    SERVERS = ("the_leviathan", "star_forge", "satele_shan", "darth_malgus", "tulak_hord")
-
-    SERVER_NAMES = {
-        "DM": "Darth Malgus",
-        "SF": "Star Forge",
-        "SA": "Satele Shan",
-        "TL": "The Leviathan",
-        "TH": "Tulak Hord"
+        "period": ((1, 2), "period_overview"),
+        "day": ((0, 1), "day_overview"),
+        "week": ((0,), "week_overview"),
+        "matches": ((1, 2), "matches_overview"),
+        "character": ((2, 3), "find_character_owner"),
     }
 
     def __init__(self, database: DatabaseHandler):
@@ -141,7 +140,7 @@ class DiscordBot(object):
                 servers[server] = status
             if "class=\"status\"" in line:
                 status = line.split(">")[2].split("<")[0].lower().replace("up", "online").replace("down", "offline")
-        for server in self.SERVERS:
+        for server in SERVERS:
             if server in servers:
                 continue
             servers[server] = "offline"
@@ -191,20 +190,9 @@ class DiscordBot(object):
 
     """Data Retrieval"""
 
-    async def build_overview(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Build an overview of a specified type by retrieving data from
-        the database and summarizing and formatting it.
-        """
-        overview = args[0]
-        if overview == "day":
-            await self.day_overview(channel, args)
-        else:
-            await self.bot.send_message(channel, NOT_IMPLEMENTED)
-
-    async def day_overview(self, channel: Channel, args: tuple):
+    async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send an overview for a specific day"""
-        if len(args) == 1:
+        if len(args) == 0:
             day = datetime.now().strftime(DATE_FORMAT)
         else:
             day = args[1]
@@ -213,23 +201,78 @@ class DiscordBot(object):
             except ValueError:
                 await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
                 return
-        servers = {server: 0 for server in self.SERVER_NAMES.keys()}
+        servers = {server: 0 for server in SERVER_NAMES.keys()}
         servers.update(self.db.get_matches_count_by_day(day))
-        message = str()
-        for server, count in servers.items():
-            message += "{}: {}\n".format(server, count)
+        message = self.build_string_from_servers(servers)
         message = MATCH_COUNT_DAY.format(day, message)
         await self.bot.send_message(channel, message)
 
+    async def period_overview(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Send the overview like that of a day for a period"""
+        self.bot.send_typing(channel)
+        if len(args) == 1:
+            args += (datetime.now().strftime(DATE_FORMAT),)
+        if len(args) != 2:
+            await self.bot.send_message(channel, INVALID_ARGS)
+            return
+        start, end = start_s, end_s = args
+        try:
+            start, end = map(lambda s: datetime.strptime(s, DATE_FORMAT), (start, end))
+        except ValueError:
+            await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
+            return
+        if end <= start:
+            await self.bot.send_message(channel, INVALID_DATE_RANGE)
+            return
+        servers = self.db.get_matches_count_by_period(start, end)
+        message = self.build_string_from_servers(servers)
+        message = MATCH_COUNT_PERIOD.format(start_s, end_s, message)
+        await self.bot.send_message(channel, message)
+
+    async def week_overview(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Send the overview like that of a day for the last week"""
+        servers = self.db.get_matches_count_by_week()
+        message = self.build_string_from_servers(servers)
+        await self.bot.send_message(channel, MATCH_COUNT_WEEK.format(message))
+
     async def find_character_owner(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the owner of a character to the channel"""
-        server, name = args
+        server = args[0]
         server = server.upper()
+        if server not in SERVER_NAMES.keys():
+            await self.bot.send_message(channel, INVALID_SERVER)
+            return
+        if len(args[1:]) == 2:
+            name = "{} {}".format(*args[1:])
+        else:
+            name = args[1]
         owner = self.db.get_character_owner(server, name)
         if owner is None:
-            await self.bot.send_message(channel, UNKNOWN_CHARACTER.format(name, server))
+            await self.bot.send_message(channel, UNKNOWN_CHARACTER.format(name, SERVER_NAMES[server]))
             return
         await self.bot.send_message(channel, CHARACTER_OWNER.format(owner))
+
+    async def matches_overview(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Send an overview of matches for a given server"""
+        server = args[0]
+        if server not in SERVER_NAMES.keys():
+            await self.bot.send_message(channel, INVALID_SERVER)
+            return
+        if len(args) == 2:
+            day = args[1]
+            try:
+                datetime.strptime(day, DATE_FORMAT)
+            except ValueError:
+                await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
+                return
+        else:
+            day = datetime.now().strftime(DATE_FORMAT)
+        matches = self.db.get_matches_by_day_by_server(server, day)
+        if len(matches) == 0:
+            await self.bot.send_message(channel, NO_MATCHES_FOUND)
+            return
+        message = MATCH_OVERVIEW.format(day, SERVER_NAMES[server], self.build_string_from_matches(matches))
+        await self.bot.send_message(channel, message)
 
     @staticmethod
     def validate_message(content: str):
@@ -244,3 +287,37 @@ class DiscordBot(object):
         if command not in DiscordBot.COMMANDS or len(args) not in DiscordBot.COMMANDS[command][0]:
             return None, None
         return command, args
+
+    @staticmethod
+    def build_string_from_servers(servers: dict):
+        """Return a formatted string from a server: match_count dict"""
+        message = str()
+        for server, count in servers.items():
+            message += "{}: {}\n".format(SERVER_NAMES[server], count)
+        return message
+
+    @staticmethod
+    def build_string_from_matches(matches: list):
+        """Return a formatted string from a matches list"""
+        string = str()
+        for match in matches:
+            start, end, map, score = match
+            if end is None:
+                end = "Uknown"
+            if map is not None:
+                match_type, match_map = literal_eval(map)
+            else:
+                match_type, match_map = "Unknown", "Unknown"
+            if score is not None:
+                imp, rep = map(int, score.split("-"))
+                if imp > rep:
+                    winner = "Empire"
+                elif imp == rep:
+                    winner = "Close call",
+                else:
+                    winner = "Republic"
+            else:
+                winner, score = "Uknown", "Uknown"
+            string += "{:^7}|{:^7}|{:^10}|{:^9}|{:^9}|{:^10}\n".format(
+                start, end, match_type, match_map, score, winner)
+        return string
