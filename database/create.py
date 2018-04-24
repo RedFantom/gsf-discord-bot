@@ -48,8 +48,8 @@ CREATE_TABLE_MATCH = """
 
 CREATE_TABLE_RESULT = """
     CREATE TABLE IF NOT EXISTS 'Result'(
-        match INTEGER REFERENCES 'Match'.id,
-        char INTEGER REFERENCES 'Character'.id,
+        match INTEGER REFERENCES Match(id),
+        char INTEGER REFERENCES Character(id),
         assists INTEGER NOT NULL,
         dmgd INTEGER NOT NULL,
         dmgt INTEGER NOT NULL,
