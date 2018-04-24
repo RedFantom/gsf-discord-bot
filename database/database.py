@@ -139,28 +139,36 @@ class DatabaseHandler(object):
                       assists: int, dmgd: int, dmgt: int, deaths: int):
         """Insert the result of a given character into the database"""
         self.debug("Inserting result of {} on server {} for match start {}.".format(character, server, start))
-        query = select.GET_CHARACTER_ID.format(name=character, server=server)
-        result = self.exec_query(query)
-        if len(result) == 0:
+        char = self.get_character_id(server, character)
+        if char is None:
             self.error("Character '{}' is not known on this server '{}'.".format(character, server))
             return False
-        character_id, = result[0]
-        if self.get_match_id(server, date, id_fmt) is None:
+        match_id = self.get_match_id(server, date, id_fmt)
+        if match_id is None:
             self.insert_match(server, date, start, id_fmt)
-            result = self.exec_query(query)
-        match_id, = result[0]
+            match_id = self.get_match_id(server, date, id_fmt)
         command = insert.INSERT_RESULT.format(
-            match=match_id, char=character_id, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths)
+            match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths)
         self.exec_command(command)
 
     def get_match_id(self, server: str, date: str, id_fmt: str):
         """Return the match ID from the database"""
+        self.logger.debug("Retrieving match id: {}, {}, {}".format(server, date, id_fmt))
         query = select.GET_MATCH_ID.format(server=server, date=date, idfmt=id_fmt)
         result = self.exec_query(query)
         if len(result) == 0:
             return None
         match, = result[0]
         return match
+
+    def get_character_id(self, server, name):
+        """Return the ID of a given character"""
+        query = select.GET_CHARACTER_ID.format(name=name, server=server)
+        result = self.exec_query(query)
+        if len(result) == 0:
+            return None
+        char, = result[0]
+        return char
 
     def get_auth_code(self, discord: str):
         """Return the authentication code for a given Discord user"""

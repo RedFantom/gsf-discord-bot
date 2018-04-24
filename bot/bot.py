@@ -61,7 +61,7 @@ class DiscordBot(object):
         "week": ((0,), "week_overview"),
         "matches": ((1, 2), "matches_overview"),
         "character": ((2, 3), "find_character_owner"),
-        "results": ((2,), "get_results")
+        "results": ((3,), "get_results")
     }
 
     def __init__(self, database: DatabaseHandler):
