@@ -126,3 +126,5 @@ For the match starting at `{}` on `{}` on server `{}`, the following results wer
 ---------------------------------------------------------------------------
 {}
 """
+
+NO_RESULTS = """I don't have any results for that match in my database."""

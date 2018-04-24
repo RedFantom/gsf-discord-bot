@@ -277,6 +277,7 @@ class DiscordBot(object):
 
     async def get_results(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the list of known results for this match"""
+        self.logger.debug("Getting results for {}".format(args))
         server, date, start = args
         try:
             datetime.strptime(date, DATE_FORMAT)
@@ -289,7 +290,12 @@ class DiscordBot(object):
             await self.bot.send_message(UNKNOWN_TIME_FORMAT)
             return
         results = self.db.get_match_results(server, date, start)
+        self.logger.debug("Results retrieved: {}".format(results))
+        if len(results) == 0:
+            await self.bot.send_message(channel, NO_RESULTS)
+            return
         message = RESULTS.format(self.build_string_from_results(results))
+        self.logger.debug(message)
         await self.bot.send_message(channel, message)
 
     @staticmethod
