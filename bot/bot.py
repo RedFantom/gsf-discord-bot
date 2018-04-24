@@ -294,7 +294,7 @@ class DiscordBot(object):
         if len(results) == 0:
             await self.bot.send_message(channel, NO_RESULTS)
             return
-        message = RESULTS.format(self.build_string_from_results(results))
+        message = RESULTS.format(start, date, server, self.build_string_from_results(results))
         self.logger.debug(message)
         await self.bot.send_message(channel, message)
 
@@ -355,4 +355,8 @@ class DiscordBot(object):
             string = "{:<16}| {:<8} |{:>10} |{:>10} |{:>13} |{:>8} \n".format(*result)
             total += string
         return total
+
+
+if __name__ == "__main__":
+    print(DiscordBot.build_string_from_results([('Redfantom', 'Imperial', 12017, 6338, 11, 2)]))
 
