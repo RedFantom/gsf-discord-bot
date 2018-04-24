@@ -36,7 +36,7 @@ def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger
     file = logging.FileHandler(file_path)
     stdout = logging.StreamHandler(sys.stdout)
     logger.addHandler(file)
-    logger.addHandler(stdout)
+    # logger.addHandler(stdout)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file.setFormatter(fmt)
     stdout.setFormatter(fmt)

@@ -23,7 +23,7 @@ class DatabaseHandler(object):
     call can be executed on the database at the same time.
     """
 
-    def __init__(self, file_name="database.db", log_level=logging.INFO):
+    def __init__(self, file_name="database.db"):
         """
         :param file_name: File name for the SQLite database
         :param log_level: Logger logging level
@@ -33,7 +33,7 @@ class DatabaseHandler(object):
         self._file_name = file_name
         self._db_lock = Lock()
         # Build logger
-        self.logger = setup_logger("DatabaseHandler", "database.log", level=log_level)
+        self.logger = setup_logger("DatabaseHandler", "database.log")
         self.debug, self.info, self.error = self.logger.debug, self.logger.info, self.logger.error
         # Initialize the database
         self.init_db()
@@ -142,7 +142,7 @@ class DatabaseHandler(object):
         if len(result) == 0:
             self.error("Character '{}' is not known on this server '{}'.".format(character, server))
             return False
-        character_id = result[0][0]
+        character_id, = result[0]
         if self.get_match_id(server, date, id_fmt) is None:
             self.insert_match(server, date, start, id_fmt)
             result = self.exec_query(query)
