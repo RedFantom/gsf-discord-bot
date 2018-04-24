@@ -43,6 +43,8 @@ GET_MATCHES_FOR_DAY_FOR_SERVER = """
 
 GET_MATCH_RESULTS = """
     SELECT name, faction, dmgd, dmgt, damage, deaths
-    FROM Character, Result, Match 
+    FROM Character
+        INNER JOIN Result ON 'Character'.id = 'Result'.char
+        INNER JOIN 'Match' ON 'Match'.id = 'Result'.match 
     WHERE Match.date = '{date}' AND Match.server = '{server}' AND Match.start = '{start}';
 """
