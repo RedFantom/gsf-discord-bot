@@ -125,6 +125,7 @@ For the match starting at `{}` on `{}` on server `{}`, the following results wer
       Name      |  Faction  | DMG Dealt | DMG Taken | Enemies hit | Deaths 
 ---------------------------------------------------------------------------
 {}
+```
 """
 
 NO_RESULTS = """I don't have any results for that match in my database."""
