@@ -114,7 +114,9 @@ class DatabaseHandler(object):
     def update_match(self, server: str, date: str, start: str, id_fmt: str,
                      score: str = None, map: str = None, end: str = None):
         """Insert the match score into the database"""
+
         if self.get_match_id(server, date, id_fmt) is None:
+            self.logger.debug("Match {}, {}, {} was not in database, inserting now...")
             self.insert_match(server, date, start, id_fmt)
         match = self.get_match_id(server, date, id_fmt)
         commands = list()

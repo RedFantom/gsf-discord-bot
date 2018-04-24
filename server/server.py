@@ -63,20 +63,26 @@ class Server(object):
 
     def process_command(self, command: str, args: tuple):
         """Process a command given by a Client"""
-        if command == "match":
-            self.process_match_start(*args)
-        elif command == "result":
-            self.process_result(*args)
-        elif command == "score":
-            self.process_score(*args)
-        elif command == "map":
-            self.process_map(*args)
-        elif command == "end":
-            self.process_end(*args)
-        elif command == "character":
-            self.process_character(*args)
-        else:
-            self.logger.error("Invalid command received: {}.".format(command))
+        try:
+            if command == "match":
+                self.process_match_start(*args)
+            elif command == "result":
+                self.process_result(*args)
+            elif command == "score":
+                self.process_score(*args)
+            elif command == "map":
+                self.process_map(*args)
+            elif command == "end":
+                self.process_end(*args)
+            elif command == "character":
+                self.process_character(*args)
+            else:
+                self.logger.error("Invalid command received: {}.".format(command))
+        except Exception:
+            self.logger.error("Error occurred during processing of command `{}, {}`\n{}".format(
+                command, args, traceback.format_exc()))
+            return False
+        return True
 
     def authenticate(self, discord: str, auth: str):
         """Authenticate the user that gives the command"""
