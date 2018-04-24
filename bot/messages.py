@@ -27,6 +27,7 @@ UNREGISTER = "I have deleted all of your data from the database."
 UNREGISTER_PUBLIC = "{}, you are now no longer registered."
 UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
 UNKNOWN_DATE_FORMAT = "I do not recognize that date format. Please use YYYY-MM-DD."
+UNKNOWN_TIME_FORMAT = "I do not recognize that time format. Please use HH:MM instead."
 
 CHARACTER_OWNER = "`{}` owns that character."
 

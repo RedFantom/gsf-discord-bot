@@ -238,3 +238,7 @@ class DatabaseHandler(object):
     def get_matches_by_day_by_server(self, server: str, date: str):
         """Return a list of matches for a given server"""
         return self.exec_query(select.GET_MATCHES_FOR_DAY_FOR_SERVER.format(server=server, date=date))
+
+    def get_match_results(self, server: str, date: str, start: str):
+        """Return the results of players participating in a match"""
+        return self.exec_query(select.GET_MATCH_RESULTS.format(server=server, date=date, start=start))

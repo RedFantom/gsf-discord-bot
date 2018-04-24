@@ -14,7 +14,7 @@ from discord import User as DiscordUser, Channel, Message
 from database import DatabaseHandler, SERVERS, SERVER_NAMES
 from bot.messages import *
 from utils import setup_logger, generate_tag, hash_auth, generate_code
-from utils.utils import DATE_FORMAT
+from utils.utils import DATE_FORMAT, TIME_FORMAT
 
 
 class DiscordBot(object):
@@ -61,6 +61,7 @@ class DiscordBot(object):
         "week": ((0,), "week_overview"),
         "matches": ((1, 2), "matches_overview"),
         "character": ((2, 3), "find_character_owner"),
+        "results": ((2,), "get_results")
     }
 
     def __init__(self, database: DatabaseHandler):
@@ -273,6 +274,22 @@ class DiscordBot(object):
             return
         message = MATCH_OVERVIEW.format(day, SERVER_NAMES[server], self.build_string_from_matches(matches))
         await self.bot.send_message(channel, message)
+
+    async def get_results(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Send the list of known results for this match"""
+        server, date, start = args
+        try:
+            datetime.strptime(date, DATE_FORMAT)
+        except ValueError:
+            await self.bot.send_message(UNKNOWN_DATE_FORMAT)
+            return
+        try:
+            datetime.strptime(start, TIME_FORMAT)
+        except ValueError:
+            await self.bot.send_message(UNKNOWN_TIME_FORMAT)
+            return
+        results = self.db.get_match_results(server, date, start)
+        await self.bot.send_message(channel, str(results))
 
     @staticmethod
     def validate_message(content: str):

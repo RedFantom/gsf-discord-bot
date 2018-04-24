@@ -40,3 +40,9 @@ GET_MATCHES_FOR_DAY_FOR_SERVER = """
     SELECT start, end, map, score FROM Match
     WHERE server = '{server}' AND date = '{date}';
 """
+
+GET_MATCH_RESULTS = """
+    SELECT name, faction, dmgd, dmgt, damage, deaths
+    FROM Character, Result, Match 
+    WHERE Match.date = '{date}' AND Match.server = '{server}' AND Match.start = '{start}';
+"""
