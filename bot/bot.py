@@ -352,7 +352,7 @@ class DiscordBot(object):
         total = str()
         # name, faction, dmgd, dmgt, assists, deaths
         for result in sorted(results, key=lambda item: item[1]):
-            string = "{:<16}| {:<8} |{:>10} |{:>10} |{:>13} |{:>8} \n".format(*result)
+            string = "{:<16}| {:<9} |{:>10} |{:>10} |{:>12} |{:>8} \n".format(*result)
             total += string
         return total
 
