@@ -42,7 +42,7 @@ GET_MATCHES_FOR_DAY_FOR_SERVER = """
 """
 
 GET_MATCH_RESULTS = """
-    SELECT name, faction, dmgd, dmgt, deaths
+    SELECT name, faction, dmgd, dmgt, assists, deaths
     FROM Character
         INNER JOIN Result ON 'Character'.id = 'Result'.char
         INNER JOIN 'Match' ON 'Match'.id = 'Result'.match 

@@ -289,7 +289,8 @@ class DiscordBot(object):
             await self.bot.send_message(UNKNOWN_TIME_FORMAT)
             return
         results = self.db.get_match_results(server, date, start)
-        await self.bot.send_message(channel, str(results))
+        message = RESULTS.format(self.build_string_from_results(results))
+        await self.bot.send_message(channel, message)
 
     @staticmethod
     def validate_message(content: str):
@@ -338,3 +339,14 @@ class DiscordBot(object):
             string += "{:^7}|{:^7}|{:^10}|{:^9}\n".format(  # |{:^9}|{:^10}\n".format(
                 start, end, match_type, match_map)  # , score, winner)
         return string
+
+    @staticmethod
+    def build_string_from_results(results: list):
+        """Return a formatted string from a results list"""
+        total = str()
+        # name, faction, dmgd, dmgt, assists, deaths
+        for result in sorted(results, key=lambda item: item[1]):
+            string = "{:<16}| {:<8} |{:>10} |{:>10} |{:>13} |{:>8} \n".format(*result)
+            total += string
+        return total
+
