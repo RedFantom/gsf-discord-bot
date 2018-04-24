@@ -23,7 +23,7 @@ class DatabaseHandler(object):
     call can be executed on the database at the same time.
     """
 
-    def __init__(self, file_name="database.db", log_level=logging.DEBUG):
+    def __init__(self, file_name="database.db", log_level=logging.INFO):
         """
         :param file_name: File name for the SQLite database
         :param log_level: Logger logging level
@@ -45,7 +45,7 @@ class DatabaseHandler(object):
             command = getattr(create, "CREATE_TABLE_{}".format(table))
             try:
                 self.exec_command(command)
-                self.debug("Created table {}.".format(table))
+                self.info("Created table {}.".format(table))
             except sql.OperationalError:
                 self.error("Failed to create table {}".format(table))
                 raise
@@ -134,7 +134,7 @@ class DatabaseHandler(object):
             self.exec_command(command)
 
     def insert_result(self, character: str, server: str, date: str, start: str, id_fmt: str,
-                      assists: int, damage: int, deaths: int):
+                      assists: int, dmgd: int, dmgt: int, deaths: int):
         """Insert the result of a given character into the database"""
         self.debug("Inserting result of {} on server {} for match start {}.".format(character, server, start))
         query = select.GET_CHARACTER_ID.format(name=character, server=server)
@@ -148,7 +148,7 @@ class DatabaseHandler(object):
             result = self.exec_query(query)
         match_id, = result[0]
         command = insert.INSERT_RESULT.format(
-            match=match_id, char=character_id, assists=assists, damage=damage, deaths=deaths)
+            match=match_id, char=character_id, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths)
         self.exec_command(command)
 
     def get_match_id(self, server: str, date: str, id_fmt: str):

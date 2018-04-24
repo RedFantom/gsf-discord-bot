@@ -318,6 +318,6 @@ class DiscordBot(object):
                     winner = "Republic"
             else:
                 winner, score = "Uknown", "Uknown"
-            string += "{:^7}|{:^7}|{:^10}|{:^9}|{:^9}|{:^10}\n".format(
-                start, end, match_type, match_map, score, winner)
+            string += "{:^7}|{:^7}|{:^10}|{:^9}\n".format(  # |{:^9}|{:^10}\n".format(
+                start, end, match_type, match_map)  # , score, winner)
         return string

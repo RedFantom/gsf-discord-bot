@@ -48,6 +48,6 @@ UPDATE_MATCH_MAP = """
 """
 
 INSERT_RESULT = """
-    INSERT INTO Result(match, char, assists, damage, deaths) VALUES 
-        ({match}, {char}, {assists}, {damage}, {deaths});
+    INSERT INTO Result(match, char, assists, dmgd, dmgt, deaths) VALUES 
+        ({match}, {char}, {assists}, {dmgd}, {dmgt}, {deaths});
 """

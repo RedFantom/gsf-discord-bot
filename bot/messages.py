@@ -109,8 +109,8 @@ NOT_IMPLEMENTED = "Sorry, that feature has not yet been implemented. " \
 MATCH_OVERVIEW = """
 On {} I registered the following matches on `{}`:
 ```python
- start |  end  |   type   |   map   |  score  |  winner  
----------------------------------------------------------
+ start |  end  |   type   |   map   
+------------------------------------
 {}
 ```
 """

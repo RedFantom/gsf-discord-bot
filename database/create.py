@@ -27,7 +27,8 @@ CREATE_TABLE_CHARACTER = """
         name TEXT NOT NULL,
         server TEXT REFERENCES Server(id) NOT NULL,
         faction TEXT NOT NULL,
-        owner INTEGER REFERENCES User(id) NOT NULL
+        owner INTEGER REFERENCES User(id) NOT NULL,
+        UNIQUE(name, server)
     );
 """
 
@@ -46,12 +47,13 @@ CREATE_TABLE_MATCH = """
 """
 
 CREATE_TABLE_RESULT = """
-    CREATE TABLE IF NOT EXISTS Match(
-        match INTEGER REFERENCES Match(id),
-        char INTEGER REFERENCES Character(id),
-        assists INTEGER,
-        damage INTEGER,
-        deaths INTEGER,
+    CREATE TABLE IF NOT EXISTS 'Result'(
+        match INTEGER REFERENCES 'Match'.id,
+        char INTEGER REFERENCES 'Character'.id,
+        assists INTEGER NOT NULL,
+        dmgd INTEGER NOT NULL,
+        dmgt INTEGER NOT NULL,
+        deaths INTEGER NOT NULL,
         PRIMARY KEY(match, char)
     );
 """

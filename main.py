@@ -17,7 +17,7 @@ if __name__ == '__main__':
     with open("discord", "r") as fi:
         token = fi.readlines()[0].strip()
     bot = DiscordBot(database)
-    server = Server(database, "127.0.0.1", 64731)
+    server = Server(database, "discord.thrantasquadron.tk", 64731)
     loop.create_task(server.start())
     loop.create_task(bot.bot.start(token))
     try:
