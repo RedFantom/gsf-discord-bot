@@ -53,6 +53,7 @@ class DiscordBot(object):
         "servers": ((0,), "print_servers"),
         "author": ((0,), "print_author"),
         "privacy": ((0,), "print_privacy"),
+        "purpose": ((0,), "print_purpose"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
@@ -156,6 +157,9 @@ class DiscordBot(object):
 
     async def print_privacy(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, PRIVACY)
+
+    async def print_purpose(self, channel: Channel, user: DiscordUser, args: tuple):
+        await self.bot.send_message(channel, PURPOSE)
 
     """User Commands"""
 

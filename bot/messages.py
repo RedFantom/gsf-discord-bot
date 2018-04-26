@@ -143,7 +143,8 @@ information sent by GSF Parser users, is copyrighted by RedFantom
 and licensed under:
 
 Creative Commons - Attribution-NonCommercial-ShareAlike
-For more information, check: https://creativecommons.org/licenses/by-nc-sa/4.0/
+For more information, check: 
+<https://creativecommons.org/licenses/by-nc-sa/4.0/>
 ```
 
 ```markdown
