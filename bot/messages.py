@@ -38,6 +38,11 @@ users. Using that data, I can compose different types of overviews.
 Please check the list of commands below to get started. 
 
 Commands: ```python
+# General
+'author': Display license and copyright information
+'purpose': Display a description of this bot's general purpose
+'privacy': Display privacy information
+
 # Users
 'register': Register yourself as a user into my database. I will send 
     you a unique access code to enter into the GSF Parser.
@@ -165,7 +170,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ```
 """
 
-PURPOSE = """```markdown
+PURPOSE = """
+```markdown
 My primary programming consists of collecting data in order to allow 
 users to interact socially with the statistics collected by the GSF
 Parser. However, with the collection of this data, a few interesting
@@ -184,7 +190,8 @@ By uploading your data to my database, you will help my Maker answer
 these very questions! My code is open-source and available at GitHub.
 Note though, that if you use parts of my code, you will have to use the
 same license as my Maker used. Please use the `author` command to learn
-more about the GNU GPLv3. 
+more about the GNU GPLv3.
+``` 
 """
 
 PRIVACY = """
