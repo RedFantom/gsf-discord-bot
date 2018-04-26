@@ -51,6 +51,8 @@ class DiscordBot(object):
         # Help commands
         "manual": ((0,), "print_manual"),
         "servers": ((0,), "print_servers"),
+        "author": ((0,), "print_author"),
+        "privacy": ((0,), "print_privacy"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
@@ -147,6 +149,13 @@ class DiscordBot(object):
             servers[server] = "offline"
         self.logger.debug("Server statuses: {}".format(servers))
         await self.bot.send_message(channel, SERVERS.format(**servers))
+
+    async def print_author(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Print the AUTHOR message"""
+        await self.bot.send_message(channel, AUTHOR)
+
+    async def print_privacy(self, channel: Channel, user: DiscordUser, args: tuple):
+        await self.bot.send_message(channel, PRIVACY)
 
     """User Commands"""
 
