@@ -44,8 +44,10 @@ class DiscordBot(object):
     """
 
     PREFIX = "$"
-    DESCRIPTION = "GSF-Parser based Discord Bot"
+    DESCRIPTION = "A friendly bot to socially interact with GSF " \
+                  "statistics and for research"
     CHANNELS = ("general",)
+    CHANNELS_ENFORCED = False
 
     COMMANDS = {
         # Help commands
@@ -66,6 +68,8 @@ class DiscordBot(object):
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results")
     }
+
+    PRIVATE = ["forgot_code"]
 
     def __init__(self, database: DatabaseHandler):
         """
@@ -97,12 +101,18 @@ class DiscordBot(object):
         executed.
         """
         author, channel, content = message.author, message.channel, message.content
-        if author == self.bot.user:
+        if author == self.bot.user:  # Don't process own messages
             return
-        if not isinstance(author, DiscordUser) or not isinstance(channel, Channel):
-            self.logger.error("Invalid types: {}, {}".format(author, channel))
-            return
-        if channel.name not in DiscordBot.CHANNELS:
+        if channel.is_private is True:  # Only certain commands allowed
+            valid = False
+            for command in DiscordBot.PRIVATE:
+                if command in message.content:
+                    valid = True
+                    break
+            if valid is False:
+                await self.bot.send_message(author, NOT_PRIVATE)
+                return
+        if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED:
             self.logger.debug("Ignored a message from wrong channel: {}, channel: {}".format(content, channel.name))
             return
         if self.validate_message(content) is False:
