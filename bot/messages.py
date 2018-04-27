@@ -86,7 +86,7 @@ RESULTS = """
 For the match starting at `{}` on `{}` on server `{}`, the following results were sent:
 ```python
 Name            | Faction   | DMG Dealt | DMG Taken | Enemies hit | Deaths | Ship Type     
--------------------------------------------------------------------------------------------
+---------------------------------------------------------------------------------------
 {}
 ```
 """
