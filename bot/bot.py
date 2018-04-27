@@ -133,7 +133,7 @@ class DiscordBot(object):
 
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
-        await self.bot.send_message(channel, INVALID_COMMAND.format(user.mention))
+        await self.bot.send_message(channel, INVALID_COMMAND)
 
     async def print_manual(self, channel: Channel, author: DiscordUser, args: tuple):
         """Send the DiscordBot manual to a channel"""
@@ -193,17 +193,17 @@ class DiscordBot(object):
         self.logger.info("Registering new user {}.".format(tag))
         self.db.insert_user(generate_tag(user), hash_auth(code))
         self.logger.debug("Sending public registration message to {}.".format(channel.name))
-        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC.format(user.mention))
+        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC)
 
     async def unregister_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Remove a user fully from the database"""
         tag = generate_tag(user)
         if self.db.get_user_in_database(tag) is False:
-            await self.bot.send_message(channel, NOT_REGISTERED.format(user.mention))
+            await self.bot.send_message(channel, NOT_REGISTERED)
             return
         self.db.delete_user(tag)
         self.logger.info("Unregistered {}.".format(tag))
-        await self.bot.send_message(channel, UNREGISTER_PUBLIC.format(user.mention))
+        await self.bot.send_message(channel, UNREGISTER_PUBLIC)
         await self.bot.send_message(user, UNREGISTER)
 
     async def forgot_code(self, channel: Channel, user: DiscordUser, args: tuple):

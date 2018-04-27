@@ -7,17 +7,17 @@ Copyright (C) 2018 RedFantom
 UPON_REGISTER = "Welcome! Enter the following code in the GSF Parser to get " \
     "started: {}"
 
-UPON_REGISTER_PUBLIC = """{}, you are now registered."""
+UPON_REGISTER_PUBLIC = """You are now registered."""
 
 ALREADY_REGISTERED = "You are already registered. Use the `forgot_code` " \
     "command to obtain a new access code."
 
-NOT_REGISTERED = "{}, you are not registered."
+NOT_REGISTERED = "You are not registered."
 
 NEW_CODE = "Your new authentication code: {}. Your old code is now invalid."
 
-INVALID_COMMAND = "{}, that is not a valid command. Please check the `manual` " \
-                  "command."
+INVALID_COMMAND = "That is either not a valid command or it does not have the " \
+                  "correct arguments. Please check the `man` command."
 NOT_PRIVATE = "Please don't PM me for any other purpose than the `forgot_code` or `man` commands."
 
 INVALID_ARGS = "Those are not valid arguments for that command."
@@ -25,7 +25,7 @@ INVALID_DATE_RANGE = "That is not a valid date range."
 INVALID_SERVER = "That is not a valid server name. Please use a server abbreviation."
 
 UNREGISTER = "I have deleted all of your data from the database."
-UNREGISTER_PUBLIC = "{}, you are now no longer registered."
+UNREGISTER_PUBLIC = "You are now no longer registered. All your data has been removed."
 UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
 UNKNOWN_DATE_FORMAT = "I do not recognize that date format. Please use YYYY-MM-DD."
 UNKNOWN_TIME_FORMAT = "I do not recognize that time format. Please use HH:MM instead."
