@@ -335,7 +335,7 @@ class DiscordBot(object):
     def build_string_from_matches(matches: list):
         """Return a formatted string from a matches list"""
         string = str()
-        for match in matches:
+        for match in sorted(matches, key=lambda tup: tup[0]):
             start, end, map, score = match
             if end is None:
                 end = "Uknown"

@@ -56,6 +56,10 @@ class Server(object):
                 self.process_command(command, args)
             except Exception:
                 self.logger.error("Error occurred while processing command: {}".format(traceback.format_exc()))
+                writer.write(b"error")
+                await writer.drain()
+                writer.close()
+                return
             writer.write(b"ack")
             self.logger.debug("Request complete, sent acknowledgement.")
         await writer.drain()
@@ -95,12 +99,12 @@ class Server(object):
         self.db.insert_match(server, date, time, id_fmt)
 
     def process_result(self, server: str, date: str, start: str, id_fmt: str, character: str,
-                       assists: str, dmgd: str, dmgt: str, deaths: str):
+                       assists: str, dmgd: str, dmgt: str, deaths: str, ship: str):
         """Insert a character result into the database"""
         self.logger.debug("Inserting new result into database: {}".format((
             server, start, character, assists, dmgd, dmgt, deaths)))
         assists, dmgd, dmgt, deaths = map(int, (assists, dmgd, dmgt, deaths))
-        self.db.insert_result(character, server, date, start, id_fmt, assists, dmgd, dmgt, deaths)
+        self.db.insert_result(character, server, date, start, id_fmt, assists, dmgd, dmgt, deaths, ship)
 
     def process_map(self, server: str, date: str, start: str, id_fmt: str, map: str):
         """Insert the map of a match into the database"""
