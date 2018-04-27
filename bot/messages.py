@@ -32,49 +32,6 @@ UNKNOWN_TIME_FORMAT = "I do not recognize that time format. Please use HH:MM ins
 
 CHARACTER_OWNER = "`{}` owns that character."
 
-MANUAL = """
-Hello! I am the GSF Parser-based Discord Bot. I am capable of 
-tracking matches and player results based on data sent by GSF Parser
-users. Using that data, I can compose different types of overviews.
-Please check the list of commands below to get started. 
-
-Commands: ```python
-# General
-'author': Display license and copyright information
-'purpose': Display a description of this bot's general purpose
-'privacy': Display privacy information
-
-# Users
-'register': Register yourself as a user into my database. I will send 
-    you a unique access code to enter into the GSF Parser.
-'unregister': Unregister yourself from the database. All your data will
-    be removed if you issue this command, and this action is 
-    irreversible.
-'forgot_code': If you no longer have your unique access code, I can
-    generate a new one for you. 
-
-# Data retrieval
-'day {date}': List the amount of matches registered on each server for 
-    a given date. If the date is omitted, I will assume you mean today. 
-'week': List the amount of matches registered on each server for the 
-    last seven days.
-'period {start} {end}': List the amount of matches registered on each
-    server for a specified period. If the 'end' argument is not given,
-    I will assume you mean today.
-'matches {server} {date}': List the matches registered for a given
-    server and date. Lists at least the start time and, if available,
-    also the end time, match type, map type, end score and winning 
-    faction. If the 'date' argument is omitted, I will assume you mean
-    today.
-'character {server} {name}': Find the owner of the character specified
-    by the server and name. Note that the matching is sensitive for 
-    capital and accented letters.
-
-# Data insertion
-'match {start} {end} {type} {map} {score}': Not yet implemented. 
-```
-"""
-
 SERVERS = """
 The following servers are in my database:
 ```markdown
@@ -128,8 +85,8 @@ NO_MATCHES_FOUND = "I could not find any matches for the specified criteria."
 RESULTS = """
 For the match starting at `{}` on `{}` on server `{}`, the following results were sent:
 ```python
-      Name      |  Faction  | DMG Dealt | DMG Taken | Enemies hit | Deaths 
----------------------------------------------------------------------------
+      Name      |  Faction  | DMG Dealt | DMG Taken | Enemies hit | Deaths |   Ship Type   
+-------------------------------------------------------------------------------------------
 {}
 ```
 """

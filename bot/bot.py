@@ -13,6 +13,7 @@ from discord import User as DiscordUser, Channel, Message
 # Project Modules
 from database import DatabaseHandler, SERVERS, SERVER_NAMES
 from bot.messages import *
+from bot.man import MANUAL
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT
 
@@ -51,11 +52,12 @@ class DiscordBot(object):
 
     COMMANDS = {
         # Help commands
-        "manual": ((0,), "print_manual"),
+        "man": ((0, 1), "print_manual"),
         "servers": ((0,), "print_servers"),
         "author": ((0,), "print_author"),
         "privacy": ((0,), "print_privacy"),
         "purpose": ((0,), "print_purpose"),
+        "setup": ((0,), "print_setup"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
@@ -135,7 +137,10 @@ class DiscordBot(object):
 
     async def print_manual(self, channel: Channel, author: DiscordUser, args: tuple):
         """Send the DiscordBot manual to a channel"""
-        await self.bot.send_message(channel, MANUAL)
+        if len(args) == 0:
+            args = ("commands",)
+        command, = args
+        await self.bot.send_message(channel, MANUAL[command])
 
     async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send a list of servers to the channel with server statuses"""
