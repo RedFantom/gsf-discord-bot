@@ -94,7 +94,7 @@ class DiscordBot(object):
             if valid is False:
                 await self.bot.send_message(author, NOT_PRIVATE)
                 return
-        if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED:
+        if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private:
             self.logger.debug("Ignored a message from wrong channel: {}, channel: {}".format(content, channel.name))
             return
         if self.validate_message(content) is False:
