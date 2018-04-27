@@ -21,6 +21,7 @@ MANUAL = {
         "- week\n"
         "- period\n"
         "- matches\n"
+        "- results\n"
         "- character\n"
         "```",
     # Data Retrieval
@@ -31,7 +32,8 @@ MANUAL = {
         "- date, optional, assumes today if not given\n"
         "\n"
         "Display the amount of matches registered for each server on any\n"
-        "given day in a table format.\n",
+        "given day in a table format.\n"
+        "```",
     "week":
         "```markdown\n"
         "Command: week\n"
@@ -68,6 +70,17 @@ MANUAL = {
         "Display the matches registered on each server in a table format with\n"
         "additional information, including the start and end time, match type\n"
         "and map type if available and end score.\n"
+        "```",
+    "results":
+        "```markdown\n"
+        "Command: results\n"
+        "Arguments:\n"
+        "- server code, mandatory\n"
+        "- date, mandatory\n"
+        "- start, mandatory\n"
+        "\n"
+        "Display the registered results of a specific match in a table format,\n"
+        "including damage dealt, damage taken and other statistics.\n"
         "```",
     "character":
         "```markdown\n"

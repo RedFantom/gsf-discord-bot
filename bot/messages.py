@@ -18,7 +18,7 @@ NEW_CODE = "Your new authentication code: {}. Your old code is now invalid."
 
 INVALID_COMMAND = "{}, that is not a valid command. Please check the `manual` " \
                   "command."
-NOT_PRIVATE = "Please don't PM me for any other purpose than the `forgot_code` command."
+NOT_PRIVATE = "Please don't PM me for any other purpose than the `forgot_code` or `man` commands."
 
 INVALID_ARGS = "Those are not valid arguments for that command."
 INVALID_DATE_RANGE = "That is not a valid date range."
@@ -153,6 +153,7 @@ more about the GNU GPLv3.
 """
 
 PRIVACY = """
+```markdown
 My primary programming is allowing social interaction of users with 
 statistical data, thus allowing free access to my database through a
 given set of commands. While your data is saved on a VPS that is not
@@ -169,4 +170,5 @@ collected includes:
 - Personal match data, including number of enemies damaged, deaths, 
   damage dealt and damage taken, linked to a specific character and
   match.
+```
 """
