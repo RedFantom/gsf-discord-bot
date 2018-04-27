@@ -54,6 +54,7 @@ CREATE_TABLE_RESULT = """
         dmgd INTEGER NOT NULL,
         dmgt INTEGER NOT NULL,
         deaths INTEGER NOT NULL,
+        ship TEXT NOT NULL,
         PRIMARY KEY(match, char)
     );
 """

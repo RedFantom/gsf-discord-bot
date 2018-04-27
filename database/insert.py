@@ -48,6 +48,6 @@ UPDATE_MATCH_MAP = """
 """
 
 INSERT_RESULT = """
-    INSERT OR IGNORE INTO Result(match, char, assists, dmgd, dmgt, deaths) VALUES 
-        ({match}, {char}, {assists}, {dmgd}, {dmgt}, {deaths});
+    INSERT OR IGNORE INTO Result(match, char, assists, dmgd, dmgt, deaths, ship) VALUES 
+        ({match}, {char}, {assists}, {dmgd}, {dmgt}, {deaths}, {ship});
 """

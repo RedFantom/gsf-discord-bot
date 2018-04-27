@@ -361,9 +361,9 @@ class DiscordBot(object):
     def build_string_from_results(results: list):
         """Return a formatted string from a results list"""
         total = str()
-        # name, faction, dmgd, dmgt, assists, deaths
+        # name, faction, dmgd, dmgt, assists, deaths, ship
         for result in sorted(results, key=lambda item: item[1]):
-            string = "{:<16}| {:<9} |{:>10} |{:>10} |{:>12} |{:>8} \n".format(*result)
+            string = "{:<16}| {:<9} |{:>10} |{:>10} |{:>12} |{:>8} | {:<14}\n".format(*result)
             total += string
         return total
 

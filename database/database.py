@@ -26,7 +26,6 @@ class DatabaseHandler(object):
     def __init__(self, file_name="database.db"):
         """
         :param file_name: File name for the SQLite database
-        :param log_level: Logger logging level
         """
         # Attributes
         self._db = None
@@ -136,7 +135,7 @@ class DatabaseHandler(object):
             self.exec_command(command)
 
     def insert_result(self, character: str, server: str, date: str, start: str, id_fmt: str,
-                      assists: int, dmgd: int, dmgt: int, deaths: int):
+                      assists: int, dmgd: int, dmgt: int, deaths: int, ship: str):
         """Insert the result of a given character into the database"""
         self.debug("Inserting result of {} on server {} for match start {}.".format(character, server, start))
         char = self.get_character_id(server, character)
@@ -148,7 +147,7 @@ class DatabaseHandler(object):
             self.insert_match(server, date, start, id_fmt)
             match_id = self.get_match_id(server, date, id_fmt)
         command = insert.INSERT_RESULT.format(
-            match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths)
+            match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths, ship=ship)
         self.exec_command(command)
 
     def get_match_id(self, server: str, date: str, id_fmt: str):
@@ -210,7 +209,8 @@ class DatabaseHandler(object):
 
     def get_server_in_database(self, server: str):
         """Return whether a server is present in the database"""
-        query = "SELECT id FROM Server WHERE 'name' = '{server}' OR id = '{server}';"
+        query = "SELECT id FROM Server WHERE 'name' = '{server}' OR id = '{server}';".format(
+            server=server)
         result = self.exec_query(query)
         return len(result) != 0
 
