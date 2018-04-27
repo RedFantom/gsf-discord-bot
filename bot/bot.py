@@ -27,8 +27,8 @@ class DiscordBot(object):
     PREFIX = "$"
     DESCRIPTION = "A friendly bot to socially interact with GSF " \
                   "statistics and for research"
-    CHANNELS = ("general",)
-    CHANNELS_ENFORCED = False
+    CHANNELS = ("general", "code", "bots", "bot", "parser",)
+    CHANNELS_ENFORCED = True
 
     COMMANDS = {
         # Help commands
@@ -51,7 +51,7 @@ class DiscordBot(object):
         "results": ((3,), "get_results")
     }
 
-    PRIVATE = ["forgot_code"]
+    PRIVATE = ["forgot_code", "man", "servers", "author", "privacy", "purpose", "setup"]
 
     def __init__(self, database: DatabaseHandler):
         """

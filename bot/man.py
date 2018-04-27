@@ -5,6 +5,7 @@ MANUAL = {
         "the manual for each specific command instead.\n"
         "\n"
         "# Bot information\n"
+        "These commands can be accessed over PM."
         "- author\n"
         "- purpose\n"
         "- privacy\n"

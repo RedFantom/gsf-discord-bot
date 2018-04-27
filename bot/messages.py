@@ -18,7 +18,7 @@ NEW_CODE = "Your new authentication code: {}. Your old code is now invalid."
 
 INVALID_COMMAND = "That is either not a valid command or it does not have the " \
                   "correct arguments. Please check the `man` command."
-NOT_PRIVATE = "Please don't PM me for any other purpose than the `forgot_code` or `man` commands."
+NOT_PRIVATE = "Please don't PM me for any other purpose than the `forgot_code` or Bot Information commands."
 
 INVALID_ARGS = "Those are not valid arguments for that command."
 INVALID_DATE_RANGE = "That is not a valid date range."
