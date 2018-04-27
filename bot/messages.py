@@ -85,7 +85,7 @@ NO_MATCHES_FOUND = "I could not find any matches for the specified criteria."
 RESULTS = """
 For the match starting at `{}` on `{}` on server `{}`, the following results were sent:
 ```python
- Name           |  Faction  | DMG Dealt | DMG Taken | Enemies hit | Deaths | Ship Type     
+Name            | Faction   | DMG Dealt | DMG Taken | Enemies hit | Deaths | Ship Type     
 -------------------------------------------------------------------------------------------
 {}
 ```
