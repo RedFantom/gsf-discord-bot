@@ -172,3 +172,25 @@ collected includes:
   match.
 ```
 """
+
+SETUP = """
+```markdown
+Setting up the GSF Parser to work with this bot is really easy. It can
+be done in a few simple steps.
+
+1. Download and install the latest version of the GSF Parser from
+   <https://www.github.com/RedFantom/gsf-parser/releases>
+2. Register yourself into my database with the `register` command.
+3. Open the GSF Parser and let it initialize for the first time. This 
+   may take a while.
+4. You should have received a security code over PM. Enter this code,
+   along with your Discord tag in `@Name#1234` format into the settings
+   tab of the GSF Parser. It is saved automatically.
+5. Go to the characters tab and enable Discord sharing for each
+   character you want to share data of. If selected, match results 
+   will be available through the `results` command and your Discord tag
+   will be available through the `character` command.
+6. Restart the GSF Parser to resynchronize with the Discord Bot Server,
+   sharing the results for the characters you have selected.
+```
+"""

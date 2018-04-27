@@ -20,28 +20,8 @@ from utils.utils import DATE_FORMAT, TIME_FORMAT
 
 class DiscordBot(object):
     """
-    Run a Discord bot for GSF Parser users. Discord Bot commands:
-
-    :register: Register a new user to the Discord bot. Sends a unique
-        registration code to the user who issued the command.
-
-    :forgot_code: Generate a new access code for the user and send it
-        through PM. Invalidates the old access code.
-
-    :overview {type}: Send a public message into the channel where the
-        user issued the command, tagging the user for notification.
-
-        :user {name} {day}: Display the results of this user for each
-            match played on a given day. If day is not given, then
-            today is assumed.
-        :day {date} {server}:
-        :week: Display the amount of matches per server for the last
-            seven days
-        :period {start} {end}:
-        :server:
-
-    :unregister: Remove the user who issued the command fully from the
-        whole database, deleting all information referencing the user.
+    Run a Discord bot for GSF Parser users. For a list commands, check
+    the man.py file.
     """
 
     PREFIX = "$"
@@ -175,6 +155,9 @@ class DiscordBot(object):
 
     async def print_purpose(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, PURPOSE)
+
+    async def print_setup(self, channel: Channel, user: DiscordUser, args: tuple):
+        await self.bot.send_message(channel, SETUP)
 
     """User Commands"""
 
