@@ -138,7 +138,7 @@ async def parse_scoreboard(image: Image.Image, bot, message)->list:
         text = list()
         for name, column in zip(columns, row):
             result = await perform_ocr(column, name in digits)
-            todo += 1
+            done += 1
             message = await bot.edit_message(message, generate_progress_string(done/todo))
             text.append(result)
         allied = get_allied(column)
@@ -159,4 +159,4 @@ def format_results(results: list):
 
 
 def generate_progress_string(percent: float):
-    return "`[{:<20}]`".format(int(percent * 10) * "#")
+    return "`[{:<20}] - {:>3}%`".format(int(percent * 20) * "#", int(percent*100))
