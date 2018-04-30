@@ -234,7 +234,6 @@ class DiscordBot(object):
 
     async def period_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the overview like that of a day for a period"""
-        self.bot.send_typing(channel)
         if len(args) == 1:
             args += (datetime.now().strftime(DATE_FORMAT),)
         if len(args) != 2:
@@ -337,9 +336,9 @@ class DiscordBot(object):
         if image.size != (1920, 1080):
             await self.bot.send_message(channel, "Sorry, for now I only support Full-HD screenshots.")
             return
-        await self.bot.send_typing(channel)
+        to_edit = await self.bot.send_message(channel, "I'm working on it...")
         message = "```{}```".format(sb.format_results(sb.parse_scoreboard(image)))
-        await self.bot.send_message(channel, message)
+        await self.bot.edit_message(to_edit, message)
 
     @staticmethod
     def validate_message(content: str):
