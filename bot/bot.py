@@ -318,7 +318,7 @@ class DiscordBot(object):
         self.logger.debug(message)
         await self.bot.send_message(channel, message)
 
-    async def parse_scoreboard(self, channel: Channel, user: DiscordUser, message: Message):
+    async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
         try:
             await self.bot.send_message(channel, str(message.attachments))
         except Exception as e:
