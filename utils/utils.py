@@ -51,6 +51,19 @@ def get_log_directory():
     return path
 
 
+def get_assets_directory():
+    """Return an absolute path to the assets directory"""
+    return os.path.realpath(os.path.join(os.path.dirname(os.path.realpath(__file__)), "..", "assets"))
+
+
+def get_temp_directory():
+    """Return an absolute path to a temporary directory"""
+    folder = "/var/tmp/discord"
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    return folder
+
+
 def datetime_to_str(dt: datetime)->str:
     if isinstance(dt, str):
         return dt
