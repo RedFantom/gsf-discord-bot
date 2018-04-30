@@ -26,7 +26,7 @@ widths = {
 digits = ["kills", "assists", "deaths", "damage", "hit", "objectives"]
 columns = ["name", "kills", "assists", "deaths", "damage", "hit", "objectives"]
 
-START, END, DIFF = 650, 580, 10
+START, END, DIFF = 650, 400, 20
 TRAIN_TH = (START + END) // 2
 ROWS = 17.2
 
