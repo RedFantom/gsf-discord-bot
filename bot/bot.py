@@ -315,7 +315,10 @@ class DiscordBot(object):
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, message: Message):
-        await self.bot.send_message(channel, str(message.attachments))
+        try:
+            await self.bot.send_message(channel, str(message.attachments))
+        except Exception as e:
+            await self.bot.send_message(channel, e)
 
     @staticmethod
     def validate_message(content: str):
