@@ -337,6 +337,7 @@ class DiscordBot(object):
         if image.size != (1920, 1080):
             await self.bot.send_message(channel, "Sorry, for now I only support Full-HD screenshots.")
             return
+        await self.bot.send_typing(channel)
         message = "```{}```".format(sb.format_results(sb.parse_scoreboard(image)))
         await self.bot.send_message(channel, message)
 
