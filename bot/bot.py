@@ -48,7 +48,9 @@ class DiscordBot(object):
         "week": ((0,), "week_overview"),
         "matches": ((1, 2), "matches_overview"),
         "character": ((2, 3), "find_character_owner"),
-        "results": ((3,), "get_results")
+        "results": ((3,), "get_results"),
+        # Data Processing
+        "scoreboard": ((0,), "parse_scoreboard", True),
     }
 
     PRIVATE = ["forgot_code", "man", "servers", "author", "privacy", "purpose", "setup"]
@@ -104,8 +106,11 @@ class DiscordBot(object):
         if command is None:
             await self.invalid_command(channel, author)
             return
-        func = self.__getattribute__(DiscordBot.COMMANDS[command][1])
-        await func(channel, author, args)
+        command = DiscordBot.COMMANDS[command]
+        func = self.__getattribute__(command[1])
+        mess = command[2] if len(command) == 3 else False
+        arguments = (channel, author, args) if not mess else (channel, author, args, message)
+        await func(*arguments)
 
     def run(self, token: str):
         """Run the Bot loop"""
@@ -308,6 +313,9 @@ class DiscordBot(object):
         message = RESULTS.format(start, date, server, self.build_string_from_results(results))
         self.logger.debug(message)
         await self.bot.send_message(channel, message)
+
+    async def parse_scoreboard(self, channel: Channel, user: DiscordUser, message: Message):
+        await self.bot.send_message(channel, str(message.attachments))
 
     @staticmethod
     def validate_message(content: str):
