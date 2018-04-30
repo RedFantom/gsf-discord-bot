@@ -104,7 +104,7 @@ def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
 
 def match_digit(image: Image.Image)->int:
     """Match the digit in the image to a template in the assets folder"""
-    folder = "../assets/digits"
+    folder = os.path.join(get_assets_directory(), "digits")
     digits = os.listdir(folder)
     results = dict()
     for digit in digits:
@@ -152,9 +152,3 @@ def format_results(results: list):
     for player in results:
         string += formatter.format(*tuple(player))
     return string
-
-
-if __name__ == "__main__":
-    Image.open("../assets/tests/test2.jpg").convert("RGBA").save("../assets/tests/test2.png")
-    results = parse_scoreboard(Image.open("../assets/tests/test2.png"))
-    print(format_results(results))
