@@ -11,7 +11,6 @@ from utils.utils import get_temp_directory
 from PIL import Image
 import cv2 as cv
 import numpy
-from matplotlib import pyplot as plt
 
 
 def image_to_opencv(image: Image.Image)->numpy.array:
@@ -32,9 +31,6 @@ def feature_match(image: Image.Image, template: Image.Image)->int:
     matcher = cv.BFMatcher(cv.NORM_L1, crossCheck=False)
     template = image_to_opencv(template.convert("RGB"))
     tp_kp, tp_ds = orb.detectAndCompute(template, None)
-    img = cv.drawKeypoints(template, tp_kp, None, color=(0, 255, 0), flags=0)
-    plt.imshow(img)
-    plt.show()
     image = image_to_opencv(image.convert("RGB"))
     im_kp, im_ds = orb.detectAndCompute(image, None)
     try:
