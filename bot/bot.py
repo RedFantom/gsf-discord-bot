@@ -7,6 +7,7 @@ Copyright (C) 2018 RedFantom
 import requests
 from datetime import datetime
 from ast import literal_eval
+import traceback
 # Packages
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
@@ -84,33 +85,36 @@ class DiscordBot(object):
         amount of arguments is checked, and then the command is
         executed.
         """
-        author, channel, content = message.author, message.channel, message.content
-        if author == self.bot.user:  # Don't process own messages
-            return
-        if channel.is_private is True:  # Only certain commands allowed
-            valid = False
-            for command in DiscordBot.PRIVATE:
-                if command in message.content:
-                    valid = True
-                    break
-            if valid is False:
-                await self.bot.send_message(author, NOT_PRIVATE)
+        try:
+            author, channel, content = message.author, message.channel, message.content
+            if author == self.bot.user:  # Don't process own messages
                 return
-        if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private:
-            self.logger.debug("Ignored a message from wrong channel: {}, channel: {}".format(content, channel.name))
-            return
-        if self.validate_message(content) is False:
-            self.logger.debug("{} is not a command.".format(content))
-            return
-        command, args = self.process_command(content)
-        if command is None:
-            await self.invalid_command(channel, author)
-            return
-        command = DiscordBot.COMMANDS[command]
-        func = self.__getattribute__(command[1])
-        mess = command[2] if len(command) == 3 else False
-        arguments = (channel, author, args) if not mess else (channel, author, args, message)
-        await func(*arguments)
+            if channel.is_private is True:  # Only certain commands allowed
+                valid = False
+                for command in DiscordBot.PRIVATE:
+                    if command in message.content:
+                        valid = True
+                        break
+                if valid is False:
+                    await self.bot.send_message(author, NOT_PRIVATE)
+                    return
+            if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private:
+                self.logger.debug("Ignored a message from wrong channel: {}, channel: {}".format(content, channel.name))
+                return
+            if self.validate_message(content) is False:
+                self.logger.debug("{} is not a command.".format(content))
+                return
+            command, args = self.process_command(content)
+            if command is None:
+                await self.invalid_command(channel, author)
+                return
+            command = DiscordBot.COMMANDS[command]
+            func = self.__getattribute__(command[1])
+            mess = command[2] if len(command) == 3 else False
+            arguments = (channel, author, args) if not mess else (channel, author, args, message)
+            await func(*arguments)
+        except Exception as e:
+            await self.bot.send_message(message.channel, "That hurt! ```python\n{}```".format(traceback.format_exc()))
 
     def run(self, token: str):
         """Run the Bot loop"""
