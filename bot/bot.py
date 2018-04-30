@@ -337,7 +337,8 @@ class DiscordBot(object):
             await self.bot.send_message(channel, "Sorry, for now I only support Full-HD screenshots.")
             return
         to_edit = await self.bot.send_message(channel, "I'm working on it...")
-        message = "```{}```".format(sb.format_results(sb.parse_scoreboard(image)))
+        results = await sb.parse_scoreboard(image, self.bot, to_edit)
+        message = "```{}```".format(sb.format_results(results))
         await self.bot.edit_message(to_edit, message)
 
     @staticmethod

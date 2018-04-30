@@ -5,6 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import os
+import asyncio
 # Project Modules
 from utils import opencv
 from utils.utils import get_assets_directory
@@ -78,7 +79,7 @@ def split_scoreboard(image: Image.Image)->list:
     return result
 
 
-def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
+async def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
     """Perform OCR on a part of an image"""
     result = None
     for treshold in range(START, END, -DIFF):  # Continue until result is valid
@@ -99,7 +100,7 @@ def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
         return 0 if is_number else None
     if is_number:
         return int(result)
-    return result
+    return result.replace("\n", "").replace("  ", "")
 
 
 def match_digit(image: Image.Image)->int:
@@ -128,14 +129,17 @@ def high_pass_invert(image: Image.Image, treshold: int)->Image.Image:
     return result
 
 
-def parse_scoreboard(image: Image.Image)->list:
+async def parse_scoreboard(image: Image.Image, bot, message)->list:
     """Perform OCR on a screenshot of a scoreboard"""
     split = split_scoreboard(image)
     results = list()
+    todo, done = sum(len(row) for row in split), 0
     for i, row in enumerate(split):
         text = list()
         for name, column in zip(columns, row):
-            result = perform_ocr(column, name in digits)
+            result = await perform_ocr(column, name in digits)
+            todo += 1
+            message = await bot.edit_message(message, generate_progress_string(done/todo))
             text.append(result)
         allied = get_allied(column)
         text.append(str(allied))
@@ -152,3 +156,7 @@ def format_results(results: list):
     for player in results:
         string += formatter.format(*tuple(player))
     return string
+
+
+def generate_progress_string(percent: float):
+    return "[{:<20}]".format(int(percent * 10) * "#")
