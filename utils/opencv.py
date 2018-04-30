@@ -30,16 +30,22 @@ def feature_match(image: Image.Image, template: Image.Image)->int:
     """Return the amount of features matched with ORB"""
     orb = cv.ORB_create()
     matcher = cv.BFMatcher(cv.NORM_L1, crossCheck=False)
-    template = image_to_opencv(template)
+    template = image_to_opencv(template.convert("RGB"))
     tp_kp, tp_ds = orb.detectAndCompute(template, None)
-    # img = cv.drawKeypoints(template, tp_kp, None, color=(0, 255, 0), flags=0)
-    # plt.imshow(img)
-    # plt.show()
-    image = image_to_opencv(image)
+    img = cv.drawKeypoints(template, tp_kp, None, color=(0, 255, 0), flags=0)
+    plt.imshow(img)
+    plt.show()
+    image = image_to_opencv(image.convert("RGB"))
     im_kp, im_ds = orb.detectAndCompute(image, None)
-    matches = matcher.knnMatch(tp_ds, im_ds, k=2)
+    try:
+        matches = matcher.knnMatch(tp_ds, im_ds, k=2)
+    except cv.error as e:
+        return 0
     result = 0
-    for m, n in matches:
+    for value in matches:
+        if len(value) != 2:
+            continue
+        m, n = value
         if m.distance < 0.8 * n.distance:
             result += 1
     return result

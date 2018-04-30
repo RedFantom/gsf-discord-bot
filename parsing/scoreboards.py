@@ -155,5 +155,6 @@ def format_results(results: list):
 
 
 if __name__ == "__main__":
-    results = parse_scoreboard(Image.open("../assets/tests/test1.png"))
+    Image.open("../assets/tests/test2.jpg").convert("RGBA").save("../assets/tests/test2.png")
+    results = parse_scoreboard(Image.open("../assets/tests/test2.png"))
     print(format_results(results))

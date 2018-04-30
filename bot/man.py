@@ -152,5 +152,14 @@ MANUAL = {
         "\n"
         "Request a new security key for accessing the Discord Bot Server. Your\n"
         "old code is invalidated instantly and only the new code can be used.\n"
+        "```",
+    "scoreboard":
+        "```markdown\n"
+        "Command: scoreboard\n"
+        "Arguments: None\n"
+        "\n"
+        "Performs cropping and OCR on a screenshot of a scoreboard in order to\n"
+        "build a table with the results. The screenshot should be sent as an\n"
+        "attachment.\n"
         "```"
 }

@@ -5,16 +5,20 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import requests
+from io import BytesIO
 from datetime import datetime
 from ast import literal_eval
 import traceback
+import requests
 # Packages
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
+from PIL import Image
 # Project Modules
 from database import DatabaseHandler, SERVERS, SERVER_NAMES
 from bot.messages import *
 from bot.man import MANUAL
+import parsing.scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT
 
@@ -319,10 +323,22 @@ class DiscordBot(object):
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
-        try:
-            await self.bot.send_message(channel, str(message.attachments))
-        except Exception as e:
-            await self.bot.send_message(channel, e)
+        if len(message.attachments) == 0:
+            await self.bot.send_message(channel, "You forgot to include the screenshot.")
+            return
+        elif len(message.attachments) > 1:
+            await self.bot.send_message(channel, "You can only send a single image at a time.")
+            return
+        link = message.attachments[0]["url"]
+        if not link.endswith((".png", ".jpg")):
+            await self.bot.send_message(channel, "I only support `png` and `jpg` images, sorry.")
+            return
+        image = Image.open(BytesIO(requests.get(link).content))
+        if image.size != (1920, 1080):
+            await self.bot.send_message(channel, "Sorry, for now I only support Full-HD screenshots.")
+            return
+        message = "```{}```".format(sb.format_results(sb.parse_scoreboard(image)))
+        await self.bot.send_message(channel, message)
 
     @staticmethod
     def validate_message(content: str):
