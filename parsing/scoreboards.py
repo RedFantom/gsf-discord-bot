@@ -159,4 +159,4 @@ def format_results(results: list):
 
 
 def generate_progress_string(percent: float):
-    return "`[{:<20}]`".format(int(percent * 10) * "#")
+    return "`[{:<20}] - {:>3}%`".format(int(percent * 20) * "#", int(percent*100))
