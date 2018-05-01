@@ -174,6 +174,6 @@ def format_results(results: list):
 def generate_progress_string(percent: float, start: datetime):
     todo = 1.0 - percent
     percent_per_second = percent / (datetime.now() - start).total_seconds()
-    seconds_to_go = todo / percent_per_second
+    seconds_to_go = int(todo / percent_per_second)
     eta = "{:02d}:{:02d}".format(*divmod(seconds_to_go, 60))
     return "`[{:<20}] - {:>3}% - ETA: {}`".format(int(percent * 20) * "#", int(percent*100), eta)
