@@ -6,7 +6,7 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 import os
 # Project Modules
-from utils.utils import get_temp_directory, get_assets_directory
+from utils.utils import get_temp_directory
 # Packages
 from PIL import Image
 import cv2 as cv

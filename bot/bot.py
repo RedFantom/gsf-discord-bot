@@ -9,15 +9,14 @@ from io import BytesIO
 from datetime import datetime
 from ast import literal_eval
 import traceback
-import requests
 # Packages
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
 from PIL import Image
 # Project Modules
-from database import DatabaseHandler, SERVERS, SERVER_NAMES
 from bot.messages import *
 from bot.man import MANUAL
+from database import DatabaseHandler, SERVERS, SERVER_NAMES
 import parsing.scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT
@@ -399,8 +398,3 @@ class DiscordBot(object):
             string = "{:<16}| {:<9} |{:>10} |{:>10} |{:>12} |{:>7} | {:<14}\n".format(*result)
             total += string
         return total
-
-
-if __name__ == "__main__":
-    print(DiscordBot.build_string_from_results([('Redfantom', 'Imperial', 12017, 6338, 11, 2)]))
-
