@@ -13,15 +13,17 @@ from utils.utils import get_assets_directory
 from PIL import Image, ImageFilter
 from pytesseract import image_to_string
 
+DEFAULT_WIDTH = 1190
+DEFAULT_TABLE_HEIGHT = 430
 
 widths = {
-    "name": 280,
-    "kills": 130,
-    "assists": 130,
-    "deaths": 130,
-    "damage": 130,
-    "hit": 130,
-    "objectives": 130,
+    "name": 280 / DEFAULT_WIDTH,
+    "kills": 130 / DEFAULT_WIDTH,
+    "assists": 130 / DEFAULT_WIDTH,
+    "deaths": 130 / DEFAULT_WIDTH,
+    "damage": 130 / DEFAULT_WIDTH,
+    "hit": 130 / DEFAULT_WIDTH,
+    "objectives": 130 / DEFAULT_WIDTH,
 }
 
 digits = ["kills", "assists", "deaths", "damage", "hit", "objectives"]
@@ -45,31 +47,40 @@ def get_allied(image: Image.Image)->bool:
     return dom[1] > dom[0]
 
 
-def is_scoreboard(image: Image.Image)->bool:
+def is_scoreboard(image: Image.Image)->(tuple, None):
     """Use feature matching to check if image contains scoreboard"""
-    template = Image.open(os.path.join(get_assets_directory(), "table_bar.png"))
-    result = opencv.feature_match(image, template)
-    return True
+    folder = os.path.join(get_assets_directory(), "headers")
+    scales = os.listdir(folder)
+    scale, location = None, None
+    for file in scales:
+        template = Image.open(os.path.join(folder, file))
+        is_match, location = opencv.template_match(image, template)
+        if not is_match:
+            continue
+        scale = float(file[:-4])
+        break
+    if scale is not None:
+        return scale, location
+    return None, None
 
 
-def crop_scoreboard(image: Image.Image)->Image.Image:
+def crop_scoreboard(image: Image.Image, scale: float, loc: tuple)->Image.Image:
     """Crop a screenshot to just the scoreboard"""
-    w, h = image.width, image.height
-    xc, yc = w / 2, h / 2
-    crop = (xc - 600, yc - 170, xc + 600, yc + 260)
-    return image.crop(crop)
+    template = Image.open(os.path.join(get_assets_directory(), "headers", "{}.png".format(scale)))
+    (w, h), (x, y) = template.size, loc
+    return image.crop((x, y + h, x + w, y + h + DEFAULT_TABLE_HEIGHT * scale))
 
 
-def split_scoreboard(image: Image.Image)->list:
+def split_scoreboard(image: Image.Image, scale: float, header_loc: tuple)->list:
     """Split a scoreboard into different elements"""
-    image = crop_scoreboard(image)
+    image = crop_scoreboard(image, scale, header_loc)
     result = list()
     for i in range(16):
         row = (0, i * (image.height / ROWS), image.width, (i + 1) * (image.height / ROWS))
         row_img = image.crop(row)
         row_elems = list()
         for name in columns:
-            start = sum([widths[col] for col in columns[:columns.index(name)]])
+            start = sum([widths[col] * image.width for col in columns[:columns.index(name)]])
             end = start + widths[name]
             crop = (start, 0, end, row_img.height)
             column = row_img.crop(crop)
@@ -129,9 +140,9 @@ def high_pass_invert(image: Image.Image, treshold: int)->Image.Image:
     return result
 
 
-async def parse_scoreboard(image: Image.Image, bot, message)->list:
+async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bot, message)->list:
     """Perform OCR on a screenshot of a scoreboard"""
-    split = split_scoreboard(image)
+    split = split_scoreboard(image, scale, location)
     results = list()
     todo, done = sum(len(row) for row in split), 0
     for i, row in enumerate(split):

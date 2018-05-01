@@ -336,8 +336,12 @@ class DiscordBot(object):
         if image.size != (1920, 1080):
             await self.bot.send_message(channel, "Sorry, for now I only support Full-HD screenshots.")
             return
+        scale, location = sb.is_scoreboard(image)
+        if scale is None or location is None:
+            await self.bot.send_message(channel, "I don't recognize that as a scoreboard.")
+            return
         to_edit = await self.bot.send_message(channel, "I'm working on it...")
-        results = await sb.parse_scoreboard(image, self.bot, to_edit)
+        results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
         message = "```{}```".format(sb.format_results(results))
         await self.bot.edit_message(to_edit, message)
 
