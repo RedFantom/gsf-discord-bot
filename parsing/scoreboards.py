@@ -14,17 +14,18 @@ from utils.utils import get_assets_directory
 from PIL import Image, ImageFilter
 from pytesseract import image_to_string
 
-DEFAULT_WIDTH = 1190
+DEFAULT_TABLE_WIDTH = 1190
 DEFAULT_TABLE_HEIGHT = 430
+DEFAULT_WIDTH, DEFAULT_HEIGHT = 1920, 1080
 
 widths = {
-    "name": 280 / DEFAULT_WIDTH,
-    "kills": 130 / DEFAULT_WIDTH,
-    "assists": 130 / DEFAULT_WIDTH,
-    "deaths": 130 / DEFAULT_WIDTH,
-    "damage": 130 / DEFAULT_WIDTH,
-    "hit": 130 / DEFAULT_WIDTH,
-    "objectives": 130 / DEFAULT_WIDTH,
+    "name": 280 / DEFAULT_TABLE_WIDTH,
+    "kills": 130 / DEFAULT_TABLE_WIDTH,
+    "assists": 130 / DEFAULT_TABLE_WIDTH,
+    "deaths": 130 / DEFAULT_TABLE_WIDTH,
+    "damage": 130 / DEFAULT_TABLE_WIDTH,
+    "hit": 130 / DEFAULT_TABLE_WIDTH,
+    "objectives": 130 / DEFAULT_TABLE_WIDTH,
 }
 
 digits = ["kills", "assists", "deaths", "damage", "hit", "objectives"]
@@ -50,7 +51,10 @@ def get_allied(image: Image.Image)->bool:
 
 def is_scoreboard(image: Image.Image)->(tuple, None):
     """Use feature matching to check if image contains scoreboard"""
-    folder = os.path.join(get_assets_directory(), "headers")
+    resolution = "{}x{}".format(*image.size)
+    folder = os.path.join(get_assets_directory(), "headers", resolution)
+    if not os.path.exists(folder):
+        return None, None
     scales = os.listdir(folder)
     scale, location = None, None
     for file in scales:
@@ -67,7 +71,8 @@ def is_scoreboard(image: Image.Image)->(tuple, None):
 
 def crop_scoreboard(image: Image.Image, scale: float, loc: tuple)->Image.Image:
     """Crop a screenshot to just the scoreboard"""
-    template = Image.open(os.path.join(get_assets_directory(), "headers", "{}.png".format(scale)))
+    path = os.path.join(get_assets_directory(), "headers", "{}x{}".format(*image.size), "{}.png".format(scale))
+    template = Image.open(path)
     (w, h), (x, y) = template.size, loc
     return image.crop((x, y + h, x + w, y + h + DEFAULT_TABLE_HEIGHT * scale))
 

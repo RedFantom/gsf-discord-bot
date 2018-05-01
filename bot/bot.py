@@ -335,7 +335,7 @@ class DiscordBot(object):
         image = Image.open(BytesIO(requests.get(link).content))
         scale, location = sb.is_scoreboard(image)
         if scale is None or location is None:
-            await self.bot.send_message(channel, "I don't recognize that as a scoreboard.")
+            await self.bot.send_message(channel, NOT_A_SCOREBOARD)
             return
         to_edit = await self.bot.send_message(channel, "I'm working on it...")
         results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
