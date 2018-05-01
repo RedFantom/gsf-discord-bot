@@ -332,6 +332,7 @@ class DiscordBot(object):
         if not link.endswith((".png", ".jpg")):
             await self.bot.send_message(channel, "I only support `png` and `jpg` images, sorry.")
             return
+        image = Image.open(BytesIO(requests.get(link).content))
         scale, location = sb.is_scoreboard(image)
         if scale is None or location is None:
             await self.bot.send_message(channel, "I don't recognize that as a scoreboard.")
