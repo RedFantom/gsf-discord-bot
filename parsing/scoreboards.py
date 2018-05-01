@@ -177,6 +177,7 @@ def format_results(results: list):
 
 
 def generate_progress_string(percent: float, start: datetime):
+    """Generate a progress bar string with percentage and ETA"""
     todo = 1.0 - percent
     percent_per_second = percent / (datetime.now() - start).total_seconds()
     seconds_to_go = int(todo / percent_per_second)
