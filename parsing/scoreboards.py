@@ -81,7 +81,7 @@ def split_scoreboard(image: Image.Image, scale: float, header_loc: tuple)->list:
         row_elems = list()
         for name in columns:
             start = sum([widths[col] * image.width for col in columns[:columns.index(name)]])
-            end = start + widths[name]
+            end = start + widths[name] * image.width
             crop = (start, 0, end, row_img.height)
             column = row_img.crop(crop)
             column = column.resize((column.width * 3, column.height * 3), Image.LANCZOS)
