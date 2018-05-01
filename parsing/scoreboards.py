@@ -6,6 +6,7 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 import os
 import asyncio
+from datetime import datetime
 # Project Modules
 from utils import opencv
 from utils.utils import get_assets_directory
@@ -142,6 +143,7 @@ def high_pass_invert(image: Image.Image, treshold: int)->Image.Image:
 
 async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bot, message)->list:
     """Perform OCR on a screenshot of a scoreboard"""
+    start = datetime.now()
     split = split_scoreboard(image, scale, location)
     results = list()
     todo, done = sum(len(row) for row in split), 0
@@ -150,7 +152,7 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bo
         for name, column in zip(columns, row):
             result = await perform_ocr(column, name in digits)
             done += 1
-            message = await bot.edit_message(message, generate_progress_string(done/todo))
+            message = await bot.edit_message(message, generate_progress_string(done/todo, start))
             text.append(result)
         allied = get_allied(column)
         text.append(str(allied))
@@ -169,5 +171,9 @@ def format_results(results: list):
     return string
 
 
-def generate_progress_string(percent: float):
-    return "`[{:<20}] - {:>3}%`".format(int(percent * 20) * "#", int(percent*100))
+def generate_progress_string(percent: float, start: datetime):
+    todo = 1.0 - percent
+    percent_per_second = percent / (datetime.now() - start).total_seconds()
+    seconds_to_go = todo / percent_per_second
+    eta = "{:02d.0f}:{:02d.0f}".format(*divmod(seconds_to_go, 60))
+    return "`[{:<20}] - {:>3}% - ETA: {}`".format(int(percent * 20) * "#", int(percent*100), eta)
