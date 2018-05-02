@@ -231,7 +231,7 @@ class DiscordBot(object):
     async def period_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the overview like that of a day for a period"""
         if len(args) == 1:
-            args += (datetime.now().strftime(DATE_FORMAT),)
+            args += (datetime.now(),)
         if len(args) != 2:
             await self.bot.send_message(channel, INVALID_ARGS)
             return
@@ -333,7 +333,7 @@ class DiscordBot(object):
         arguments = list()
         held = str()
         for arg in args:
-            if arg.startswith("\""):
+            if arg.startswith("\"") and not args.endswith("\""):
                 held += arg
                 continue
             if arg.endswith("\""):
