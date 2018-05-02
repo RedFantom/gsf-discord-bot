@@ -333,7 +333,7 @@ class DiscordBot(object):
         arguments = list()
         held = str()
         for arg in args:
-            if arg.startswith("\"") and not args.endswith("\""):
+            if arg.startswith("\"") and not arg.endswith("\""):
                 held += arg
                 continue
             if arg.endswith("\""):
