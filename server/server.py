@@ -31,39 +31,43 @@ class Server(object):
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
         """Handle a single Client that wants to send a command"""
-        data, count = "", 0
-        self.logger.debug("Client accepted.")
-        while len(data) == 0:
-            await asyncio.sleep(0.1)
-            data = await reader.read(100)
-            data = data.decode().replace("+", "")
-            if count > 20:
-                return
-        self.logger.debug("Data read: {}".format(data))
-        self.logger.debug("Received message from client: {}".format(data.strip()))
-        elements = data.split("_")
         try:
-            (discord, auth, command), args = elements[0:3], tuple(elements[3:])
-        except ValueError:
-            self.logger.error("Invalid amount of elements: {}".format(elements))
-            return
-        if self.authenticate(discord, auth) is False:
-            self.logger.info("User {} failed to authenticate.".format(discord))
-            writer.write(b"unauth")
-        else:
-            self.logger.debug("User {} successfully authenticated.".format(discord))
+            data, count = "", 0
+            self.logger.debug("Client accepted.")
+            while len(data) == 0:
+                await asyncio.sleep(0.1)
+                data = await reader.read(100)
+                data = data.decode().replace("+", "")
+                if count > 20:
+                    self.logger.debug("Did not receive any data from client.")
+                    return
+            self.logger.debug("Data read: {}".format(data))
+            self.logger.debug("Received message from client: {}".format(data.strip()))
+            elements = data.split("_")
             try:
-                self.process_command(command, args)
-            except Exception:
-                self.logger.error("Error occurred while processing command: {}".format(traceback.format_exc()))
-                writer.write(b"error")
-                await writer.drain()
-                writer.close()
+                (discord, auth, command), args = elements[0:3], tuple(elements[3:])
+            except ValueError:
+                self.logger.error("Invalid amount of elements: {}".format(elements))
                 return
-            writer.write(b"ack")
-            self.logger.debug("Request complete, sent acknowledgement.")
-        await writer.drain()
-        writer.close()
+            if self.authenticate(discord, auth) is False:
+                self.logger.info("User {} failed to authenticate.".format(discord))
+                writer.write(b"unauth")
+            else:
+                self.logger.debug("User {} successfully authenticated.".format(discord))
+                try:
+                    self.process_command(command, args)
+                except Exception:
+                    self.logger.error("Error occurred while processing command: {}".format(traceback.format_exc()))
+                    writer.write(b"error")
+                    await writer.drain()
+                    writer.close()
+                    return
+                writer.write(b"ack")
+                self.logger.debug("Request complete, sent acknowledgement.")
+            await writer.drain()
+            writer.close()
+        except Exception:
+            self.logger.error("Error occurred while processing client: {}".format(traceback.format_exc()))
 
     def process_command(self, command: str, args: tuple):
         """Process a command given by a Client"""
