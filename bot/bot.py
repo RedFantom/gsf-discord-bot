@@ -4,12 +4,13 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-import requests
-from io import BytesIO
-from datetime import datetime
 from ast import literal_eval
+from datetime import datetime, time, date
+from io import BytesIO
+import requests
 import traceback
 # Packages
+from dateparser import parse as parse_date
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
 from PIL import Image
@@ -107,7 +108,7 @@ class DiscordBot(object):
             if self.validate_message(content) is False:
                 self.logger.debug("{} is not a command.".format(content))
                 return
-            command, args = self.process_command(content)
+            command, args = await self.process_command(content)
             if command is None:
                 await self.invalid_command(channel, author)
                 return
@@ -217,14 +218,10 @@ class DiscordBot(object):
     async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send an overview for a specific day"""
         if len(args) == 0:
-            day = datetime.now().strftime(DATE_FORMAT)
+            day = datetime.now()
         else:
             day, = args
-            try:
-                datetime.strptime(day, DATE_FORMAT)
-            except ValueError:
-                await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
-                return
+        day = day.strftime(DATE_FORMAT)
         servers = {server: 0 for server in SERVER_NAMES.keys()}
         servers.update(self.db.get_matches_count_by_day(day))
         message = self.build_string_from_servers(servers)
@@ -238,18 +235,13 @@ class DiscordBot(object):
         if len(args) != 2:
             await self.bot.send_message(channel, INVALID_ARGS)
             return
-        start, end = start_s, end_s = args
-        try:
-            start, end = map(lambda s: datetime.strptime(s, DATE_FORMAT), (start, end))
-        except ValueError:
-            await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
-            return
+        start, end = map(lambda e: e.strftime(DATE_FORMAT), args)
         if end <= start:
             await self.bot.send_message(channel, INVALID_DATE_RANGE)
             return
         servers = self.db.get_matches_count_by_period(start, end)
         message = self.build_string_from_servers(servers)
-        message = MATCH_COUNT_PERIOD.format(start_s, end_s, message)
+        message = MATCH_COUNT_PERIOD.format(start, end, message)
         await self.bot.send_message(channel, message)
 
     async def week_overview(self, channel: Channel, user: DiscordUser, args: tuple):
@@ -282,12 +274,7 @@ class DiscordBot(object):
             await self.bot.send_message(channel, INVALID_SERVER)
             return
         if len(args) == 2:
-            day = args[1]
-            try:
-                datetime.strptime(day, DATE_FORMAT)
-            except ValueError:
-                await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
-                return
+            day = args[1].strftime(DATE_FORMAT)
         else:
             day = datetime.now().strftime(DATE_FORMAT)
         matches = self.db.get_matches_by_day_by_server(server, day)
@@ -301,16 +288,8 @@ class DiscordBot(object):
         """Send the list of known results for this match"""
         self.logger.debug("Getting results for {}".format(args))
         server, date, start = args
-        try:
-            datetime.strptime(date, DATE_FORMAT)
-        except ValueError:
-            await self.bot.send_message(UNKNOWN_DATE_FORMAT)
-            return
-        try:
-            datetime.strptime(start, TIME_FORMAT)
-        except ValueError:
-            await self.bot.send_message(UNKNOWN_TIME_FORMAT)
-            return
+        date = date.strftime(DATE_FORMAT)
+        start = date.strftime(TIME_FORMAT)
         results = self.db.get_match_results(server, date, start)
         self.logger.debug("Results retrieved: {}".format(results))
         if len(results) == 0:
@@ -346,14 +325,35 @@ class DiscordBot(object):
         """Check if this message is a valid command for the bot"""
         return isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX
 
-    @staticmethod
-    def process_command(content: str):
+    async def process_command(self, content: str):
         """Split the message into command and arguments"""
         elements = content.split(" ")
         command, args = elements[0][1:], elements[1:]
-        if command not in DiscordBot.COMMANDS or len(args) not in DiscordBot.COMMANDS[command][0]:
+        arguments = list()
+        held = str()
+        for arg in args:
+            if arg.startswith("\""):
+                held += arg
+                continue
+            if arg.endswith("\""):
+                held += " " + arg
+                try:
+                    held = parse_date(held)
+                    if held is None:
+                        raise ValueError
+                except ValueError:
+                    await self.bot.send_message(UNKNOWN_DATE_FORMAT)
+                    return None, None
+                arguments.append(held)
+                held = str()
+                continue
+            if held != "":
+                held += " " + arg
+                continue
+            arguments.append(arg)
+        if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
             return None, None
-        return command, args
+        return command, tuple(arguments)
 
     @staticmethod
     def build_string_from_servers(servers: dict):

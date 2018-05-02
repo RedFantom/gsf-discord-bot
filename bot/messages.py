@@ -27,8 +27,9 @@ INVALID_SERVER = "That is not a valid server name. Please use a server abbreviat
 UNREGISTER = "I have deleted all of your data from the database."
 UNREGISTER_PUBLIC = "You are now no longer registered. All your data has been removed."
 UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
-UNKNOWN_DATE_FORMAT = "I do not recognize that date format. Please use YYYY-MM-DD."
-UNKNOWN_TIME_FORMAT = "I do not recognize that time format. Please use HH:MM instead."
+UNKNOWN_DATE_FORMAT = "I support many different date and time formats. For formats that consist of " \
+                      "multiple elements (with spaces), please enclose them in quotes. If in doubt, " \
+                      "use `YYYY-MM-DD` or `HH:MM`."
 
 CHARACTER_OWNER = "`{}` owns that character."
 
