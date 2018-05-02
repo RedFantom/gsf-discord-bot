@@ -338,6 +338,8 @@ class DiscordBot(object):
                 continue
             if arg.endswith("\""):
                 held += " " + arg
+                self.logger.debug("Processing held command: {}".format(held))
+                held = held.replace("\"", "")
                 try:
                     held = parse_date(held)
                     if held is None:
