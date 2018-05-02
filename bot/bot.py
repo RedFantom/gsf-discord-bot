@@ -235,13 +235,14 @@ class DiscordBot(object):
         if len(args) != 2:
             await self.bot.send_message(channel, INVALID_ARGS)
             return
+        start_s, end_s = args
         start, end = map(lambda e: e.strftime(DATE_FORMAT), args)
         if end <= start:
             await self.bot.send_message(channel, INVALID_DATE_RANGE)
             return
         servers = self.db.get_matches_count_by_period(start, end)
         message = self.build_string_from_servers(servers)
-        message = MATCH_COUNT_PERIOD.format(start, end, message)
+        message = MATCH_COUNT_PERIOD.format(start_s, end_s, message)
         await self.bot.send_message(channel, message)
 
     async def week_overview(self, channel: Channel, user: DiscordUser, args: tuple):
