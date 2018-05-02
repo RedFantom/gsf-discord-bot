@@ -5,7 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from ast import literal_eval
-from datetime import datetime, time, date
+from datetime import datetime
 from io import BytesIO
 import requests
 import traceback
@@ -353,7 +353,8 @@ class DiscordBot(object):
             if held != "":
                 held += " " + arg
                 continue
-            arguments.append(arg)
+            date = parse_date(arg)
+            arguments.append(arg if date is None else date)
         if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
             return None, None
         return command, tuple(arguments)
