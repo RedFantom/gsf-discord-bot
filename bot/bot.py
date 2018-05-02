@@ -108,7 +108,7 @@ class DiscordBot(object):
             if self.validate_message(content) is False:
                 self.logger.debug("{} is not a command.".format(content))
                 return
-            command, args = await self.process_command(content)
+            command, args = await self.process_command(message)
             if command is None:
                 await self.invalid_command(channel, author)
                 return
@@ -325,8 +325,9 @@ class DiscordBot(object):
         """Check if this message is a valid command for the bot"""
         return isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX
 
-    async def process_command(self, content: str):
+    async def process_command(self, message: Message):
         """Split the message into command and arguments"""
+        content, channel = message.content, message.channel
         elements = content.split(" ")
         command, args = elements[0][1:], elements[1:]
         arguments = list()
@@ -342,7 +343,7 @@ class DiscordBot(object):
                     if held is None:
                         raise ValueError
                 except ValueError:
-                    await self.bot.send_message(UNKNOWN_DATE_FORMAT)
+                    await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
                     return None, None
                 arguments.append(held)
                 held = str()
