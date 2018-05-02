@@ -156,7 +156,12 @@ MANUAL = {
     "scoreboard":
         "```markdown\n"
         "Command: scoreboard\n"
-        "Arguments: None\n"
+        "Arguments:\n"
+        "- type, optional, table assumed if not given\n"
+        "  Possible values:\n"
+        "  - table, output sent as a table\n"
+        "  - excel, output sent as an Excel file\n"
+        "  - csv, output sent as a CSV file\n"
         "\n"
         "Performs cropping and OCR on a screenshot of a scoreboard in order to\n"
         "build a table with the results. The screenshot should be sent as an\n"

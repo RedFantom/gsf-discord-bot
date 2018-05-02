@@ -20,7 +20,7 @@ from bot.man import MANUAL
 from database import DatabaseHandler, SERVERS, SERVER_NAMES
 import parsing.scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
-from utils.utils import DATE_FORMAT, TIME_FORMAT
+from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
 
 class DiscordBot(object):
@@ -55,7 +55,7 @@ class DiscordBot(object):
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
         # Data Processing
-        "scoreboard": ((0,), "parse_scoreboard", True),
+        "scoreboard": ((0, 1), "parse_scoreboard", True),
     }
 
     PRIVATE = ["forgot_code", "man", "servers", "author", "privacy", "purpose", "setup"]
@@ -301,6 +301,12 @@ class DiscordBot(object):
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
+        if len(args) == 0:
+            args = ("table",)
+        type, = args
+        if type not in ("table", "excel", "csv",):
+            await self.bot.send_message(channel, INVALID_ARGS)
+            return
         if len(message.attachments) == 0:
             await self.bot.send_message(channel, "You forgot to include the screenshot.")
             return
@@ -318,8 +324,22 @@ class DiscordBot(object):
             return
         to_edit = await self.bot.send_message(channel, "I'm working on it...")
         results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
-        message = "```{}```".format(sb.format_results(results))
-        await self.bot.edit_message(to_edit, message)
+        if "table" in args:
+            message = "```{}```".format(sb.format_results(results))
+            await self.bot.send_message(channel, message)
+        else:
+            df = sb.results_to_dataframe(results)
+            await self.send_dataframe(type, df, channel)
+
+    async def send_dataframe(self, type: str, df, channel: Channel):
+        if type == "excel":
+            sb.write_excel(df, get_temp_file("xls"))
+            await self.bot.send_file(channel, get_temp_file("xls"))
+        elif type == "csv":
+            df.to_csv(get_temp_file("csv"))
+            await self.bot.send_file(channel, get_temp_file("csv"))
+        else:
+            raise ValueError
 
     @staticmethod
     def validate_message(content: str):

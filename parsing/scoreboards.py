@@ -11,6 +11,7 @@ from datetime import datetime
 from utils import opencv
 from utils.utils import get_assets_directory
 # Packages
+from pandas import DataFrame, ExcelWriter
 from PIL import Image, ImageFilter
 from pytesseract import image_to_string
 
@@ -165,7 +166,7 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bo
     return results
 
 
-def format_results(results: list):
+def format_results(results: list)->str:
     """Print the results in table format"""
     formatter = " {:<22} | {:>5} | {:>7} | {:>6} | {:>6} | {:>3} | {:>10} | {:<6} \n"
     header = formatter.format(*(tuple(column.capitalize() for column in columns) + ("Allied",)))
@@ -176,10 +177,27 @@ def format_results(results: list):
     return string
 
 
-def generate_progress_string(percent: float, start: datetime):
+def results_to_dataframe(results: list)->DataFrame:
+    """Convert parsing results to DataFrame"""
+    results = [{column: value for column, value in zip(columns, row)} for row in results]
+    return DataFrame(results)
+
+
+def write_excel(df: DataFrame, path: str):
+    """Write DataFrame to Excel File"""
+    writer = ExcelWriter(path)
+    df.to_excel(writer, sheet_name="Results")
+    writer.save()
+
+
+def generate_progress_string(percent: float, start: datetime)->str:
     """Generate a progress bar string with percentage and ETA"""
     todo = 1.0 - percent
-    percent_per_second = percent / (datetime.now() - start).total_seconds()
-    seconds_to_go = int(todo / percent_per_second)
-    eta = "{:02d}:{:02d}".format(*divmod(seconds_to_go, 60))
-    return "`[{:<20}] - {:>3}% - ETA: {}`".format(int(percent * 20) * "#", int(percent*100), eta)
+    seconds_taken = (datetime.now() - start).total_seconds()
+    if percent < 1.0:
+        percent_per_second = percent / seconds_taken
+        seconds_to_go = int(todo / percent_per_second)
+        eta = "ETA: {:02d}:{:02d}".format(*divmod(seconds_to_go, 60))
+    else:
+        eta = "Done in {} minutes, {} seconds".format(*divmod(seconds_taken, 60))
+    return "`[{:<20}] - {:>3}% - {}`".format(int(percent * 20) * "#", int(percent*100), eta)

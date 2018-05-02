@@ -64,6 +64,11 @@ def get_temp_directory():
     return folder
 
 
+def get_temp_file(ext: str):
+    """Return an absolute path to a temporary file"""
+    return os.path.join(get_temp_directory(), "temp.{}".format(ext))
+
+
 def datetime_to_str(dt: datetime)->str:
     if isinstance(dt, str):
         return dt
