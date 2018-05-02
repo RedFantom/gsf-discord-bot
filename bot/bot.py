@@ -329,15 +329,17 @@ class DiscordBot(object):
             await self.bot.send_message(channel, message)
         else:
             df = sb.results_to_dataframe(results)
-            await self.send_dataframe(type, df, channel)
+            await self.send_dataframe(type, df, channel, user)
 
-    async def send_dataframe(self, type: str, df, channel: Channel):
+    async def send_dataframe(self, type: str, df, channel: Channel, user: DiscordUser):
         if type == "excel":
-            sb.write_excel(df, get_temp_file("xls"))
-            await self.bot.send_file(channel, get_temp_file("xls"))
+            path = get_temp_file(ext="xls", user=user)
+            sb.write_excel(df, path)
+            await self.bot.send_file(channel, path)
         elif type == "csv":
-            df.to_csv(get_temp_file("csv"))
-            await self.bot.send_file(channel, get_temp_file("csv"))
+            path = get_temp_file(ext="csv", user=user)
+            df.to_csv(path)
+            await self.bot.send_file(channel, path)
         else:
             raise ValueError
 

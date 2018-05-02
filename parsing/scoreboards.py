@@ -180,7 +180,9 @@ def format_results(results: list)->str:
 def results_to_dataframe(results: list)->DataFrame:
     """Convert parsing results to DataFrame"""
     results = [{column: value for column, value in zip(columns, row)} for row in results]
-    return DataFrame(results)
+    df = DataFrame(results)
+    df.reindex_axis(columns, axis=1)
+    return df
 
 
 def write_excel(df: DataFrame, path: str):
@@ -199,5 +201,5 @@ def generate_progress_string(percent: float, start: datetime)->str:
         seconds_to_go = int(todo / percent_per_second)
         eta = "ETA: {:02d}:{:02d}".format(*divmod(seconds_to_go, 60))
     else:
-        eta = "Done in {} minutes, {} seconds".format(*divmod(seconds_taken, 60))
+        eta = "Done in {:.0f} minutes, {:.0f} seconds".format(*divmod(seconds_taken, 60))
     return "`[{:<20}] - {:>3}% - {}`".format(int(percent * 20) * "#", int(percent*100), eta)

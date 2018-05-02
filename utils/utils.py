@@ -3,11 +3,14 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
+# Standard Library
 import os
 import sys
 import logging
 from datetime import datetime
 from hashlib import sha256
+# Packages
+from discord import User
 
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -64,9 +67,9 @@ def get_temp_directory():
     return folder
 
 
-def get_temp_file(ext: str):
+def get_temp_file(ext: str, user: User):
     """Return an absolute path to a temporary file"""
-    return os.path.join(get_temp_directory(), "temp.{}".format(ext))
+    return os.path.join(get_temp_directory(), "{}_{}.{}".format(user.name, datetime.now().strftime(TIME_FORMAT), ext))
 
 
 def datetime_to_str(dt: datetime)->str:
