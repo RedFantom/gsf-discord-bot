@@ -5,14 +5,13 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import os
-import asyncio
 from datetime import datetime
 # Project Modules
 from utils import opencv
-from utils.utils import get_assets_directory, setup_logger, get_temp_directory
+from utils.utils import get_assets_directory, setup_logger
 # Packages
 from pandas import DataFrame, ExcelWriter
-from PIL import Image, ImageFilter
+from PIL import Image
 from pytesseract import image_to_string
 
 DEFAULT_TABLE_WIDTH = 1190
@@ -115,9 +114,11 @@ async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
             result = image_to_string(template, config="-psm 10")
         if result == "" or (is_number and not result.isdigit()):
             continue
+        logger.debug("Tesseract - {} - {} - {}".format(column, treshold, result))
         break
     if is_number and not result.isdigit():
         result = match_digit(high_pass_invert(image, START))
+        logger.debug("Digit - {} - {} - {}".format(column, START, result))
     if result == "" or (is_number and not result.isdigit()):
         return 0 if is_number else None
     if is_number:
