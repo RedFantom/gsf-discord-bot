@@ -406,11 +406,11 @@ class DiscordBot(object):
             if end is None:
                 end = "Uknown"
             if map is not None:
-                match_type, match_map = literal_eval(map)
+                match_type, match_map = map.split(",")
             else:
                 match_type, match_map = "Unknown", "Unknown"
             if score is not None:
-                imp, rep = map(int, score.split("-"))
+                imp, rep = (int, score.split("-"))
                 if imp > rep:
                     winner = "Empire"
                 elif imp == rep:
