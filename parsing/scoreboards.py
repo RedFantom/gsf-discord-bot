@@ -39,6 +39,10 @@ columns = ["name", "kills", "assists", "deaths", "damage", "hit", "objectives"]
 START, END, DIFF = 650, 400, 20
 TRAIN_TH = (START + END) // 2
 ROWS = 17.2
+WHITELIST = "-c tessedit_char_whitelist=\"" \
+            "abcdefghijklmnopqrstuvwxyz" \
+            "ABCDEFGHIJKLMNOPQRSTUVWXYZ" \
+            "-áàäúùüóòöéèëíìï'\""
 
 logger = setup_logger("scoreboards", "scoreboards.log")
 
@@ -109,7 +113,7 @@ async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
     is_number = column in digits
     for treshold in range(START, END, -DIFF):  # Continue until result is valid
         template = high_pass_invert(image, treshold)
-        result = image_to_string(template)
+        result = image_to_string(template, config="" if column in digits else WHITELIST)
         if is_number and not result.isdigit():  # Try again for numbers
             result = image_to_string(template, config="-psm 10")
         if is_number and not result.isdigit():
