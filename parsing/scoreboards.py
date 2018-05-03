@@ -135,6 +135,7 @@ def match_digit(image: Image.Image)->int:
         template = Image.open(os.path.join(folder, digit))
         digit = digit[:-4]
         results[digit] = opencv.feature_match(image, template)
+        logger.debug("Match Digit - {} - {}".format(digit, results[digit]))
     return max(results, key=lambda key: results[key])
 
 
