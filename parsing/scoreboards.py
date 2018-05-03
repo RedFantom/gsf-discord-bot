@@ -9,7 +9,7 @@ import asyncio
 from datetime import datetime
 # Project Modules
 from utils import opencv
-from utils.utils import get_assets_directory
+from utils.utils import get_assets_directory, setup_logger, get_temp_directory
 # Packages
 from pandas import DataFrame, ExcelWriter
 from PIL import Image, ImageFilter
@@ -18,6 +18,11 @@ from pytesseract import image_to_string
 DEFAULT_TABLE_WIDTH = 1190
 DEFAULT_TABLE_HEIGHT = 430
 DEFAULT_WIDTH, DEFAULT_HEIGHT = 1920, 1080
+
+FILTERS = {
+    "|": "1",
+    " ": ""
+}
 
 widths = {
     "name": 280 / DEFAULT_TABLE_WIDTH,
@@ -35,6 +40,8 @@ columns = ["name", "kills", "assists", "deaths", "damage", "hit", "objectives"]
 START, END, DIFF = 650, 400, 20
 TRAIN_TH = (START + END) // 2
 ROWS = 17.2
+
+logger = setup_logger("scoreboards", "scoreboards.log")
 
 
 def dominant_color(image: Image.Image)->tuple:
@@ -97,23 +104,26 @@ def split_scoreboard(image: Image.Image, scale: float, header_loc: tuple)->list:
     return result
 
 
-async def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
+async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
     """Perform OCR on a part of an image"""
+    logger.debug("Processing column: {}".format(column))
+    is_number = column in digits
     result = None
-    for treshold in range(START, END, -DIFF):  # Continue until result is valid
-        template = high_pass_invert(image, treshold)
+    for threshold in range(START, END, -DIFF):  # Continue until result is valid
+        template = high_pass_invert(image, threshold)
         result = image_to_string(template)
+        logger.debug("Tesseract {} - '{}'".format(threshold, result))
         if is_number and not result.isdigit():  # Try again for numbers
-            result = image_to_string(template, config="-psm 10")
+            result = image_to_string(template, config="-psm=10")
+            logger.debug("Attempted again number: {}".format(result))
         if result == "" or (is_number and not result.isdigit()):
             continue
+        logger.debug("Tesseract succeeded with threshold {}.".format(threshold))
         break
     if is_number and not result.isdigit():
         template = high_pass_invert(image, START)
-        template = template.filter(ImageFilter.GaussianBlur(radius=1))
-        result = image_to_string(template)
-    if is_number and not result.isdigit():
-        result = match_digit(high_pass_invert(image, START))
+        result = match_digit(template)
+        logger.debug("Performing match_digit, result: {}".format(result))
     if result == "" or (is_number and not result.isdigit()):
         return 0 if is_number else None
     if is_number:
@@ -156,9 +166,9 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bo
     for i, row in enumerate(split):
         text = list()
         for name, column in zip(columns, row):
-            result = await perform_ocr(column, name in digits)
+            result = await perform_ocr(column, name)
             done += 1
-            message = await bot.edit_message(message, generate_progress_string(done/todo, start))
+            message = await bot.edit_message(message, generate_progress_string(done/todo, start, i, name))
             text.append(result)
         allied = get_allied(column)
         text.append(str(allied))
@@ -192,14 +202,15 @@ def write_excel(df: DataFrame, path: str):
     writer.save()
 
 
-def generate_progress_string(percent: float, start: datetime)->str:
+def generate_progress_string(percent: float, start: datetime, row: int, column: str)->str:
     """Generate a progress bar string with percentage and ETA"""
     todo = 1.0 - percent
     seconds_taken = (datetime.now() - start).total_seconds()
     if percent < 1.0:
         percent_per_second = percent / seconds_taken
         seconds_to_go = int(todo / percent_per_second)
-        eta = "ETA: {:02d}:{:02d}".format(*divmod(seconds_to_go, 60))
+        working_on = "Working on: {:02d} - {}".format(row, column)
+        eta = "ETA: {:02d}:{:02d} - {}".format(*divmod(seconds_to_go, 60), working_on)
     else:
         eta = "Done in {:.0f} minutes, {:.0f} seconds".format(*divmod(seconds_taken, 60))
     return "`[{:<20}] - {:>3}% - {}`".format(int(percent * 20) * "#", int(percent*100), eta)
