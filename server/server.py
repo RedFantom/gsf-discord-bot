@@ -114,7 +114,7 @@ class Server(object):
         """Insert the map of a match into the database"""
         self.logger.debug("Updating map in database: {}".format(server, start, map))
         map_eval = map.split(",")
-        if not isinstance(map_eval, tuple) and len(map_eval) == 2:
+        if not isinstance(map_eval, list) or not len(map_eval) == 2:
             self.logger.error("Invalid map tuple received: {}.".format(map_eval))
             return False
         self.db.update_match(server, date, start, id_fmt, map=map)
