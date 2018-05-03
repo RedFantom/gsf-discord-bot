@@ -11,7 +11,7 @@ from utils import opencv
 from utils.utils import get_assets_directory, setup_logger
 # Packages
 from pandas import DataFrame, ExcelWriter
-from PIL import Image
+from PIL import Image, ImageFilter
 from pytesseract import image_to_string
 
 DEFAULT_TABLE_WIDTH = 1190
@@ -111,6 +111,9 @@ async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
         template = high_pass_invert(image, treshold)
         result = image_to_string(template)
         if is_number and not result.isdigit():  # Try again for numbers
+            result = image_to_string(template, config="-psm 10")
+        if is_number and not result.isdigit():
+            template = template.filter(ImageFilter.GaussianBlur())
             result = image_to_string(template, config="-psm 10")
         if result == "" or (is_number and not result.isdigit()):
             continue
