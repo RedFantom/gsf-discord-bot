@@ -129,7 +129,7 @@ async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
     return result.replace("\n", "").replace("  ", "")
 
 
-def match_digit(image: Image.Image)->int:
+def match_digit(image: Image.Image)->str:
     """Match the digit in the image to a template in the assets folder"""
     folder = os.path.join(get_assets_directory(), "digits")
     digits = os.listdir(folder)
@@ -139,6 +139,8 @@ def match_digit(image: Image.Image)->int:
         digit = digit[:-4]
         results[digit] = opencv.feature_match(image, template)
         logger.debug("Match Digit - {} - {}".format(digit, results[digit]))
+    if all(value == 0 for value in results.values()):
+        return "0"
     return max(results, key=lambda key: results[key])
 
 
