@@ -7,6 +7,7 @@ Copyright (C) 2018 RedFantom
 import asyncio
 from ast import literal_eval
 import traceback
+from semantic_version import Version
 # Project Modules
 from utils import setup_logger
 from database import DatabaseHandler
@@ -15,6 +16,8 @@ from utils import hash_auth
 
 class Server(object):
     """Asynchronous Server for GSF Parser Clients"""
+
+    REQUIRED_VERSION = Version("4.0.2")
 
     def __init__(self, database: DatabaseHandler, host: str, port: int):
         """
@@ -45,13 +48,16 @@ class Server(object):
             self.logger.debug("Received message from client: {}".format(data.strip()))
             elements = data.split("_")
             try:
-                (discord, auth, command), args = elements[0:3], tuple(elements[3:])
+                (discord, auth, command), version, args = elements[0:3], elements[3], tuple(elements[4:])
             except ValueError:
                 self.logger.error("Invalid amount of elements: {}".format(elements))
                 return
             if self.authenticate(discord, auth) is False:
                 self.logger.info("User {} failed to authenticate.".format(discord))
                 writer.write(b"unauth")
+            elif Version(version[1:]) < self.REQUIRED_VERSION:
+                self.logger.info("User {} uses GSF Parser {}.".format(version))
+                writer.write(b"version")
             else:
                 self.logger.debug("User {} successfully authenticated.".format(discord))
                 try:
