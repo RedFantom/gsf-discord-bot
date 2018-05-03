@@ -210,7 +210,7 @@ def generate_progress_string(percent: float, start: datetime, row: int, column: 
     if percent < 1.0:
         percent_per_second = percent / seconds_taken
         seconds_to_go = int(todo / percent_per_second)
-        working_on = "Working on: {:02d} - {}".format(row, column)
+        working_on = "Working on row {:02d}, column {}".format(row + 1, column)
         eta = "ETA: {:02d}:{:02d} - {}".format(*divmod(seconds_to_go, 60), working_on)
     else:
         eta = "Done in {:.0f} minutes, {:.0f} seconds".format(*divmod(seconds_taken, 60))
