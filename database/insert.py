@@ -44,7 +44,7 @@ UPDATE_MATCH_END = """
 """
 
 UPDATE_MATCH_MAP = """
-    UPDATE 'Match' SET map = '{map}' WHERE 'id' = {match};
+    UPDATE Match SET map = '{map}' WHERE 'id' = {match};
 """
 
 INSERT_RESULT = """
