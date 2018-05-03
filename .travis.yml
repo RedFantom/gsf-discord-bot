@@ -9,6 +9,7 @@ before_install:
 install:
   - sudo apt-get install python3-tk python3-imaging python3-pip
   - sudo apt-get install tesseract-ocr
+  - sudo mkdir /var/log/discord && sudo chown -R /var/log/discord
   - python -m pip install -U pip setuptools
   - python -m pip install -r requirements.txt
 script:

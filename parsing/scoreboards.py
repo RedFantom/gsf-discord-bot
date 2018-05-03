@@ -104,26 +104,19 @@ def split_scoreboard(image: Image.Image, scale: float, header_loc: tuple)->list:
     return result
 
 
-async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
+async def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
     """Perform OCR on a part of an image"""
-    logger.debug("Processing column: {}".format(column))
-    is_number = column in digits
     result = None
-    for threshold in range(START, END, -DIFF):  # Continue until result is valid
-        template = high_pass_invert(image, threshold)
+    for treshold in range(START, END, -DIFF):  # Continue until result is valid
+        template = high_pass_invert(image, treshold)
         result = image_to_string(template)
-        logger.debug("Tesseract {} - '{}'".format(threshold, result))
         if is_number and not result.isdigit():  # Try again for numbers
-            result = image_to_string(template, config="-psm=10")
-            logger.debug("Attempted again number: {}".format(result))
+            result = image_to_string(template, config="-psm 10")
         if result == "" or (is_number and not result.isdigit()):
             continue
-        logger.debug("Tesseract succeeded with threshold {}.".format(threshold))
         break
     if is_number and not result.isdigit():
-        template = high_pass_invert(image, START)
-        result = match_digit(template)
-        logger.debug("Performing match_digit, result: {}".format(result))
+        result = match_digit(high_pass_invert(image, START))
     if result == "" or (is_number and not result.isdigit()):
         return 0 if is_number else None
     if is_number:
