@@ -36,7 +36,7 @@ INSERT_MATCH = """
 """
 
 UPDATE_MATCH_SCORE = """
-    UPDATE Match SET score = '{score}' WHERE id = {match}; 
+    UPDATE Match SET score = {score} WHERE id = {match}; 
 """
 
 UPDATE_MATCH_END = """

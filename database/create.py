@@ -40,7 +40,7 @@ CREATE_TABLE_MATCH = """
         date TEXT NOT NULL,
         start TEXT NOT NULL,
         end TEXT,
-        score TEXT,
+        score REAL,
         map TEXT,
         UNIQUE (server, date, idfmt)
     );

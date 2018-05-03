@@ -404,23 +404,20 @@ class DiscordBot(object):
         for match in sorted(matches, key=lambda tup: tup[0]):
             start, end, map, score = match
             if end is None:
-                end = "Uknown"
+                end = "Unknown"
             if map is not None:
                 match_type, match_map = map.split(",")
             else:
                 match_type, match_map = "Unknown", "Unknown"
             if score is not None:
-                imp, rep = (int, score.split("-"))
-                if imp > rep:
-                    winner = "Empire"
-                elif imp == rep:
-                    winner = "Close call",
-                else:
-                    winner = "Republic"
+                winner = "Empire" if score > 1.0 else "Republic"
+                if winner == "Republic":
+                    score = 1 / score
+                score = "{:.2f}".format(score)
             else:
-                winner, score = "Uknown", "Uknown"
-            string += "{:^7}|{:^7}|{:^10}|{:^9}\n".format(  # |{:^9}|{:^10}\n".format(
-                start, end, match_type, match_map)  # , score, winner)
+                winner, score = "Unknown", "Unknown"
+            string += "{:^7}|{:^7}|{:^10}|{:^9}|{:^9}|{:>10}\n".format(
+                start, end, match_type, match_map, score, winner)
         return string
 
     @staticmethod

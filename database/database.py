@@ -6,12 +6,11 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 from threading import Lock
 import sqlite3 as sql
-import logging
 from contextlib import closing
 from datetime import datetime, timedelta
 # Project Modules
 from database import create, insert, select, delete
-from database.servers import SERVERS, SERVER_NAMES
+from database.servers import SERVER_NAMES
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 
@@ -111,7 +110,7 @@ class DatabaseHandler(object):
         self.exec_command(command)
 
     def update_match(self, server: str, date: str, start: str, id_fmt: str,
-                     score: str = None, map: str = None, end: str = None):
+                     score: float = None, map: str = None, end: str = None):
         """Insert the match score into the database"""
 
         if self.get_match_id(server, date, id_fmt) is None:
