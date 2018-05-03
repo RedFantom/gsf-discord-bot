@@ -121,7 +121,7 @@ class DatabaseHandler(object):
         commands = list()
         kwargs = {
             "match": match,
-            "map": map,
+            "map": map.replace("'", "\\'"),
             "score": score,
             "end": end
         }

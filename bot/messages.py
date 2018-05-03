@@ -33,7 +33,7 @@ UNKNOWN_DATE_FORMAT = "I support many different date and time formats. For forma
 
 CHARACTER_OWNER = "`{}` owns that character."
 
-SERVERS = """
+SERVER_STATUS = """
 The following servers are in my database:
 ```markdown
 # Region Europe

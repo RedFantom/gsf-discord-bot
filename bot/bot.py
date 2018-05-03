@@ -5,6 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from ast import literal_eval
+import asyncio
 from datetime import datetime
 from io import BytesIO
 import requests
@@ -17,7 +18,7 @@ from PIL import Image
 # Project Modules
 from bot.messages import *
 from bot.man import MANUAL
-from database import DatabaseHandler, SERVERS, SERVER_NAMES
+from database import DatabaseHandler, SERVER_NAMES, SERVERS
 import parsing.scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
@@ -135,14 +136,12 @@ class DiscordBot(object):
         command, = args
         await self.bot.send_message(channel, MANUAL[command])
 
-    async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send a list of servers to the channel with server statuses"""
+    @staticmethod
+    async def get_server_status():
         try:
             page = requests.get("http://www.swtor.com/server-status")
         except (requests.ConnectionError, requests.HTTPError):
-            self.bot.send_message(channel, "I could not contact the SWTOR website for information.")
-            return
-        self.bot.send_typing(channel)
+            return None
         lines = page.content.decode().split("\n")
         servers = {}
         status = None
@@ -156,8 +155,16 @@ class DiscordBot(object):
             if server in servers:
                 continue
             servers[server] = "offline"
+        return servers
+
+    async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Send a list of servers to the channel with server statuses"""
+        servers = await self.get_server_status()
+        if servers is None:
+            await self.bot.send_message(channel, "I could not contact the SWTOR website for information.")
+            return
         self.logger.debug("Server statuses: {}".format(servers))
-        await self.bot.send_message(channel, SERVERS.format(**servers))
+        await self.bot.send_message(channel, SERVER_STATUS.format(**servers))
 
     async def print_author(self, channel: Channel, user: DiscordUser, args: tuple):
         """Print the AUTHOR message"""
