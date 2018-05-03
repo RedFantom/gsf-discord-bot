@@ -56,7 +56,7 @@ class Server(object):
                 self.logger.info("User {} failed to authenticate.".format(discord))
                 writer.write(b"unauth")
             elif Version(version[1:]) < self.REQUIRED_VERSION:
-                self.logger.info("User {} uses GSF Parser {}.".format(version))
+                self.logger.info("User {} uses GSF Parser {}.".format(discord, version))
                 writer.write(b"version")
             else:
                 self.logger.debug("User {} successfully authenticated.".format(discord))
