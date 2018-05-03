@@ -104,9 +104,10 @@ def split_scoreboard(image: Image.Image, scale: float, header_loc: tuple)->list:
     return result
 
 
-async def perform_ocr(image: Image.Image, is_number: bool)->(str, int, None):
+async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
     """Perform OCR on a part of an image"""
     result = None
+    is_number = column in digits
     for treshold in range(START, END, -DIFF):  # Continue until result is valid
         template = high_pass_invert(image, treshold)
         result = image_to_string(template)
