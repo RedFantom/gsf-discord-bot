@@ -43,7 +43,7 @@ class TestScoreboards(TestCase):
             self.assertIsInstance(results, list)
             self.assertEqual(len(results), 16)
             for row in results:
-                self.assertEqual(len(row), len(sb.columns))
+                self.assertEqual(len(row), len(sb.columns) + 1)
                 for col in row:
                     self.assertIsInstance(col, (str, int))
             names = [row[0] for row in results]

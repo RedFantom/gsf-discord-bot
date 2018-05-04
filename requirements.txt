@@ -6,3 +6,4 @@ discord.py
 requests
 dateparser
 pandas
+semantic_version
