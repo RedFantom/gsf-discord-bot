@@ -48,7 +48,7 @@ class Server(object):
             self.logger.debug("Received message from client: {}".format(data.strip()))
             elements = data.split("_")
             try:
-                (discord, auth, command), version, args = elements[0:3], elements[3], tuple(elements[4:])
+                (discord, auth, version, command), args = elements[0:4], tuple(elements[4:])
             except ValueError:
                 self.logger.error("Invalid amount of elements: {}".format(elements))
                 return
