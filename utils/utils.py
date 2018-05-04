@@ -24,6 +24,8 @@ SERVERS = {
     "TL": "The Leviathan"
 }
 
+STDOUT = False
+
 
 def hash_auth(auth: str):
     """Securely hash an authentication code"""
@@ -38,8 +40,7 @@ def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger
     logger = logging.Logger(name, level=level)
     file = logging.FileHandler(file_path)
     stdout = logging.StreamHandler(sys.stdout)
-    logger.addHandler(file)
-    # logger.addHandler(stdout)
+    logger.addHandler(file if STDOUT is False else stdout)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
     file.setFormatter(fmt)
     stdout.setFormatter(fmt)
