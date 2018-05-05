@@ -220,11 +220,8 @@ class DiscordBot(object):
         """Send the overview like that of a day for a period"""
         if len(args) == 1:
             args += (datetime.now(),)
-        if len(args) != 2:
-            await self.bot.send_message(channel, INVALID_ARGS)
-            return
-        start_s, end_s = args
-        start, end = map(lambda e: e.strftime(DATE_FORMAT), args)
+        start, end = args
+        start_s, end_s = map(lambda dt: dt.strftime(DATE_FORMAT), (start, end))
         if end <= start:
             await self.bot.send_message(channel, INVALID_DATE_RANGE)
             return
