@@ -4,7 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from datetime import datetime
+from datetime import datetime, timedelta
 from io import BytesIO
 import requests
 import traceback
@@ -107,7 +107,6 @@ class DiscordBot(object):
                     await self.bot.send_message(author, NOT_PRIVATE)
                     return
             if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private:
-                self.logger.debug("Ignored a message from wrong channel: {}, channel: {}".format(content, channel.name))
                 return
             if self.validate_message(content) is False:
                 self.logger.debug("{} is not a command.".format(content))
@@ -279,7 +278,7 @@ class DiscordBot(object):
         self.logger.debug("Getting results for {}".format(args))
         server, date, start = args
         date = date.strftime(DATE_FORMAT)
-        start = date.strftime(TIME_FORMAT)
+        start = start.strftime(TIME_FORMAT)
         results = self.db.get_match_results(server, date, start)
         self.logger.debug("Results retrieved: {}".format(results))
         if len(results) == 0:
@@ -351,7 +350,13 @@ class DiscordBot(object):
         """Split the message into command and arguments"""
         content, channel = message.content, message.channel
         elements = content.split(" ")
-        command, args = elements[0][1:], elements[1:]
+        command, args = elements[0][len(self.PREFIX):], elements[1:]
+        arguments = await self.parse_arguments(args, channel)
+        if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
+            return None, None
+        return command, tuple(arguments)
+
+    async def parse_arguments(self, args: tuple, channel: Channel)->list:
         arguments = list()
         held = str()
         for arg in args:
@@ -366,9 +371,11 @@ class DiscordBot(object):
                     held = parse_date(held)
                     if held is None:
                         raise ValueError
+                    if isinstance(held, timedelta):
+                        held = datetime.now() - held
                 except ValueError:
                     await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
-                    return None, None
+                    return list()
                 arguments.append(held)
                 held = str()
                 continue
@@ -377,6 +384,4 @@ class DiscordBot(object):
                 continue
             date = parse_date(arg)
             arguments.append(arg if date is None else date)
-        if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
-            return None, None
-        return command, tuple(arguments)
+        return arguments
