@@ -145,13 +145,15 @@ class DiscordBot(object):
             await asyncio.sleep(1)
 
     @property
-    async def validated_channels(self)->list:
+    def validated_channels(self)->list:
         """Generator for all valid channels this Bot is in"""
+        channels = list()
         for server in self.bot.servers:
             for channel in server.channels:
                 if self.validate_channel(channel) is False:
                     continue
-                yield channel
+                channels.append(channel)
+        return channels
 
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
