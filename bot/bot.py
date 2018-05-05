@@ -4,8 +4,6 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from ast import literal_eval
-import asyncio
 from datetime import datetime
 from io import BytesIO
 import requests
@@ -16,9 +14,12 @@ from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message
 from PIL import Image
 # Project Modules
+from bot.func import get_server_status
+from bot.strings import *
 from bot.messages import *
+from bot.static import *
 from bot.man import MANUAL
-from database import DatabaseHandler, SERVER_NAMES, SERVERS
+from database import DatabaseHandler, SERVER_NAMES
 import parsing.scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
@@ -35,6 +36,8 @@ class DiscordBot(object):
                   "statistics and for research"
     CHANNELS = ("general", "code", "bots", "bot", "parser",)
     CHANNELS_ENFORCED = True
+
+    IMAGE_TYPES = ("png", "jpg", "bmp")
 
     COMMANDS = {
         # Help commands
@@ -136,30 +139,9 @@ class DiscordBot(object):
         command, = args
         await self.bot.send_message(channel, MANUAL[command])
 
-    @staticmethod
-    async def get_server_status():
-        try:
-            page = requests.get("http://www.swtor.com/server-status")
-        except (requests.ConnectionError, requests.HTTPError):
-            return None
-        lines = page.content.decode().split("\n")
-        servers = {}
-        status = None
-        for line in lines:
-            if "class=\"name\"" in line:
-                server = line.split(">")[1].split("<")[0].lower().replace(" ", "_")
-                servers[server] = status
-            if "class=\"status\"" in line:
-                status = line.split(">")[2].split("<")[0].lower().replace("up", "online").replace("down", "offline")
-        for server in SERVERS:
-            if server in servers:
-                continue
-            servers[server] = "offline"
-        return servers
-
     async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send a list of servers to the channel with server statuses"""
-        servers = await self.get_server_status()
+        servers = await get_server_status()
         if servers is None:
             await self.bot.send_message(channel, "I could not contact the SWTOR website for information.")
             return
@@ -231,7 +213,7 @@ class DiscordBot(object):
         day = day.strftime(DATE_FORMAT)
         servers = {server: 0 for server in SERVER_NAMES.keys()}
         servers.update(self.db.get_matches_count_by_day(day))
-        message = self.build_string_from_servers(servers)
+        message = build_string_from_servers(servers)
         message = MATCH_COUNT_DAY.format(day, message)
         await self.bot.send_message(channel, message)
 
@@ -248,14 +230,14 @@ class DiscordBot(object):
             await self.bot.send_message(channel, INVALID_DATE_RANGE)
             return
         servers = self.db.get_matches_count_by_period(start, end)
-        message = self.build_string_from_servers(servers)
+        message = build_string_from_servers(servers)
         message = MATCH_COUNT_PERIOD.format(start_s, end_s, message)
         await self.bot.send_message(channel, message)
 
     async def week_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the overview like that of a day for the last week"""
         servers = self.db.get_matches_count_by_week()
-        message = self.build_string_from_servers(servers)
+        message = build_string_from_servers(servers)
         await self.bot.send_message(channel, MATCH_COUNT_WEEK.format(message))
 
     async def find_character_owner(self, channel: Channel, user: DiscordUser, args: tuple):
@@ -289,7 +271,7 @@ class DiscordBot(object):
         if len(matches) == 0:
             await self.bot.send_message(channel, NO_MATCHES_FOUND)
             return
-        message = MATCH_OVERVIEW.format(day, SERVER_NAMES[server], self.build_string_from_matches(matches))
+        message = MATCH_OVERVIEW.format(day, SERVER_NAMES[server], build_string_from_matches(matches))
         await self.bot.send_message(channel, message)
 
     async def get_results(self, channel: Channel, user: DiscordUser, args: tuple):
@@ -303,7 +285,7 @@ class DiscordBot(object):
         if len(results) == 0:
             await self.bot.send_message(channel, NO_RESULTS)
             return
-        message = RESULTS.format(start, date, server, self.build_string_from_results(results))
+        message = RESULTS.format(start, date, server, build_string_from_results(results))
         self.logger.debug(message)
         await self.bot.send_message(channel, message)
 
@@ -314,29 +296,20 @@ class DiscordBot(object):
         if type not in ("table", "excel", "csv",):
             await self.bot.send_message(channel, INVALID_ARGS)
             return
-        if len(message.attachments) == 0:
-            await self.bot.send_message(channel, "You forgot to include the screenshot.")
-            return
-        elif len(message.attachments) > 1:
-            await self.bot.send_message(channel, "You can only send a single image at a time.")
-            return
-        link = message.attachments[0]["url"]
-        if not link.endswith((".png", ".jpg")):
-            await self.bot.send_message(channel, "I only support `png` and `jpg` images, sorry.")
-            return
-        image = Image.open(BytesIO(requests.get(link).content))
-        scale, location = sb.is_scoreboard(image)
-        if scale is None or location is None:
-            await self.bot.send_message(channel, NOT_A_SCOREBOARD)
-            return
-        to_edit = await self.bot.send_message(channel, "I'm working on it...")
-        results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
-        if "table" in args:
-            message = "```{}```".format(sb.format_results(results))
-            await self.bot.send_message(channel, message)
-        else:
-            df = sb.results_to_dataframe(results)
-            await self.send_dataframe(type, df, channel, user)
+        images = await self.get_images(message)
+        for name, image in images.items():
+            scale, location = sb.is_scoreboard(image)
+            if scale is None or location is None:
+                await self.bot.send_message(channel, NOT_A_SCOREBOARD)
+                return
+            to_edit = await self.bot.send_message(channel, "I'm working on it...")
+            results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
+            if "table" in args:
+                message = "```{}```".format(sb.format_results(results))
+                await self.bot.send_message(channel, message)
+            else:
+                df = sb.results_to_dataframe(results)
+                await self.send_dataframe(type, df, channel, user)
 
     async def send_dataframe(self, type: str, df, channel: Channel, user: DiscordUser):
         if type == "excel":
@@ -348,7 +321,26 @@ class DiscordBot(object):
             df.to_csv(path)
             await self.bot.send_file(channel, path)
         else:
-            raise ValueError
+            return
+
+    async def get_images(self, message: Message, to_edit: Message=None)->dict:
+        """Return a list of all images attached to the given message"""
+        todo = len(message.attachments)
+        done = 1
+        if to_edit is not None:
+            to_edit = await self.bot.edit_message(to_edit, DOWNLOADING_IMAGES.format(done, todo))
+        channel = message.channel
+        results = dict()
+        for attachment in message.attachments:
+            if to_edit is not None:
+                to_edit = await self.bot.edit_message(to_edit, DOWNLOADING_IMAGES.format(done, todo))
+            link, name = attachment["url"], attachment["filename"]
+            done += 1
+            if not name.endswith(DiscordBot.IMAGE_TYPES):
+                await self.bot.send_message(channel, UNSUPPORTED_IMAGE_TYPE.format(name))
+                continue
+            results[name] = Image.open(BytesIO(requests.get(link).content))
+        return results
 
     @staticmethod
     def validate_message(content: str):
@@ -388,44 +380,3 @@ class DiscordBot(object):
         if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
             return None, None
         return command, tuple(arguments)
-
-    @staticmethod
-    def build_string_from_servers(servers: dict):
-        """Return a formatted string from a server: match_count dict"""
-        message = str()
-        for server, count in servers.items():
-            message += "{}: {}\n".format(SERVER_NAMES[server], count)
-        return message
-
-    @staticmethod
-    def build_string_from_matches(matches: list):
-        """Return a formatted string from a matches list"""
-        string = str()
-        for match in sorted(matches, key=lambda tup: tup[0]):
-            start, end, map, score = match
-            if end is None:
-                end = "Unknown"
-            if map is not None:
-                match_type, match_map = map.split(",")
-            else:
-                match_type, match_map = "Unknown", "Unknown"
-            if score is not None:
-                winner = "Empire" if score > 1.0 else "Republic"
-                if winner == "Republic":
-                    score = 1 / score
-                score = "{:.2f}".format(score)
-            else:
-                winner, score = "Unknown", "Unknown"
-            string += "{:^7}|{:^7}|{:^10}|{:^9}|{:^9}|{:>10}\n".format(
-                start, end, match_type, match_map, score, winner)
-        return string
-
-    @staticmethod
-    def build_string_from_results(results: list):
-        """Return a formatted string from a results list"""
-        total = str()
-        # name, faction, dmgd, dmgt, assists, deaths, ship
-        for result in sorted(results, key=lambda item: item[1]):
-            string = "{:<16}| {:<9} |{:>10} |{:>10} |{:>12} |{:>7} | {:<14}\n".format(*result)
-            total += string
-        return total
