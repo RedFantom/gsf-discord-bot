@@ -289,6 +289,13 @@ class DiscordBot(object):
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
+        """
+        Parse a scoreboard with OCR on user request
+
+        Downloads the image attached to the message by the user and then
+        parses it using the functions in scoreboards.py to generate
+        either a string table or a file.
+        """
         if len(args) == 0:
             args = ("table",)
         type, = args
@@ -311,6 +318,13 @@ class DiscordBot(object):
                 await self.send_dataframe(type, df, channel, user)
 
     async def send_dataframe(self, type: str, df, channel: Channel, user: DiscordUser):
+        """
+        Send a Pandas DataFrame instance as a file to a channel
+        :param type: File type in ("excel", "csv")
+        :param df: DataFrame instance to send
+        :param channel: Channel to send the file to
+        :param user: User that requested the file conversion
+        """
         if type == "excel":
             path = get_temp_file(ext="xls", user=user)
             sb.write_excel(df, path)
@@ -319,11 +333,15 @@ class DiscordBot(object):
             path = get_temp_file(ext="csv", user=user)
             df.to_csv(path)
             await self.bot.send_file(channel, path)
-        else:
-            return
 
     async def get_images(self, message: Message, to_edit: Message=None)->dict:
-        """Return a list of all images attached to the given message"""
+        """
+        Download and return a list of Image objects from the attachments
+
+        First downloads the images from the Discord CDN and then
+        converts them into Image instances. Then returns a dictionary
+        of filename: Image.
+        """
         todo = len(message.attachments)
         done = 1
         if to_edit is not None:
@@ -357,6 +375,14 @@ class DiscordBot(object):
         return command, tuple(arguments)
 
     async def parse_arguments(self, args: tuple, channel: Channel)->list:
+        """
+        Parse the arguments given in a command to a list of real
+        arguments. Uses dateparser.parse function to support many
+        different date and time formats.
+        :param args: A tuple of str arguments
+        :param channel: Channel the command was given in
+        :return: list or arguments
+        """
         arguments = list()
         held = str()
         for arg in args:
