@@ -4,23 +4,21 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
+import asyncio
 from datetime import datetime, timedelta
-from io import BytesIO
-import requests
 import traceback
 # Packages
 from dateparser import parse as parse_date
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message
-from PIL import Image
+from discord import User as DiscordUser, Channel, Message, Server
 # Project Modules
-from bot.func import get_server_status
+from bot.func import *
 from bot.strings import *
 from bot.messages import *
 from bot.static import *
 from bot.man import MANUAL
 from database import DatabaseHandler, SERVER_NAMES
-import parsing.scoreboards as sb
+from parsing import scoreboards as sb
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
@@ -106,8 +104,6 @@ class DiscordBot(object):
                 if valid is False:
                     await self.bot.send_message(author, NOT_PRIVATE)
                     return
-            if channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private:
-                return
             if self.validate_message(content) is False:
                 self.logger.debug("{} is not a command.".format(content))
                 return
@@ -126,6 +122,36 @@ class DiscordBot(object):
     def run(self, token: str):
         """Run the Bot loop"""
         self.bot.run(token)
+
+    async def server_status_monitor(self):
+        """
+        Monitor the server status and send a message upon changes
+
+        This runs as a coroutine, continuously monitoring the status of
+        each server and sending a message to all available channels if
+        the server status changes.
+        """
+        statuses = dict()
+        messages = list()
+        while True:
+            servers = await get_server_status()
+            for server, status in servers.items():
+                if status == statuses[server]:
+                    continue
+                messages.append(locals()["SERVER_{}".format(status)].format(server))
+            for message in messages:
+                for channel in self.validated_channels:
+                    await self.bot.send_message(channel, message)
+            await asyncio.sleep(1)
+
+    @property
+    async def validated_channels(self)->list:
+        """Generator for all valid channels this Bot is in"""
+        for server in self.bot.servers:
+            for channel in server.channels:
+                if self.validate_channel(channel) is False:
+                    continue
+                yield channel
 
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
@@ -325,11 +351,13 @@ class DiscordBot(object):
         if type == "excel":
             path = get_temp_file(ext="xls", user=user)
             sb.write_excel(df, path)
-            await self.bot.send_file(channel, path)
         elif type == "csv":
             path = get_temp_file(ext="csv", user=user)
             df.to_csv(path)
-            await self.bot.send_file(channel, path)
+        else:
+            self.logger.error("Invalid scoreboard parsing type: {}".format(type))
+            return None
+        await self.bot.send_file(channel, path)
 
     async def get_images(self, message: Message, to_edit: Message=None)->dict:
         """
@@ -353,13 +381,18 @@ class DiscordBot(object):
             if not name.endswith(DiscordBot.IMAGE_TYPES):
                 await self.bot.send_message(channel, UNSUPPORTED_IMAGE_TYPE.format(name))
                 continue
-            results[name] = Image.open(BytesIO(requests.get(link).content))
+            results[name] = await download_image(link)
         return results
 
     @staticmethod
     def validate_message(content: str):
         """Check if this message is a valid command for the bot"""
         return isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX
+
+    @staticmethod
+    def validate_channel(channel: Channel):
+        """Check if this message was sent in a valid channel for the Bot"""
+        return not (channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private)
 
     async def process_command(self, message: Message):
         """Split the message into command and arguments"""

@@ -101,3 +101,6 @@ Name            | Faction   | DMG Dealt | DMG Taken | Enemies hit | Deaths | Shi
 NO_RESULTS = """I don't have any results for that match in my database."""
 
 DOWNLOADING_IMAGES = "Downloading image: {}/{}"
+
+SERVER_ONLINE = """`{}` just came online."""
+SERVER_OFFLINE = """`{}` just went offline."""
