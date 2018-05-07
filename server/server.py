@@ -5,142 +5,147 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-from ast import literal_eval
 import traceback
 from semantic_version import Version
 # Project Modules
-from utils import setup_logger
 from database import DatabaseHandler
-from utils import hash_auth
+from utils import setup_logger, hash_auth
 
 
 class Server(object):
-    """Asynchronous Server for GSF Parser Clients"""
+    """
+    Parent class for DiscordServer and SharingServer. Each Server
+    executes its own functionality in the same manner.
+    1. The asyncio loop checks for clients once the server is started.
+    2. When a Client connects, the handle_client function is called.
+    3. The handle_client function authenticates the client and
+       starts the processing of received data with a process_command
+       instance function.
+    4. The result of the process_command function is sent back to the
+       client, after which the connection is closed. Each command
+       requires a new connection.
+    """
 
-    REQUIRED_VERSION = Version("4.0.2")
+    MAX_ATTEMPTS = 20
+    BUFFER_SIZE = 100
+    MIN_VERSION = "v4.0.2"
 
-    def __init__(self, database: DatabaseHandler, host: str, port: int):
+    def __init__(self, database: DatabaseHandler, host: str, port: int, name: str="Server"):
         """
-        :param database: DatabaseHandler instance to perform database operations
+        :param database: DatabaseHandler instance
+        :param host: Hostname to bind the server to
+        :param port: Port number to bind the server to
         """
-        self.logger = setup_logger("ClientHandler", "server.log")
+        log_file = name.replace("Server", "").lower() + ".log"
+        self.logger = setup_logger(name, log_file)
         self.db = database
         self.host, self.port = host, port
 
     async def start(self):
-        host, port = self.host, self.port
-        self.logger.info("Initializing server ({}, {})".format(host, port))
-        await asyncio.start_server(self.handle_client, host, port)
+        """Start the server in the asyncio loop"""
+        self.logger.info("Initiating server ({}, {})...".format(self.host, self.port))
+        await asyncio.start_server(self.handle_client, self.host, self.port)
 
     async def handle_client(self, reader: asyncio.StreamReader, writer: asyncio.StreamWriter):
-        """Handle a single Client that wants to send a command"""
+        """
+        Authenticate the connecting client and read the command from the
+        stream. The command is decoded and passed to the
+        process_command function, where execution should happen.
+        The result of the process_command function is sent back to the
+        client.
+        """
         try:
-            data, count = "", 0
-            self.logger.debug("Client accepted.")
-            while len(data) == 0:
-                await asyncio.sleep(0.1)
-                data = await reader.read(100)
-                data = data.decode().replace("+", "")
-                if count > 20:
-                    self.logger.debug("Did not receive any data from client.")
-                    return
-            self.logger.debug("Data read: {}".format(data))
-            self.logger.debug("Received message from client: {}".format(data.strip()))
-            elements = data.split("_")
-            try:
-                (discord, auth, version, command), args = elements[0:4], tuple(elements[4:])
-            except ValueError:
-                self.logger.error("Invalid amount of elements: {}".format(elements))
-                return
-            if self.authenticate(discord, auth) is False:
-                self.logger.info("User {} failed to authenticate.".format(discord))
+            command = await self.read_command(reader)
+            split = await self.split_command(command)
+            if split is None:
+                raise ValueError
+            # Authenticate the user and check version
+            tag, auth, version, command, args = split
+            if self.authenticate_user(tag, auth) is False:
                 writer.write(b"unauth")
-            elif Version(version[1:]) < self.REQUIRED_VERSION:
-                self.logger.info("User {} uses GSF Parser {}.".format(discord, version))
+                raise ValueError
+            if self.check_version(version) is False:
                 writer.write(b"version")
-            else:
-                self.logger.debug("User {} successfully authenticated.".format(discord))
-                try:
-                    self.process_command(command, args)
-                except Exception:
-                    self.logger.error("Error occurred while processing command: {}".format(traceback.format_exc()))
-                    writer.write(b"error")
-                    await writer.drain()
-                    writer.close()
-                    return
-                writer.write(b"ack")
-                self.logger.debug("Request complete, sent acknowledgement.")
+                raise ValueError
+            # Process the command
+            result = await self.process_command(command, args)
+            if result is None:  # Command execution failed
+                self.logger.error("Command execution failed: {}, {}".format(command, args))
+                writer.write(b"error")
+                raise ValueError
+            to_write = result.encode()
+            writer.write(to_write)
+        except Exception:
+            self.logger.error("Client handling failed:\n{}".format(traceback.format_exc()))
+        finally:
             await writer.drain()
             writer.close()
-        except Exception:
-            self.logger.error("Error occurred while processing client: {}".format(traceback.format_exc()))
 
-    def process_command(self, command: str, args: tuple):
-        """Process a command given by a Client"""
+    async def read_command(self, reader: asyncio.StreamReader)->(str, None):
+        """Read data from the stream"""
+        data = ""
         try:
-            if command == "match":
-                self.process_match_start(*args)
-            elif command == "result":
-                self.process_result(*args)
-            elif command == "score":
-                self.process_score(*args)
-            elif command == "map":
-                self.process_map(*args)
-            elif command == "end":
-                self.process_end(*args)
-            elif command == "character":
-                self.process_character(*args)
-            else:
-                self.logger.error("Invalid command received: {}.".format(command))
+            for i in range(self.MAX_ATTEMPTS):
+                data = await reader.read(self.BUFFER_SIZE)
+                data = data.decode()
+                if data != "":
+                    break
         except Exception:
-            self.logger.error("Error occurred during processing of command `{}, {}`\n{}".format(
-                command, args, traceback.format_exc()))
+            self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
+            return None
+        if data == "":
+            return None
+        return data
+
+    async def authenticate_user(self, tag: str, code: str)->bool:
+        """
+        Authenticate a user based on Discord tag and authentication
+        code. Only users with valid code for the given user will be
+        authenticated.
+        :param tag: Discord Tag ('@TestUser#1111')
+        :param code: Authentication code in str format
+        :return: boolean, authenticated
+        """
+        valid = self.db.get_auth_code(tag)
+        if valid is None:  # User not known
+            self.logger.info("User {} not known.".format(tag))
+            return False
+        hashed = hash_auth(code)
+        if valid != hashed:  # Invalid authentication code
+            self.logger.error("User {} failed to authenticate.".format(tag))
+            return False
+        self.logger.debug("User {} authenticated successfully.".format(tag))
+        return True
+
+    async def check_version(self, version: str)->bool:
+        """
+        Check the version the client is using, and whether the user is
+        using the required minimum version of the server.
+        """
+        valid = Server.version_from_tag(version) >= Server.version_from_tag(Server.MIN_VERSION)
+        if valid is False:
+            self.logger.debug("Too old client version detected.")
             return False
         return True
 
-    def authenticate(self, discord: str, auth: str):
-        """Authenticate the user that gives the command"""
-        code = self.db.get_auth_code(discord)
-        return code == hash_auth(auth)
+    @staticmethod
+    def version_from_tag(version: str)->Version:
+        """Convert a str version tag to a Version instance"""
+        return Version(version[1:])  # v4.0.2, v5.0.0
 
-    def process_match_start(self, server: str, date: str, time: str, id_fmt: str):
-        """Insert a new match into the database"""
-        self.logger.debug("Inserting new match into database: {}, {}".format(server, time))
-        self.db.insert_match(server, date, time, id_fmt)
+    async def split_command(self, command: str)->(tuple, None):
+        """
+        Split the given command into different elements. The command is
+        in the format:
+            @TestUser#1111_123456_v4.0.2_command_arg1_arg2...
+        """
+        elements = command.split("_")
+        if len(elements) < 5:
+            self.logger.error("Invalid amount of elements received: {}".format(command))
+            return None
+        (tag, auth, version, command), args = elements[:4], tuple(elements[4:])
+        return tag, auth, version, command, args
 
-    def process_result(self, server: str, date: str, start: str, id_fmt: str, character: str,
-                       assists: str, dmgd: str, dmgt: str, deaths: str, ship: str):
-        """Insert a character result into the database"""
-        self.logger.debug("Inserting new result into database: {}".format((
-            server, start, character, assists, dmgd, dmgt, deaths)))
-        assists, dmgd, dmgt, deaths = map(int, (assists, dmgd, dmgt, deaths))
-        self.db.insert_result(character, server, date, start, id_fmt, assists, dmgd, dmgt, deaths, ship)
-
-    def process_map(self, server: str, date: str, start: str, id_fmt: str, map: str):
-        """Insert the map of a match into the database"""
-        self.logger.debug("Updating map in database: {}".format(server, start, map))
-        map_eval = map.split(",")
-        if not isinstance(map_eval, list) or not len(map_eval) == 2:
-            self.logger.error("Invalid map tuple received: {}.".format(map_eval))
-            return False
-        self.db.update_match(server, date, start, id_fmt, map=map)
-
-    def process_score(self, server: str, date: str, start: str, id_fmt: str, score: str):
-        """Insert the score of a match into the database"""
-        self.logger.debug("Updating score in database: {}".format(server, start, score))
-        if not score.isdecimal():
-            self.logger.error("Invalid literal for float.")
-            return
-        score = float(score)
-        self.db.update_match(server, date, start, id_fmt, score=score)
-
-    def process_end(self, server: str, date: str, start: str, id_fmt: str, end: str):
-        """Insert the end time of a match into the database"""
-        self.logger.debug("Updating end in database: {}".format(server, start, end))
-        self.db.update_match(server, date, start, id_fmt, end=end)
-
-    def process_character(self, server: str, faction: str, name: str, discord: str):
-        """Insert a new character into the database for a Discord user"""
-        self.logger.debug("Inserting new character into dtaabase: {}".format(
-            server, faction, name, discord))
-        self.db.insert_character(name, server, faction, discord)
+    async def process_command(self, command: str, args: tuple)->(str, None):
+        """Abstract function to be implemented for performing tasks"""
+        raise NotImplementedError

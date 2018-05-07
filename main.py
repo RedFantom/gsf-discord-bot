@@ -8,7 +8,7 @@ import asyncio
 # Project Modules
 from database import DatabaseHandler
 from bot import DiscordBot
-from server import Server
+from server import DiscordServer
 
 
 if __name__ == '__main__':
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     with open("discord", "r") as fi:
         token = fi.readlines()[0].strip()
     bot = DiscordBot(database)
-    server = Server(database, "discord.thrantasquadron.tk", 64731)
+    server = DiscordServer(database, "discord.thrantasquadron.tk", 64731)
     loop.create_task(server.start())
     loop.create_task(bot.bot.start(token))
     try:
