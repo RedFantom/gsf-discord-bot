@@ -59,7 +59,14 @@ async def download_image(link: str)->Image.Image:
 
 
 async def get_download_link()->(tuple, None):
-    """Build download link to the most recent version of the GSF Parser"""
+    """
+    Build download link to the most recent version of the GSF Parser
+
+    Download the tags from the GitHub repository and select the most
+    recent one. Then the download links are built based on that. Returns
+    a tuple that can be passed directly to the GITHUB_LINKS message
+    formatter.
+    """
     github = Github()
     user = github.get_user("RedFantom")
     repo = user.get_repo("gsf-parser")

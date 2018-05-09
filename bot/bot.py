@@ -5,7 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-from datetime import datetime, timedelta
+from datetime import timedelta
 import traceback
 # Packages
 from dateparser import parse as parse_date
@@ -21,7 +21,6 @@ from database import DatabaseHandler, SERVER_NAMES
 from parsing import scoreboards as sb
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
-from utils import UNKNOWN_END, UNKNOWN_MAP, MAP_NAMES
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
 
@@ -73,6 +72,8 @@ class DiscordBot(object):
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
         :param database: DatabaseHandler instance
+        :param server: The server linked to this bot
+        :param loop: The asyncio loop this bot is running in
         """
         self.bot = commands.Bot(self.PREFIX, description=self.DESCRIPTION)
         self.db = database
@@ -168,37 +169,8 @@ class DiscordBot(object):
         """
         while True:
             try:
-                matches = self.server.matches.copy()
-                rows = list()
-                now = datetime.now()
-                for (server, start, map, score, end) in matches.values():
-                    server = SERVER_NAMES[server]
-                    running = end == UNKNOWN_END
-                    strptime = datetime.strptime
-                    if running is True:
-                        time = (now - datetime.combine(now.date(), strptime(start, TIME_FORMAT).time()))
-                    else:
-                        time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT))
-                    time = int(time.total_seconds())
-                    state = "active" if running is True else "done"
-                    if map == UNKNOWN_MAP:
-                        type = "..."
-                    else:
-                        type, map = map.split(",")
-                        map = MAP_NAMES[map]
-                        type = type.upper()
-                    score = float(score)
-                    if score > 1.0:
-                        score = 1 / score
-                        faction = "e"
-                    else:
-                        faction = "r"
-                    rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, divmod(time, 60)[0]))
-                row_message = str()
-                for row in rows:
-                    row_message += row
-                message = MATCHES_TABLE.format(row_message, now.strftime("%H:%m:%S"))
-                rows.clear()
+                message = build_string_from_matches(self.server.matches.copy())
+                message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
                 for channel in self.overview_channels:
                     if channel in self.overview_messages:
                         await self.bot.edit_message(self.overview_messages[channel], message)
@@ -277,8 +249,6 @@ class DiscordBot(object):
             return
         await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
 
-    """User Commands"""
-
     async def register_user(self, channel: Channel,  user: DiscordUser, args: tuple):
         """Register a new user into the database"""
         tag = generate_tag(user)
@@ -317,8 +287,6 @@ class DiscordBot(object):
         code = generate_code()
         self.db.update_auth_code(tag, code)
         await self.bot.send_message(user, NEW_CODE.format(code))
-
-    """Data Retrieval"""
 
     async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send an overview for a specific day"""
@@ -512,7 +480,6 @@ class DiscordBot(object):
                 continue
             if arg.endswith("\""):
                 held += " " + arg
-                self.logger.debug("Processing held command: {}".format(held))
                 held = held.replace("\"", "")
                 try:
                     held = parse_date(held)
