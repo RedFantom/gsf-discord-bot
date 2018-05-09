@@ -19,7 +19,9 @@ from bot.static import *
 from bot.man import MANUAL
 from database import DatabaseHandler, SERVER_NAMES
 from parsing import scoreboards as sb
+from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
+from utils import UNKNOWN_END, UNKNOWN_MAP, MAP_NAMES
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
 
@@ -34,6 +36,8 @@ class DiscordBot(object):
                   "statistics and for research"
     CHANNELS = ("general", "code", "bots", "bot", "parser",)
     CHANNELS_ENFORCED = True
+
+    OVERVIEW_CHANNELS = ("matches",)
 
     IMAGE_TYPES = ("png", "jpg", "bmp")
 
@@ -62,9 +66,11 @@ class DiscordBot(object):
         "scoreboard": ((0, 1), "parse_scoreboard", True),
     }
 
-    PRIVATE = ["forgot_code", "man", "servers", "author", "privacy", "purpose", "setup"]
+    PRIVATE = [
+        "forgot_code", "man", "servers", "author", "privacy", "purpose", "setup", "link", "help"
+    ]
 
-    def __init__(self, database: DatabaseHandler):
+    def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
         :param database: DatabaseHandler instance
         """
@@ -72,6 +78,10 @@ class DiscordBot(object):
         self.db = database
         self.logger = setup_logger("DiscordBot", "bot.log")
         self.setup_commands()
+        self.server = server
+        self.overview_messages = dict()
+        self.loop = loop
+        self.loop.create_task(self.server_status_monitor())
 
     def setup_commands(self):
         """Create the bot commands"""
@@ -144,6 +154,45 @@ class DiscordBot(object):
             for message in messages:
                 for channel in self.validated_channels:
                     await self.bot.send_message(channel, message)
+            await asyncio.sleep(60)
+
+    async def matches_monitor(self):
+        """
+        Monitor the matches running on each server
+
+        This runs as a coroutine, continuously monitoring the running
+        matches on each server by receiving data from
+        """
+        while True:
+            matches = self.server.matches.copy()
+            rows = list()
+            now = datetime.now()
+            for (server, start, map, score, end) in matches.values():
+                running = end == UNKNOWN_END
+                strptime = datetime.strptime
+                if running is True:
+                    time = (now - strptime(start, TIME_FORMAT)).total_seconds()
+                else:
+                    time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT)).total_seconds()
+                state = "active" if running is True else "done"
+                if map == UNKNOWN_MAP:
+                    type = "..."
+                else:
+                    type, map = map.split(",")
+                    map = MAP_NAMES[map]
+                score = float(score)
+                if score > 1.0:
+                    score = 1 / score
+                    faction = "e"
+                else:
+                    faction = "r"
+                rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
+            message = MATCHES_TABLE.join(row for row in rows)
+            for channel in self.overview_channels:
+                if channel in self.overview_messages:
+                    await self.bot.edit_message(self.overview_messages[channel], message)
+                    continue
+                self.overview_messages[channel] = await self.bot.send_message(channel, message)
             await asyncio.sleep(1)
 
     @property
@@ -153,6 +202,16 @@ class DiscordBot(object):
         for server in self.bot.servers:
             for channel in server.channels:
                 if self.validate_channel(channel) is False:
+                    continue
+                channels.append(channel)
+        return channels
+
+    @property
+    def overview_channels(self)->list:
+        channels = list()
+        for server in self.bot.servers:
+            for channel in server.channels:
+                if channel.name not in self.OVERVIEW_CHANNELS:
                     continue
                 channels.append(channel)
         return channels

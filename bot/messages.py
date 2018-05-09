@@ -115,3 +115,11 @@ GITHUB_DOWNLOAD_LINK = \
     "Setup: <{}>\n" \
     "Archive: <{}>\n" \
     "```"
+
+MATCHES_TABLE = """
+```markdown
+# state |    server    | type | map                | score | Running for
+-------------------------------------------------------------------------
+"""
+
+MATCHES_ROW = " {:<6} | {:<13} | {:<4} | {:<18} | {:.2f}{} | {:02d}:{:02d} \n"

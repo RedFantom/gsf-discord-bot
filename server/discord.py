@@ -4,22 +4,78 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
+import asyncio
+from datetime import datetime, timedelta
 import traceback
 # Project Modules
 from database import DatabaseHandler
 from server.server import Server
+from utils.utils import DATE_FORMAT, TIME_FORMAT
+from utils import UNKNOWN_MAP, UNKNOWN_END, UNKNOWN_SCORE
 
 
 class DiscordServer(Server):
     """Asynchronous Server for GSF Parser Clients"""
     SUCCESS_MESSAGE = "ack"
+    MATCH_END_TIME = 120
 
-    def __init__(self, database: DatabaseHandler, host: str, port: int):
+    def __init__(self, database: DatabaseHandler, loop: asyncio.BaseEventLoop, host: str, port: int):
         """
         :param database: DatabaseHandler instance to perform database
             operations on.
         """
         Server.__init__(self, database, host, port, "DiscordServer")
+        self.matches = dict()
+        self.queue = list()
+        self.loop = loop
+        self.loop.create_task(self.process_matches())
+
+    async def process_matches(self):
+        """Process matches in the queue"""
+        while True:
+            today = datetime.now().strftime(DATE_FORMAT)
+            for command, args in self.queue:
+                if command == "start":  # New match
+                    server, date, start, id_fmt = args
+                    if id_fmt in self.matches or date != today:
+                        continue
+                    self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, UNKNOWN_END)
+                elif command == "end":  # Match end
+                    server, date, start, id_fmt, new_end = args
+                    if id_fmt not in self.matches:
+                        self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, new_end)
+                        continue
+                    server, start, mmap, score, end = self.matches[id_fmt]
+                    if end != UNKNOWN_END:
+                        continue
+                    self.matches[id_fmt] = server, start, mmap, score, new_end
+                elif command == "map":  # Map update
+                    server, date, start, id_fmt, new_map = args
+                    if id_fmt not in self.matches:
+                        self.matches[id_fmt] = (server, start, new_map, UNKNOWN_SCORE, UNKNOWN_END)
+                        continue
+                    server, start, mmap, score, end = self.matches[id_fmt]
+                    if mmap != UNKNOWN_MAP:
+                        continue
+                    self.matches[id_fmt] = server, start
+                elif command == "score":  # Score update
+                    server, date, start, id_fmt, score = args
+                    if id_fmt not in self.matches:
+                        self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
+                        continue
+                    server, start, mmap, _, end = self.matches[id_fmt]
+                    self.matches[id_fmt] = (server, start, mmap, score, end)
+                # Others are ignored
+            for id_fmt, (_, start, _, _, end) in self.matches.copy().items():
+                # Remove all matches that have been over for a while
+                now = datetime.now()
+                projected = datetime.strptime(start, TIME_FORMAT) + timedelta(minutes=14)
+                if end != UNKNOWN_END:
+                    projected = datetime.strptime(end, TIME_FORMAT)
+                if (now - projected).total_seconds() > self.MATCH_END_TIME:
+                    del self.matches[id_fmt]
+            self.queue.clear()
+            await asyncio.sleep(1)
 
     async def process_command(self, command: str, args: tuple):
         """Process a command given by a Client"""
@@ -38,6 +94,7 @@ class DiscordServer(Server):
                 self.process_character(*args)
             else:
                 self.logger.error("Invalid command received: {}.".format(command))
+            self.queue.append((command, args))
         except Exception:
             self.logger.error("Error occurred during processing of command `{}, {}`\n{}".format(
                 command, args, traceback.format_exc()))
