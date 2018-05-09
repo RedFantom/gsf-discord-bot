@@ -193,18 +193,14 @@ class DiscordBot(object):
                         faction = "r"
                     rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, divmod(time, 60)[0]))
                 row_message = str()
-                self.logger.debug("Detected {} matches.".format(len(rows)))
                 for row in rows:
-                    self.logger.debug("Match: {}".format(row))
                     row_message += row
                 message = MATCHES_TABLE.format(row_message, now.strftime("%H:%m:%S"))
-                self.logger.debug("Matches:\n\n{}".format(message))
                 rows.clear()
                 for channel in self.overview_channels:
                     if channel in self.overview_messages:
                         await self.bot.edit_message(self.overview_messages[channel], message)
                         continue
-                    self.logger.debug("Sending overview message to: {}".format(channel.name))
                     self.overview_messages[channel] = await self.bot.send_message(channel, message)
             except Exception:
                 self.logger.error("An error occurred while building the overview message:\n{}".

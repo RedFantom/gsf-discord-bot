@@ -36,16 +36,12 @@ class DiscordServer(Server):
             try:
                 today = datetime.now().strftime(DATE_FORMAT)
                 for command, args in self.queue:
-                    self.logger.debug("Process matches processing: {}, {}".format(command, args))
                     if command == "start":  # New match
-                        self.logger.debug("Processing new match.")
                         server, date, start, id_fmt = args
                         if id_fmt in self.matches or date != today:
-                            self.logger.debug("Match is not today.")
                             continue
                         self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, UNKNOWN_END)
                     elif command == "end":  # Match end
-                        self.logger.debug("Processing match end.")
                         server, date, start, id_fmt, new_end = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, new_end)
@@ -55,7 +51,6 @@ class DiscordServer(Server):
                             continue
                         self.matches[id_fmt] = server, start, mmap, score, new_end
                     elif command == "map":  # Map update
-                        self.logger.debug("Processing map update.")
                         server, date, start, id_fmt, new_map = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, new_map, UNKNOWN_SCORE, UNKNOWN_END)
@@ -65,14 +60,11 @@ class DiscordServer(Server):
                             continue
                         self.matches[id_fmt] = (server, start, new_map, score, end)
                     elif command == "score":  # Score update
-                        self.logger.debug("Processing score update.")
                         server, date, start, id_fmt, score = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
-                            self.logger.debug("Inserting new match.")
                             continue
                         server, start, mmap, _, end = self.matches[id_fmt]
-                        self.logger.debug("Updating existing match.")
                         self.matches[id_fmt] = (server, start, mmap, score, end)
                     # Others are ignored
                 for id_fmt, (_, start, _, _, end) in self.matches.copy().items():
@@ -83,14 +75,11 @@ class DiscordServer(Server):
                         projected = datetime.strptime(end, TIME_FORMAT)
                     projected = datetime.combine(now.date(), projected.time())
                     elapsed = (now - projected).total_seconds()
-                    self.logger.debug("{} seconds elapsed since the projected end of {}".format(elapsed, id_fmt))
                     if elapsed > self.MATCH_END_TIME:
-                        self.logger.debug("Removed a match from the matches dict: {}".format(id_fmt))
                         del self.matches[id_fmt]
                 self.queue.clear()
             except Exception:
                 self.logger.error("An error occurred while processing queue:\n{}".format(traceback.format_exc()))
-            self.logger.debug("Process matches yielded {} matches".format(len(self.matches)))
             await asyncio.sleep(1)
 
     async def process_command(self, command: str, args: tuple):
