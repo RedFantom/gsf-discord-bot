@@ -15,7 +15,7 @@ from database.servers import SERVERS
 
 
 BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
-EXTENSIONS = (".exe", ".zip")
+EXTENSIONS = ("exe", "zip")
 
 
 async def get_server_status():
