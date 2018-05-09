@@ -82,6 +82,7 @@ class DiscordBot(object):
         self.overview_messages = dict()
         self.loop = loop
         self.loop.create_task(self.server_status_monitor())
+        self.loop.create_task(self.matches_monitor())
 
     def setup_commands(self):
         """Create the bot commands"""
