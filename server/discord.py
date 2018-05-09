@@ -36,6 +36,7 @@ class DiscordServer(Server):
             try:
                 today = datetime.now().strftime(DATE_FORMAT)
                 for command, args in self.queue:
+                    self.logger.debug("Process matches processing: {}, {}".format(command, args))
                     if command == "start":  # New match
                         server, date, start, id_fmt = args
                         if id_fmt in self.matches or date != today:
@@ -78,6 +79,7 @@ class DiscordServer(Server):
                 self.queue.clear()
             except Exception:
                 self.logger.error("An error occurred while processing queue:\n{}".format(traceback.format_exc()))
+            self.logger.debug("Process matches yielded {} matches".format(len(self.matches)))
             await asyncio.sleep(1)
 
     async def process_command(self, command: str, args: tuple):
@@ -128,7 +130,7 @@ class DiscordServer(Server):
 
     def process_score(self, server: str, date: str, start: str, id_fmt: str, score: str):
         """Insert the score of a match into the database"""
-        self.logger.debug("Updating score in database: {}".format(server, start, score))
+        self.logger.debug("Updating score in database: {}, {}, {}".format(server, start, score))
         score = float(score)
         self.db.update_match(server, date, start, id_fmt, score=score)
 
