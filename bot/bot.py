@@ -203,6 +203,16 @@ class DiscordBot(object):
                     if channel in self.overview_messages:
                         await self.bot.edit_message(self.overview_messages[channel], message)
                         continue
+                    messages = list()
+                    for message in self.bot.logs_from(channel, limit=20):
+                        if not isinstance(message, Message):
+                            continue
+                        author = message.author
+                        if not isinstance(author, DiscordUser):
+                            continue
+                        if author.display_name == "GSF Parser":
+                            messages.append(message)
+                    await self.bot.delete_messages(messages)
                     self.overview_messages[channel] = await self.bot.send_message(channel, message)
             except Exception:
                 self.logger.error("An error occurred while building the overview message:\n{}".
