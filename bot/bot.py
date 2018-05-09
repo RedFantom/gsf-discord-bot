@@ -170,10 +170,11 @@ class DiscordBot(object):
                 rows = list()
                 now = datetime.now()
                 for (server, start, map, score, end) in matches.values():
+                    server = SERVER_NAMES[server]
                     running = end == UNKNOWN_END
                     strptime = datetime.strptime
                     if running is True:
-                        time = (now - strptime(start, TIME_FORMAT))
+                        time = (now - datetime.combine(now.date(), strptime(start, TIME_FORMAT).time()))
                     else:
                         time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT))
                     time = int(time.total_seconds())
@@ -195,6 +196,7 @@ class DiscordBot(object):
                 for row in rows:
                     self.logger.debug("Match: {}".format(row))
                     message += row
+                self.logger.debug("Resulting message: {}".format(message))
                 message = MATCHES_TABLE.format(message)
                 self.logger.debug("Matches:\n\n{}".format(message))
                 rows.clear()
