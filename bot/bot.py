@@ -189,9 +189,10 @@ class DiscordBot(object):
                     else:
                         faction = "r"
                     rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
-                message = MATCHES_TABLE
+                message = str()
                 for row in rows:
                     message += row
+                message = MATCHES_TABLE.format(message)
                 for channel in self.overview_channels:
                     if channel in self.overview_messages:
                         await self.bot.edit_message(self.overview_messages[channel], message)
