@@ -69,8 +69,10 @@ class DiscordServer(Server):
                         server, date, start, id_fmt, score = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
+                            self.logger.debug("Inserting new match.")
                             continue
                         server, start, mmap, _, end = self.matches[id_fmt]
+                        self.logger.debug("Updating existing match.")
                         self.matches[id_fmt] = (server, start, mmap, score, end)
                     # Others are ignored
                 for id_fmt, (_, start, _, _, end) in self.matches.copy().items():
@@ -80,6 +82,7 @@ class DiscordServer(Server):
                     if end != UNKNOWN_END:
                         projected = datetime.strptime(end, TIME_FORMAT)
                     if (now - projected).total_seconds() > self.MATCH_END_TIME:
+                        self.logger.debug("Removed a match from the matches dict: {}".format(id_fmt))
                         del self.matches[id_fmt]
                 self.queue.clear()
             except Exception:
