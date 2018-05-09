@@ -10,7 +10,7 @@ import traceback
 # Packages
 from dateparser import parse as parse_date
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message, Server
+from discord import User as DiscordUser, Channel, Message
 # Project Modules
 from bot.func import *
 from bot.strings import *
@@ -46,6 +46,7 @@ class DiscordBot(object):
         "purpose": ((0,), "print_purpose"),
         "setup": ((0,), "print_setup"),
         "help": ((0,), "print_help"),
+        "link": ((0,), "print_link"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
@@ -192,6 +193,13 @@ class DiscordBot(object):
 
     async def print_setup(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, SETUP)
+
+    async def print_link(self, channel: Channel, user: DiscordUser, args: tuple):
+        links = await get_download_link()
+        if links is None:
+            await self.bot.send_message(channel, GITHUB_RATE_LIMIT)
+            return
+        await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
 
     """User Commands"""
 

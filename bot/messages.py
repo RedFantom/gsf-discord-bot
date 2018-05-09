@@ -105,3 +105,13 @@ DOWNLOADING_IMAGES = "Downloading image: {}/{}"
 
 SERVER_ONLINE = """`{}` just came online."""
 SERVER_OFFLINE = """`{}` just went offline."""
+
+GITHUB_RATE_LIMIT = "Sorry, the GitHub API rate limit has been exceeded. " \
+    "Please try again later."
+
+GITHUB_DOWNLOAD_LINK = \
+    "The most recent version of the GSF Parser is `{}`.\n" \
+    "```markdown\n" \
+    "Setup: <{}>\n" \
+    "Archive: <{}>\n" \
+    "```"

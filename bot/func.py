@@ -6,10 +6,16 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 from io import BytesIO
 # Packages
-import requests
+from github import Github, GithubException
 from PIL import Image
+import requests
+from semantic_version import Version
 # Project Modules
 from database.servers import SERVERS
+
+
+BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
+EXTENSIONS = (".exe", ".zip")
 
 
 async def get_server_status():
@@ -50,3 +56,27 @@ async def download_image(link: str)->Image.Image:
     offers the same interface as a file buffer created with open().
     """
     return Image.open(BytesIO(requests.get(link).content))
+
+
+async def get_download_link()->(tuple, None):
+    """Build download link to the most recent version of the GSF Parser"""
+    github = Github()
+    user = github.get_user("RedFantom")
+    repo = user.get_repo("gsf-parser")
+    try:
+        tags = repo.get_tags()
+    except GithubException:
+        return None
+    versions = list()
+    for tag in tags:
+        tag = tag[1:].replace("beta", "").replace("alpha", "").replace("_", "")
+        try:
+            versions.append(Version(tag))
+        except ValueError:
+            continue
+    version = max(versions)
+    tag = "v{}.{}.{}".format(version.major, version.minor, version.path)
+    links = list()
+    for ext in EXTENSIONS:
+        links.append(BASE_LINK.format(tag=tag, ext=ext))
+    return (tag,) + tuple(links)
