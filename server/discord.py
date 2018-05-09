@@ -129,9 +129,6 @@ class DiscordServer(Server):
     def process_score(self, server: str, date: str, start: str, id_fmt: str, score: str):
         """Insert the score of a match into the database"""
         self.logger.debug("Updating score in database: {}".format(server, start, score))
-        if not score.isdecimal():
-            self.logger.error("Invalid literal for float.")
-            return
         score = float(score)
         self.db.update_match(server, date, start, id_fmt, score=score)
 
