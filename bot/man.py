@@ -10,6 +10,7 @@ MANUAL = {
         "- privacy\n"
         "- help\n"
         "- man\n"
+        "- link\n"
         "\n"
         "# User commands\n"
         "- register\n"
