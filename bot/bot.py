@@ -173,9 +173,10 @@ class DiscordBot(object):
                     running = end == UNKNOWN_END
                     strptime = datetime.strptime
                     if running is True:
-                        time = (now - strptime(start, TIME_FORMAT)).total_seconds()
+                        time = (now - strptime(start, TIME_FORMAT))
                     else:
-                        time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT)).total_seconds()
+                        time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT))
+                    time = int(time.total_seconds())
                     state = "active" if running is True else "done"
                     if map == UNKNOWN_MAP:
                         type = "..."
@@ -188,7 +189,7 @@ class DiscordBot(object):
                         faction = "e"
                     else:
                         faction = "r"
-                    rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
+                    rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, divmod(time, 60)))
                 message = str()
                 for row in rows:
                     message += row
