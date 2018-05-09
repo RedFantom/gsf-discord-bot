@@ -69,7 +69,7 @@ async def get_download_link()->(tuple, None):
         return None
     versions = list()
     for tag in tags:
-        tag = tag[1:].replace("beta", "").replace("alpha", "").replace("_", "")
+        tag = tag.name[1:].replace("beta", "").replace("alpha", "").replace("_", "")
         try:
             versions.append(Version(tag))
         except ValueError:
