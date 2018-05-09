@@ -120,6 +120,7 @@ MATCHES_TABLE = """
 ```markdown
 # state |    server    | type | map                | score | Running for
 -------------------------------------------------------------------------
+{}
 ```
 """
 
