@@ -16,8 +16,8 @@ if __name__ == '__main__':
     database = DatabaseHandler()
     with open("discord", "r") as fi:
         token = fi.readlines()[0].strip()
-    server = DiscordServer(database, "discord.thrantasquadron.tk", 64731)
-    bot = DiscordBot(database, server)
+    server = DiscordServer(database, loop, "discord.thrantasquadron.tk", 64731)
+    bot = DiscordBot(database, server, loop)
     loop.create_task(server.start())
     loop.create_task(bot.bot.start(token))
     try:
