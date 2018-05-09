@@ -127,6 +127,20 @@ MANUAL = {
         "\n"
         "Displays a text explaining how to use the different bot commands.\n"
         "```",
+    "link":
+        "```markdown\n"
+        "Command: link\n"
+        "Arguments: None\n"
+        "\n"
+        "Displays download links for the latest version of the GSF Parser.\n"
+        "```",
+    "help":
+        "```markdown\n"
+        "Command: help\n"
+        "Arguments: None\n"
+        "\n"
+        "Displays a basic help text.\n"
+        "```",
     # User commands
     "register":
         "```markdown\n"
