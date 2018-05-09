@@ -38,11 +38,14 @@ class DiscordServer(Server):
                 for command, args in self.queue:
                     self.logger.debug("Process matches processing: {}, {}".format(command, args))
                     if command == "start":  # New match
+                        self.logger.debug("Processing new match.")
                         server, date, start, id_fmt = args
                         if id_fmt in self.matches or date != today:
+                            self.logger.debug("Match is not today.")
                             continue
                         self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, UNKNOWN_END)
                     elif command == "end":  # Match end
+                        self.logger.debug("Processing match end.")
                         server, date, start, id_fmt, new_end = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, new_end)
@@ -52,6 +55,7 @@ class DiscordServer(Server):
                             continue
                         self.matches[id_fmt] = server, start, mmap, score, new_end
                     elif command == "map":  # Map update
+                        self.logger.debug("Processing map update.")
                         server, date, start, id_fmt, new_map = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, new_map, UNKNOWN_SCORE, UNKNOWN_END)
@@ -61,6 +65,7 @@ class DiscordServer(Server):
                             continue
                         self.matches[id_fmt] = server, start
                     elif command == "score":  # Score update
+                        self.logger.debug("Processing score update.")
                         server, date, start, id_fmt, score = args
                         if id_fmt not in self.matches:
                             self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
