@@ -204,7 +204,7 @@ class DiscordBot(object):
                         await self.bot.edit_message(self.overview_messages[channel], message)
                         continue
                     messages = list()
-                    for message in self.bot.logs_from(channel, limit=20):
+                    for message in await self.bot.logs_from(channel, limit=20):
                         if not isinstance(message, Message):
                             continue
                         author = message.author
