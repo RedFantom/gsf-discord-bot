@@ -193,8 +193,10 @@ class DiscordBot(object):
                 message = str()
                 self.logger.debug("Detected {} matches.".format(len(rows)))
                 for row in rows:
+                    self.logger.debug("Match: {}".format(row))
                     message += row
                 message = MATCHES_TABLE.format(message)
+                self.logger.debug("Matches:\n\n{}".format(message))
                 rows.clear()
                 for channel in self.overview_channels:
                     if channel in self.overview_messages:
