@@ -166,6 +166,10 @@ class DiscordBot(object):
         command, = args
         await self.bot.send_message(channel, MANUAL[command])
 
+    async def print_help(self, channel: Channel, user: DiscordUser, args: tuple):
+        """Print the HELP message"""
+        await self.bot.send_message(channel, HELP)
+
     async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send a list of servers to the channel with server statuses"""
         servers = await get_server_status()

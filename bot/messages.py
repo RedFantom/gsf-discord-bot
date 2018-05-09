@@ -5,7 +5,8 @@ Copyright (C) 2018 RedFantom
 """
 
 UPON_REGISTER = "Welcome! Enter the following code in the GSF Parser to get " \
-    "started: {}"
+    "started: {}. Please note that by using this bot you agree to the " \
+    "licensing terms as available through the `author` command."
 
 UPON_REGISTER_PUBLIC = """You are now registered."""
 

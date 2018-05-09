@@ -105,3 +105,15 @@ be done in a few simple steps.
 ```
 """
 
+HELP = """
+Hello! 
+
+I am the GSF Parser Discord bot. Using the GSF Parser, you can send data
+to me, that I use to provide interesting information to you. 
+
+Use the `setup` command to get started.
+Use the `link` command to get a GSF Parser download link.
+Use the `purpose` command to find out more about why I am here.
+
+Use the `man` command to find out more about the specific commands.
+"""
