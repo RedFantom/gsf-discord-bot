@@ -75,7 +75,7 @@ async def get_download_link()->(tuple, None):
         except ValueError:
             continue
     version = max(versions)
-    tag = "v{}.{}.{}".format(version.major, version.minor, version.path)
+    tag = "v{}.{}.{}".format(version.major, version.minor, version.patch)
     links = list()
     for ext in EXTENSIONS:
         links.append(BASE_LINK.format(tag=tag, ext=ext))
