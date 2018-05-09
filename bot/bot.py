@@ -184,6 +184,7 @@ class DiscordBot(object):
                     else:
                         type, map = map.split(",")
                         map = MAP_NAMES[map]
+                        type = type.upper()
                     score = float(score)
                     if score > 1.0:
                         score = 1 / score
