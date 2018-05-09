@@ -191,6 +191,7 @@ class DiscordBot(object):
                         faction = "r"
                     rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
                 message = str()
+                self.logger.debug("Detected {} matches.".format(len(rows)))
                 for row in rows:
                     message += row
                 message = MATCHES_TABLE.format(message)
