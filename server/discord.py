@@ -63,7 +63,7 @@ class DiscordServer(Server):
                         server, start, mmap, score, end = self.matches[id_fmt]
                         if mmap != UNKNOWN_MAP:
                             continue
-                        self.matches[id_fmt] = server, start
+                        self.matches[id_fmt] = (server, start, new_map, score, end)
                     elif command == "score":  # Score update
                         self.logger.debug("Processing score update.")
                         server, date, start, id_fmt, score = args
