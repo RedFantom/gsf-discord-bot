@@ -197,7 +197,7 @@ class DiscordBot(object):
                 for row in rows:
                     self.logger.debug("Match: {}".format(row))
                     row_message += row
-                message = MATCHES_TABLE.format(row_message)
+                message = MATCHES_TABLE.format(row_message, now.strftime("%H:%m:%S"))
                 self.logger.debug("Matches:\n\n{}".format(message))
                 rows.clear()
                 for channel in self.overview_channels:
