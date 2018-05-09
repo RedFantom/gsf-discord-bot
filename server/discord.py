@@ -21,7 +21,7 @@ class DiscordServer(Server):
         """
         Server.__init__(self, database, host, port, "DiscordServer")
 
-    def process_command(self, command: str, args: tuple):
+    async def process_command(self, command: str, args: tuple):
         """Process a command given by a Client"""
         try:
             if command == "match":
