@@ -45,6 +45,7 @@ class DiscordBot(object):
         "privacy": ((0,), "print_privacy"),
         "purpose": ((0,), "print_purpose"),
         "setup": ((0,), "print_setup"),
+        "help": ((0,), "print_help"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
