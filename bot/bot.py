@@ -209,7 +209,7 @@ class DiscordBot(object):
             except Exception:
                 self.logger.error("An error occurred while building the overview message:\n{}".
                                   format(traceback.format_exc()))
-            await asyncio.sleep(1)
+            await asyncio.sleep(30)
 
     @property
     def validated_channels(self)->list:

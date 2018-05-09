@@ -84,7 +84,7 @@ class DiscordServer(Server):
                     projected = datetime.combine(now.date(), projected.time())
                     elapsed = (now - projected).total_seconds()
                     self.logger.debug("{} seconds elapsed since the projected end of {}".format(elapsed, id_fmt))
-                    if elapsed > self.MATCH_END_TIME:
+                    if abs(elapsed) > self.MATCH_END_TIME:
                         self.logger.debug("Removed a match from the matches dict: {}".format(id_fmt))
                         del self.matches[id_fmt]
                 self.queue.clear()
