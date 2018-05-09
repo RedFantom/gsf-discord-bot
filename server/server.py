@@ -95,7 +95,7 @@ class Server(object):
             return None
         if data == "":
             return None
-        return data
+        return data.replace("+", "")
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """
