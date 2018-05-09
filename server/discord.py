@@ -33,48 +33,51 @@ class DiscordServer(Server):
     async def process_matches(self):
         """Process matches in the queue"""
         while True:
-            today = datetime.now().strftime(DATE_FORMAT)
-            for command, args in self.queue:
-                if command == "start":  # New match
-                    server, date, start, id_fmt = args
-                    if id_fmt in self.matches or date != today:
-                        continue
-                    self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, UNKNOWN_END)
-                elif command == "end":  # Match end
-                    server, date, start, id_fmt, new_end = args
-                    if id_fmt not in self.matches:
-                        self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, new_end)
-                        continue
-                    server, start, mmap, score, end = self.matches[id_fmt]
+            try:
+                today = datetime.now().strftime(DATE_FORMAT)
+                for command, args in self.queue:
+                    if command == "start":  # New match
+                        server, date, start, id_fmt = args
+                        if id_fmt in self.matches or date != today:
+                            continue
+                        self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, UNKNOWN_END)
+                    elif command == "end":  # Match end
+                        server, date, start, id_fmt, new_end = args
+                        if id_fmt not in self.matches:
+                            self.matches[id_fmt] = (server, start, UNKNOWN_MAP, UNKNOWN_SCORE, new_end)
+                            continue
+                        server, start, mmap, score, end = self.matches[id_fmt]
+                        if end != UNKNOWN_END:
+                            continue
+                        self.matches[id_fmt] = server, start, mmap, score, new_end
+                    elif command == "map":  # Map update
+                        server, date, start, id_fmt, new_map = args
+                        if id_fmt not in self.matches:
+                            self.matches[id_fmt] = (server, start, new_map, UNKNOWN_SCORE, UNKNOWN_END)
+                            continue
+                        server, start, mmap, score, end = self.matches[id_fmt]
+                        if mmap != UNKNOWN_MAP:
+                            continue
+                        self.matches[id_fmt] = server, start
+                    elif command == "score":  # Score update
+                        server, date, start, id_fmt, score = args
+                        if id_fmt not in self.matches:
+                            self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
+                            continue
+                        server, start, mmap, _, end = self.matches[id_fmt]
+                        self.matches[id_fmt] = (server, start, mmap, score, end)
+                    # Others are ignored
+                for id_fmt, (_, start, _, _, end) in self.matches.copy().items():
+                    # Remove all matches that have been over for a while
+                    now = datetime.now()
+                    projected = datetime.strptime(start, TIME_FORMAT) + timedelta(minutes=14)
                     if end != UNKNOWN_END:
-                        continue
-                    self.matches[id_fmt] = server, start, mmap, score, new_end
-                elif command == "map":  # Map update
-                    server, date, start, id_fmt, new_map = args
-                    if id_fmt not in self.matches:
-                        self.matches[id_fmt] = (server, start, new_map, UNKNOWN_SCORE, UNKNOWN_END)
-                        continue
-                    server, start, mmap, score, end = self.matches[id_fmt]
-                    if mmap != UNKNOWN_MAP:
-                        continue
-                    self.matches[id_fmt] = server, start
-                elif command == "score":  # Score update
-                    server, date, start, id_fmt, score = args
-                    if id_fmt not in self.matches:
-                        self.matches[id_fmt] = (server, start, UNKNOWN_MAP, score, UNKNOWN_END)
-                        continue
-                    server, start, mmap, _, end = self.matches[id_fmt]
-                    self.matches[id_fmt] = (server, start, mmap, score, end)
-                # Others are ignored
-            for id_fmt, (_, start, _, _, end) in self.matches.copy().items():
-                # Remove all matches that have been over for a while
-                now = datetime.now()
-                projected = datetime.strptime(start, TIME_FORMAT) + timedelta(minutes=14)
-                if end != UNKNOWN_END:
-                    projected = datetime.strptime(end, TIME_FORMAT)
-                if (now - projected).total_seconds() > self.MATCH_END_TIME:
-                    del self.matches[id_fmt]
-            self.queue.clear()
+                        projected = datetime.strptime(end, TIME_FORMAT)
+                    if (now - projected).total_seconds() > self.MATCH_END_TIME:
+                        del self.matches[id_fmt]
+                self.queue.clear()
+            except Exception:
+                self.logger.error("An error occurred while processing queue:\n{}".format(traceback.format_exc()))
             await asyncio.sleep(1)
 
     async def process_command(self, command: str, args: tuple):
