@@ -29,7 +29,7 @@ def build_string_from_matches(matches: list):
         if score is not None:
             winner = "Empire" if score > 1.0 else "Republic"
             if winner == "Republic":
-                score = 1 / score
+                score = 1 / score if score != 0.0 else 0.0
             score = "{:.2f}".format(score)
         else:
             winner, score = "Unknown", "Unknown"

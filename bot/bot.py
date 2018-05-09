@@ -149,6 +149,8 @@ class DiscordBot(object):
         while True:
             servers = await get_server_status()
             for server, status in servers.items():
+                if server not in statuses:
+                    statuses[server] = "online"
                 if status == statuses[server]:
                     continue
                 messages.append(locals()["SERVER_{}".format(status)].format(server))
