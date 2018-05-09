@@ -164,35 +164,40 @@ class DiscordBot(object):
         matches on each server by receiving data from
         """
         while True:
-            matches = self.server.matches.copy()
-            rows = list()
-            now = datetime.now()
-            for (server, start, map, score, end) in matches.values():
-                running = end == UNKNOWN_END
-                strptime = datetime.strptime
-                if running is True:
-                    time = (now - strptime(start, TIME_FORMAT)).total_seconds()
-                else:
-                    time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT)).total_seconds()
-                state = "active" if running is True else "done"
-                if map == UNKNOWN_MAP:
-                    type = "..."
-                else:
-                    type, map = map.split(",")
-                    map = MAP_NAMES[map]
-                score = float(score)
-                if score > 1.0:
-                    score = 1 / score
-                    faction = "e"
-                else:
-                    faction = "r"
-                rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
-            message = MATCHES_TABLE.join(row for row in rows)
-            for channel in self.overview_channels:
-                if channel in self.overview_messages:
-                    await self.bot.edit_message(self.overview_messages[channel], message)
-                    continue
-                self.overview_messages[channel] = await self.bot.send_message(channel, message)
+            try:
+                matches = self.server.matches.copy()
+                rows = list()
+                now = datetime.now()
+                for (server, start, map, score, end) in matches.values():
+                    running = end == UNKNOWN_END
+                    strptime = datetime.strptime
+                    if running is True:
+                        time = (now - strptime(start, TIME_FORMAT)).total_seconds()
+                    else:
+                        time = (strptime(end, TIME_FORMAT) - strptime(start, TIME_FORMAT)).total_seconds()
+                    state = "active" if running is True else "done"
+                    if map == UNKNOWN_MAP:
+                        type = "..."
+                    else:
+                        type, map = map.split(",")
+                        map = MAP_NAMES[map]
+                    score = float(score)
+                    if score > 1.0:
+                        score = 1 / score
+                        faction = "e"
+                    else:
+                        faction = "r"
+                    rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, *divmod(time, 60)))
+                message = MATCHES_TABLE.join(row for row in rows)
+                for channel in self.overview_channels:
+                    if channel in self.overview_messages:
+                        await self.bot.edit_message(self.overview_messages[channel], message)
+                        continue
+                    self.logger.debug("Sending overview message to: {}".format(channel.name))
+                    self.overview_messages[channel] = await self.bot.send_message(channel, message)
+            except Exception:
+                self.logger.error("An error occurred while building the overview message:\n{}".
+                                  format(traceback.format_exc()))
             await asyncio.sleep(1)
 
     @property
