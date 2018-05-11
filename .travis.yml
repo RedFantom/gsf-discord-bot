@@ -1,0 +1,16 @@
+language: python
+required: sudo
+python:
+    - "3.5"
+before_install:
+  - "export DISPLAY=:99.0"
+  - "sh -e /etc/init.d/xvfb start"
+  - sleep 3
+install:
+  - sudo apt-get install python3-tk python3-imaging python3-pip
+  - sudo apt-get install tesseract-ocr
+  - sudo mkdir /var/log/discord && sudo chown $USER:$USER -R /var/log/discord
+  - python -m pip install -U pip setuptools
+  - python -m pip install -r requirements.txt
+script:
+  - python -m nose
