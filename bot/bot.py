@@ -169,22 +169,22 @@ class DiscordBot(object):
         This runs as a coroutine, continuously monitoring the running
         matches on each server by receiving data from
         """
-        while True:
-            try:
-                message = build_string_from_matches(self.server.matches.copy())
-                message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
-                for channel in self.overview_channels:
-                    if channel in self.overview_messages:
-                        await self.bot.edit_message(self.overview_messages[channel], message)
-                        continue
-                    async for message in self.bot.logs_from(channel, limit=1):
-                        if message.author.display_name == "GSF Parser":
-                            self.overview_messages[channel] = message
-                    self.overview_messages[channel] = await self.bot.send_message(channel, message)
-            except Exception:
-                self.logger.error("An error occurred while building the overview message:\n{}".
-                                  format(traceback.format_exc()))
-            await asyncio.sleep(30)
+        try:
+            message = build_string_from_matches(self.server.matches.copy())
+            message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
+            for channel in self.overview_channels:
+                if channel in self.overview_messages:
+                    await self.bot.edit_message(self.overview_messages[channel], message)
+                    continue
+                async for message in self.bot.logs_from(channel, limit=1):
+                    if message.author.display_name == "GSF Parser":
+                        self.overview_messages[channel] = message
+                self.overview_messages[channel] = await self.bot.send_message(channel, message)
+        except Exception:
+            self.logger.error("An error occurred while building the overview message:\n{}".
+                              format(traceback.format_exc()))
+        await asyncio.sleep(30)
+        self.loop.create_task(self.matches_monitor())
 
     @property
     def validated_channels(self)->list:
@@ -382,7 +382,10 @@ class DiscordBot(object):
         if len(args) == 0:
             args = (None,)
         category, = args
-        ship = get_random_ship(category)
+        ship = await get_random_ship(category)
+        if ship is None:
+            await self.bot.send_message(channel, INVALID_ARGS)
+            return
         message = RANDOM_SHIP.format(ship)
         await self.bot.send_message(channel, message)
 

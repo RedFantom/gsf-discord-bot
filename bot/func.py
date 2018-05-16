@@ -103,7 +103,7 @@ async def get_random_ship(category: str = None):
     tier = random.randint(1, 3)
     # Generate category
     if category is None:
-        random.choice(ship_tier_letters)
+        category = random.choice(ship_tier_letters)
     category = category[0].upper()
     # Check if category exists
     if category not in ship_tier_letters:
