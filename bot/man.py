@@ -25,6 +25,9 @@ MANUAL = {
         "- matches\n"
         "- results\n"
         "- character\n"
+        "\n"
+        "# Utilities\n"
+        "- random\n"
         "```",
     # Data Retrieval
     "day":
@@ -181,5 +184,20 @@ MANUAL = {
         "Performs cropping and OCR on a screenshot of a scoreboard in order to\n"
         "build a table with the results. The screenshot should be sent as an\n"
         "attachment.\n"
+        "```",
+    # Utilities
+    "random":
+        "```markdown\n"
+        "Command: random\n"
+        "Arguments:\n"
+        "- type, optional\n"
+        "\n"
+        "Choose a random ship type out of the possibilities. The result is sent\n"
+        "as a Tier-Type combination. You can specify the type by using the type\n"
+        "argument:\n"
+        "  Fighter\n"
+        "  Gunship\n"
+        "  Scout\n"
+        "  Bomber\n"
         "```"
 }
