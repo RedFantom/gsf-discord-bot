@@ -99,6 +99,7 @@ async def get_random_ship(category: str = None):
     generated. Ship tier strings are quite simple: T1S, T2G, etc.
     """
     string = "T{tier}{category}"
+    random.seed()
     # Generate random tier
     tier = random.randint(1, 3)
     # Generate category
