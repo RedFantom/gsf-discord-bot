@@ -149,18 +149,18 @@ class DiscordBot(object):
         """
         statuses = dict()
         messages = list()
-        while True:
-            servers = await get_server_status()
-            for server, status in servers.items():
-                if server not in statuses:
-                    statuses[server] = "online"
-                if status == statuses[server]:
-                    continue
-                messages.append(locals()["SERVER_{}".format(status)].format(server))
-            for message in messages:
-                for channel in self.validated_channels:
-                    await self.bot.send_message(channel, message)
-            await asyncio.sleep(60)
+        servers = await get_server_status()
+        for server, status in servers.items():
+            if server not in statuses:
+                statuses[server] = "online"
+            if status == statuses[server]:
+                continue
+            messages.append(locals()["SERVER_{}".format(status).upper()].format(server))
+        for message in messages:
+            for channel in self.validated_channels:
+                await self.bot.send_message(channel, message)
+        await asyncio.sleep(60)
+        self.loop.create_task(self.server_status_monitor())
 
     async def matches_monitor(self):
         """
