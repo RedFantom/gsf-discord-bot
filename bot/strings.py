@@ -7,7 +7,7 @@ Copyright (C) 2018 RedFantom
 from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
-from database.servers import SERVER_NAMES
+from data.servers import SERVER_NAMES
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
 from utils.utils import TIME_FORMAT
 

@@ -5,13 +5,15 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from io import BytesIO
+import random
 # Packages
 from github import Github, GithubException
 from PIL import Image
 import requests
 from semantic_version import Version
 # Project Modules
-from database.servers import SERVERS
+from data.servers import SERVERS
+from data.ships import ship_tier_letters, ship_tiers
 
 
 BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
@@ -87,3 +89,23 @@ async def get_download_link()->(tuple, None):
     for ext in EXTENSIONS:
         links.append(BASE_LINK.format(tag=tag, ext=ext))
     return (tag,) + tuple(links)
+
+
+async def get_random_ship(category: str = None):
+    """
+    Generate a ship tier string with random category and number
+
+    If category is specified, then only the ship numer is randomly
+    generated. Ship tier strings are quite simple: T1S, T2G, etc.
+    """
+    string = "T{tier}{category}"
+    # Generate random tier
+    tier = random.randint(1, 3)
+    # Generate category
+    if category is None:
+        category = random.choice(ship_tier_letters)
+    category = category[0].upper()
+    # Check if category exists
+    if category not in ship_tier_letters:
+        return None
+    return string.format(tier=tier, category=category)

@@ -17,7 +17,8 @@ from bot.strings import *
 from bot.messages import *
 from bot.static import *
 from bot.man import MANUAL
-from database import DatabaseHandler, SERVER_NAMES
+from data.servers import SERVER_NAMES
+from database import DatabaseHandler
 from parsing import scoreboards as sb
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
@@ -61,6 +62,7 @@ class DiscordBot(object):
         "matches": ((1, 2), "matches_overview"),
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
+        "random": ((0, 1), "random_ship"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
     }
@@ -167,22 +169,22 @@ class DiscordBot(object):
         This runs as a coroutine, continuously monitoring the running
         matches on each server by receiving data from
         """
-        while True:
-            try:
-                message = build_string_from_matches(self.server.matches.copy())
-                message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
-                for channel in self.overview_channels:
-                    if channel in self.overview_messages:
-                        await self.bot.edit_message(self.overview_messages[channel], message)
-                        continue
-                    async for message in self.bot.logs_from(channel, limit=1):
-                        if message.author.display_name == "GSF Parser":
-                            self.overview_messages[channel] = message
-                    self.overview_messages[channel] = await self.bot.send_message(channel, message)
-            except Exception:
-                self.logger.error("An error occurred while building the overview message:\n{}".
-                                  format(traceback.format_exc()))
-            await asyncio.sleep(30)
+        try:
+            message = build_string_from_matches(self.server.matches.copy())
+            message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
+            for channel in self.overview_channels:
+                if channel in self.overview_messages:
+                    await self.bot.edit_message(self.overview_messages[channel], message)
+                    continue
+                async for message in self.bot.logs_from(channel, limit=1):
+                    if message.author.display_name == "GSF Parser":
+                        self.overview_messages[channel] = message
+                self.overview_messages[channel] = await self.bot.send_message(channel, message)
+        except Exception:
+            self.logger.error("An error occurred while building the overview message:\n{}".
+                              format(traceback.format_exc()))
+        await asyncio.sleep(30)
+        self.loop.create_task(self.matches_monitor())
 
     @property
     def validated_channels(self)->list:
@@ -368,6 +370,23 @@ class DiscordBot(object):
             return
         message = RESULTS.format(start, date, server, build_string_from_results(results))
         self.logger.debug(message)
+        await self.bot.send_message(channel, message)
+
+    async def random_ship(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Send a random ship tier string to the requesting user
+
+        The ship sent is chosen completely at random. The user can
+        specify a specific ship type by using a single argument.
+        """
+        if len(args) == 0:
+            args = (None,)
+        category, = args
+        ship = await get_random_ship(category)
+        if ship is None:
+            await self.bot.send_message(channel, INVALID_ARGS)
+            return
+        message = RANDOM_SHIP.format(ship)
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
