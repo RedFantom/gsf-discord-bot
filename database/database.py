@@ -10,7 +10,7 @@ from contextlib import closing
 from datetime import datetime, timedelta
 # Project Modules
 from database import create, insert, select, delete
-from database.servers import SERVER_NAMES
+from data.servers import SERVER_NAMES
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 

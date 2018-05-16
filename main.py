@@ -16,7 +16,7 @@ if __name__ == '__main__':
     database = DatabaseHandler()
     with open("discord", "r") as fi:
         token = fi.readlines()[0].strip()
-    server = DiscordServer(database, loop, "discord.thrantasquadron.tk", 64731)
+    server = DiscordServer(database, loop, "discord.gsfparser.tk", 64731)
     bot = DiscordBot(database, server, loop)
     loop.create_task(server.start())
     loop.create_task(bot.bot.start(token))

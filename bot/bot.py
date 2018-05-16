@@ -17,7 +17,8 @@ from bot.strings import *
 from bot.messages import *
 from bot.static import *
 from bot.man import MANUAL
-from database import DatabaseHandler, SERVER_NAMES
+from data.servers import SERVER_NAMES
+from database import DatabaseHandler
 from parsing import scoreboards as sb
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
@@ -61,6 +62,7 @@ class DiscordBot(object):
         "matches": ((1, 2), "matches_overview"),
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
+        "random": ((0, 1), "random_ship"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
     }
@@ -368,6 +370,20 @@ class DiscordBot(object):
             return
         message = RESULTS.format(start, date, server, build_string_from_results(results))
         self.logger.debug(message)
+        await self.bot.send_message(channel, message)
+
+    async def random_ship(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Send a random ship tier string to the requesting user
+
+        The ship sent is chosen completely at random. The user can
+        specify a specific ship type by using a single argument.
+        """
+        if len(args) == 0:
+            args = (None,)
+        category, = args
+        ship = get_random_ship(category)
+        message = RANDOM_SHIP.format(ship)
         await self.bot.send_message(channel, message)
 
     async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
