@@ -53,7 +53,7 @@ def build_string_from_results(results: list):
     return total
 
 
-def built_string_from_matches(matches: dict):
+def build_matches_overview_string(matches: dict):
     """
     Build a string from a matches dictionary
 

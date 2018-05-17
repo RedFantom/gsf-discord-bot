@@ -102,9 +102,10 @@ class DiscordBot(object):
 
     async def on_message(self, message: Message):
         """
-        Process a message in the channel the bot has access to. Only
-        messages starting with the command prefix are processed. The
-        amount of arguments is checked, and then the command is
+        Process a message in the channel the bot has access to
+
+        Only messages starting with the command prefix are processed.
+        The amount of arguments is checked, and then the command is
         executed.
         """
         try:
@@ -132,12 +133,15 @@ class DiscordBot(object):
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
             await func(*arguments)
-        except Exception as e:
+        except Exception:
             await self.bot.send_message(message.channel, "That hurt! ```python\n{}```".format(traceback.format_exc()))
 
     def run(self, token: str):
         """Run the Bot loop"""
-        self.bot.run(token)
+        try:
+            self.bot.run(token)
+        except KeyboardInterrupt:
+            self.bot.close()
 
     async def server_status_monitor(self):
         """
@@ -170,7 +174,7 @@ class DiscordBot(object):
         matches on each server by receiving data from
         """
         try:
-            message = build_string_from_matches(self.server.matches.copy())
+            message = build_matches_overview_string(self.server.matches.copy())
             message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
             for channel in self.overview_channels:
                 if channel in self.overview_messages:
