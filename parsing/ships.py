@@ -228,13 +228,12 @@ class Ship(object):
         elements = string.split(";")
         # First element is FQSN
         ship_name = elements[0]
-        faction = ship_name.split("_")[0]
         ship = Ship(ship_name)
         # The string may only contain the ship name
         if len(elements) == 1:
             return ship
         # There are components and crew members to parse
-        for element in elements:
+        for element in elements[1:]:
             ship.update_element(element, ships_data)
         return ship
 
