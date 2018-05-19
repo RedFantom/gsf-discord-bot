@@ -655,7 +655,19 @@ class DiscordBot(object):
         pass
 
     async def build_show(self, channel: Channel, user: DiscordUser, args: tuple):
-        pass
+        """Show a build upon user request"""
+        build, = args
+        if not self.db.build_read_access(build, generate_tag(user)):
+            raise PermissionError("You do not have access to that build.")
+        if build in self.ship_cache:
+            _, ship = self.ship_cache[build]
+        else:
+            data = self.db.get_build_data(build)
+            ship = Ship.deserialize(data)
+        self.ship_cache[build] = (datetime.now(), ship)
+        name = self.db.get_build_name_id(build)
+        message = await build_string_from_ship(ship, name)
+        await self.bot.send_message(channel, message)
 
     async def build_search(self, channel: Channel, user: DiscordUser, args: tuple):
         pass

@@ -291,8 +291,9 @@ class Ship(object):
                 return value
         raise ValueError("Invalid component name shorthand: {}".format(shorthand))
 
-    @staticmethod
-    def identify_component_category(category: str):
+    def identify_component_category(self, category: str):
+        if category in self.components:
+            return category
         if category in shorthand_to_ship_key:
             return shorthand_to_ship_key[category]
         for key, to_match in shorthand_to_ship_key.items():

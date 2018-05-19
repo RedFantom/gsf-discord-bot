@@ -39,6 +39,22 @@ component_strings = {
     "Capacitor": "Capacitor"
 }
 
+component_keys = [
+    "primary",
+    "primary2",
+    "secondary",
+    "secondary2",
+    "shields",
+    "engine",
+    "systems",
+    "armor",
+    "reactor",
+    "magazine",
+    "sensors",
+    "thrusters",
+    "capacitor"
+]
+
 components = [
     "PrimaryWeapon",
     "PrimaryWeapon2",
