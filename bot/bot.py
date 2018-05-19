@@ -599,6 +599,7 @@ class DiscordBot(object):
                 try:
                     await self.__getattribute__(func)(channel, user, args)
                 except Exception as e:
+                    self.logger.debug(traceback.format_exc())
                     await self.bot.send_message(channel, e)
                 return
         await self.bot.send_message(channel, INVALID_ARGS)

@@ -111,7 +111,7 @@ class Ship(object):
         # shorthandcategory/fullname/upgrades;
         category, name, upgrades = element.split("/")
         category = self.identify_component_category(category)
-        name = self.identify_component_shorthand(name)
+        name = self.identify_component_shorthand(name, category)
         category = component_types[category]
         if category not in ships_data[self.ship_name]:
             raise ValueError("Component category '{}' not available for ship '{}'".format(category, self.name))
