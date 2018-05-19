@@ -100,9 +100,9 @@ class Ship(object):
             # Category and name matching
             match = False
             for role, members in crew[self.faction].items():
-                if category in role:
+                if category.lower() in role.lower():
                     for member in members:
-                        if name in member:
+                        if name.lower() in member.lower():
                             category = role
                             name = member
                             match = True
