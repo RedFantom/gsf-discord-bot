@@ -295,7 +295,7 @@ class Ship(object):
     def identify_component_category(category: str):
         if category in shorthand_to_ship_key:
             return shorthand_to_ship_key[category]
-        for key, to_match in component_short_hand.items():
+        for key, to_match in shorthand_to_ship_key.items():
             if category in to_match:
                 return shorthand_to_ship_key[key]
         raise ValueError("Invalid component category identifier: {}".format(category))

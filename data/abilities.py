@@ -128,7 +128,7 @@ capacitor = {
     "range": "Range Capacitor",
 }
 
-thruster = {
+thrusters = {
     "regen": "Regeneration Thrusters",
     "power": "Power Thrusters",
     "speed": "Speed Thrusters",
@@ -137,7 +137,7 @@ thruster = {
 
 majors = ["primary", "primary2", "secondary", "secondary2", "systems"]
 middle = ["engine", "shields"]
-minors = ["reactor", "magazine", "thruster", "sensors", "capacitor"]
+minors = ["reactor", "magazine", "thrusters", "sensors", "capacitor"]
 
 upgrades = {
     "major": [0, 1, 2, (3, 0), (3, 1), (4, 0), (4, 1)],
