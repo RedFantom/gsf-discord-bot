@@ -4,13 +4,14 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from threading import Lock
-import sqlite3 as sql
 from contextlib import closing
 from datetime import datetime, timedelta
+import sqlite3 as sql
+from threading import Lock
 # Project Modules
 from database import create, insert, select, delete
 from data.servers import SERVER_NAMES
+from parsing.ships import Ship
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 
@@ -39,7 +40,7 @@ class DatabaseHandler(object):
     def init_db(self):
         """Initialize the database connection and tables"""
         self._db = sql.connect(self._file_name)
-        for table in ["SERVER", "USER", "CHARACTER", "MATCH", "RESULT"]:
+        for table in ["SERVER", "USER", "CHARACTER", "MATCH", "RESULT", "BUILDS"]:
             command = getattr(create, "CREATE_TABLE_{}".format(table))
             try:
                 self.exec_command(command)
@@ -50,14 +51,14 @@ class DatabaseHandler(object):
         self.exec_command(insert.INSERT_SERVERS)
         return True
 
-    def exec_command(self, command: str):
+    def exec_command(self, command: str, *args):
         """Execute a command on the database"""
         self.debug("Acquiring database lock.")
         self._db_lock.acquire()
         try:
             with self.cursor as cursor:
                 self.debug("Executing command: {}".format(command))
-                cursor.execute(command)
+                cursor.execute(command, *args)
                 self.debug("Executed command: {}".format(command))
         except sql.OperationalError as e:
             self.logger.error("Execution of command failed: {}.".format(e))
@@ -112,7 +113,6 @@ class DatabaseHandler(object):
     def update_match(self, server: str, date: str, start: str, id_fmt: str,
                      score: float = None, map: str = None, end: str = None):
         """Insert the match score into the database"""
-
         if self.get_match_id(server, date, id_fmt) is None:
             self.logger.debug("Match {}, {}, {} was not in database, inserting now...")
             self.insert_match(server, date, start, id_fmt)
@@ -148,6 +148,20 @@ class DatabaseHandler(object):
         command = insert.INSERT_RESULT.format(
             match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths, ship=ship)
         self.exec_command(command)
+
+    def insert_build(self, owner: str, name: str, data: str, public: bool) -> (int, None):
+        """Insert a new build into the database"""
+        if self.get_build_id(name, owner, required=False) is not None:
+            return None
+        self.exec_command(insert.INSERT_BUILD.format(owner=owner, name=name, public=int(public), data=data))
+        return self.get_build_id(name, owner)
+
+    def update_build_data(self, build: (int, str), data: str):
+        """Update an existing build in the database"""
+        self.exec_command(insert.UPDATE_BUILD_DATA.format(build=build, data=data))
+
+    def update_build_public(self, build: (int, str), public: bool):
+        self.exec_command(insert.UPDATE_BUILD_PUBLIC.format(build=build, public=int(public)))
 
     def get_match_id(self, server: str, date: str, id_fmt: str):
         """Return the match ID from the database"""
@@ -193,7 +207,7 @@ class DatabaseHandler(object):
         self.exec_command(delete.DELETE_CHARACTERS.format(discord_id=tag))
         self.exec_command(delete.DELETE_USER.format(discord_id=tag))
 
-    def get_user_in_database(self, tag: str)->bool:
+    def get_user_in_database(self, tag: str) -> bool:
         """Return whether a certain Discord user is in the database"""
         result = self.exec_query(select.GET_USER_ID.format(discord_id=tag))
         return len(result) != 0
@@ -251,3 +265,89 @@ class DatabaseHandler(object):
     def get_match_results(self, server: str, date: str, start: str):
         """Return the results of players participating in a match"""
         return self.exec_query(select.GET_MATCH_RESULTS.format(server=server, date=date, start=start))
+
+    def get_build_id(self, name: str, owner: str, required=True):
+        """Return the build ID and whether its public"""
+        if name.isdigit():
+            name = int(name)
+            results = self.exec_query(select.GET_BUILD_BY_ID.format(build=name))
+        else:
+            results = self.exec_query(select.GET_BUILD_BY_NAME.format(name=name, owner=owner))
+        if len(results) == 0:
+            if not required:
+                return None
+            raise ValueError("I cannot find that build. Have you used a number identifier if it is not your own build?")
+        if len(results) > 1:
+            self.logger.error("Major issue detected: two builds with the same name and owner exist: {}, {}".
+                              format(name, owner))
+            raise RuntimeError("This is a design flaw.")
+        build, _ = results[0]
+        return build
+
+    def get_build_data(self, build: (int, str)) -> (None, Ship):
+        """Return the data (bytes) of a build"""
+        if isinstance(build, str):
+            build = int(build)
+        results = self.exec_query(select.GET_BUILD_DATA.format(build=build))
+        if len(results) == 0:
+            return None
+        data, = results[0]
+        return data
+
+    def get_build_owner(self, build: (int, str)):
+        """Return the tag of the build owner"""
+        if isinstance(build, str):
+            build = int(build)
+        results = self.exec_query(select.GET_BUILD_OWNER.format(build=build))
+        if len(results) == 0:
+            raise ValueError("That build does not exist.")
+        tag, = results[0]
+        return tag
+
+    def check_build_owner(self, build: (int, str), owner: str) -> bool:
+        return self.get_build_owner(build) == owner
+
+    def build_read_access(self, build: (int, str), user: str):
+        public = self.exec_query(select.GET_BUILD_PUBLIC.format(build=build))
+        if len(public) == 0:
+            raise ValueError("That build does not exist.")
+        public, = public[0]
+        owner = self.get_build_owner(build)
+        return owner == user or public
+
+    def get_public_builds(self) -> list:
+        """Return all public builds in (build, name, data)"""
+        results = self.exec_query(select.GET_BUILDS_PUBLIC)
+        for result in results:
+            build, name, data = result
+            yield build, name, data
+
+    def get_builds_owner(self, owner: str):
+        """Return all builds of an owner in (build, name, data, public)"""
+        results = self.exec_query(select.GET_BUILDS_BY_OWNER.format(owner=owner))
+        for result in results:
+            build, name, data, public = result
+            yield build, name, data, public
+
+    def get_build_name(self, name: str, owner: str):
+        """Return the name of a build"""
+        build = int(name) if name.isdigit() else self.get_build_id(name, owner)
+        if build is None:
+            raise ValueError("Invalid identifier or this build does not exist")
+        if not self.build_read_access(build, owner):
+            raise PermissionError("You do not have read access to that build.")
+        results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
+        if len(results) == 0:
+            raise ValueError("That build does not exist.")
+        name, = results[0]
+        return name
+
+    def delete_build(self, build: (int, str), owner: str):
+        """Delete a build by a unique identifier"""
+        if isinstance(build, str) and not build.isdigit():
+            raise TypeError("Builds can only be deleted with their identifiers")
+        if self.get_build_owner(build) != owner:
+            raise PermissionError("Shame on you. You are not the owner of that build.")
+        name = self.get_build_name(build, owner)
+        self.exec_command(delete.DELETE_BUILD_BY_ID.format(build=build))
+        return name

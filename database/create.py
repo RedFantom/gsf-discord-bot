@@ -34,7 +34,7 @@ CREATE_TABLE_CHARACTER = """
 
 CREATE_TABLE_MATCH = """
     CREATE TABLE IF NOT EXISTS 'Match'(
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        id INTEGER PRIMARY KEY,
         server TEXT REFERENCES Server(id) NOT NULL,
         idfmt TEXT NOT NULL,
         date TEXT NOT NULL,
@@ -56,5 +56,15 @@ CREATE_TABLE_RESULT = """
         deaths INTEGER NOT NULL,
         ship TEXT NOT NULL,
         PRIMARY KEY(match, char)
+    );
+"""
+
+CREATE_TABLE_BUILDS = """
+    CREATE TABLE IF NOT EXISTS 'Builds'(
+        build INTEGER PRIMARY KEY,
+        owner TEXT REFERENCES User(id),
+        name TEXT,
+        data TEXT,
+        public INTEGER
     );
 """

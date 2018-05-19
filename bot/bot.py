@@ -5,7 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-from datetime import timedelta
+from datetime import datetime
 import traceback
 # Packages
 from dateparser import parse as parse_date
@@ -20,6 +20,7 @@ from bot.man import MANUAL
 from data.servers import SERVER_NAMES
 from database import DatabaseHandler
 from parsing import scoreboards as sb
+from parsing.ships import Ship
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
@@ -65,11 +66,37 @@ class DiscordBot(object):
         "random": ((0, 1), "random_ship"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
+        "build": (range(2, 20), "build_calculator"),
+    }
+
+    DATES = {
+        "period": (True, True),
+        "day": (True,),
+        "matches": (False, True),
+        "results": (False, True, True),
     }
 
     PRIVATE = [
-        "forgot_code", "man", "servers", "author", "privacy", "purpose", "setup", "link", "help"
+        "forgot_code",
+        "man",
+        "servers",
+        "author",
+        "privacy",
+        "purpose",
+        "setup",
+        "link",
+        "help",
+        "build",
     ]
+
+    BUILD_COMMANDS = {
+        "create": ((2, 3), "build_create"),
+        "select": ((2,), "build_select"),
+        "show": ((1,), "build_show"),
+        "stats": ((1,), "build_stats"),
+        "search": (range(1, 15), "build_search"),
+        "delete": ((1,), "build_delete"),
+    }
 
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
@@ -86,6 +113,22 @@ class DiscordBot(object):
         self.loop = loop
         self.loop.create_task(self.server_status_monitor())
         self.loop.create_task(self.matches_monitor())
+        self.ship_cache = dict()
+        self.loop.create_task(self.cleanup_cache())
+
+    async def cleanup_cache(self):
+        """
+        Clean-up the ship cache
+
+        The ship_cache attribute stores recently accessed Ship objects
+        so they do not have to be deserialized continuously. They are
+        removed from the cache (and thus memory) after ten minutes.
+        """
+        for key, (last, _) in self.ship_cache.copy().items():
+            if (datetime.now() - last).total_seconds() > 600:
+                del self.ship_cache[key]
+        await asyncio.sleep(300)
+        self.loop.create_task(self.cleanup_cache())
 
     def setup_commands(self):
         """Create the bot commands"""
@@ -122,7 +165,6 @@ class DiscordBot(object):
                     await self.bot.send_message(author, NOT_PRIVATE)
                     return
             if self.validate_message(content) is False:
-                self.logger.debug("{} is not a command.".format(content))
                 return
             command, args = await self.process_command(message)
             if command is None:
@@ -191,7 +233,7 @@ class DiscordBot(object):
         self.loop.create_task(self.matches_monitor())
 
     @property
-    def validated_channels(self)->list:
+    def validated_channels(self) -> list:
         """Generator for all valid channels this Bot is in"""
         channels = list()
         for server in self.bot.servers:
@@ -202,7 +244,7 @@ class DiscordBot(object):
         return channels
 
     @property
-    def overview_channels(self)->list:
+    def overview_channels(self) -> list:
         channels = list()
         for server in self.bot.servers:
             for channel in server.channels:
@@ -220,7 +262,10 @@ class DiscordBot(object):
         if len(args) == 0:
             args = ("commands",)
         command, = args
-        await self.bot.send_message(channel, MANUAL[command])
+        message = MANUAL[command]
+        if not channel.is_private:
+            message += "Hint: You can use PM to use this command."
+        await self.bot.send_message(channel, message)
 
     async def print_help(self, channel: Channel, user: DiscordUser, args: tuple):
         """Print the HELP message"""
@@ -255,7 +300,7 @@ class DiscordBot(object):
             return
         await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
 
-    async def register_user(self, channel: Channel,  user: DiscordUser, args: tuple):
+    async def register_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Register a new user into the database"""
         tag = generate_tag(user)
         self.logger.debug("Initializing registration of a user: {}".format(tag))
@@ -296,10 +341,7 @@ class DiscordBot(object):
 
     async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send an overview for a specific day"""
-        if len(args) == 0:
-            day = datetime.now()
-        else:
-            day, = args
+        day, = args if len(args) != 0 else datetime.now(),
         day = day.strftime(DATE_FORMAT)
         servers = {server: 0 for server in SERVER_NAMES.keys()}
         servers.update(self.db.get_matches_count_by_day(day))
@@ -441,7 +483,7 @@ class DiscordBot(object):
             return None
         await self.bot.send_file(channel, path)
 
-    async def get_images(self, message: Message, to_edit: Message=None)->dict:
+    async def get_images(self, message: Message, to_edit: Message = None) -> dict:
         """
         Download and return a list of Image objects from the attachments
 
@@ -479,46 +521,149 @@ class DiscordBot(object):
     async def process_command(self, message: Message):
         """Split the message into command and arguments"""
         content, channel = message.content, message.channel
-        elements = content.split(" ")
-        command, args = elements[0][len(self.PREFIX):], elements[1:]
-        arguments = await self.parse_arguments(args, channel)
+        command, arguments = await DiscordBot.parse_command(content)
+        if command is None:
+            return
+        if command is False:
+            await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
+            return
         if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
             return None, None
         return command, tuple(arguments)
 
-    async def parse_arguments(self, args: tuple, channel: Channel)->list:
+    @staticmethod
+    async def parse_command(message: str) -> tuple:
         """
-        Parse the arguments given in a command to a list of real
-        arguments. Uses dateparser.parse function to support many
-        different date and time formats.
-        :param args: A tuple of str arguments
-        :param channel: Channel the command was given in
-        :return: list or arguments
+        Parse a given command message for the command and the arguments
+
+        A command is given with arguments. The arguments should be
+        separated by spaces, or enclosed in quotes if they belong
+        together as a single argument. Also attempts to parse the
+        arguments as dates where possible, and form datetime instances
+        from them with the dateparser package.
         """
-        arguments = list()
-        held = str()
-        for arg in args:
-            if arg.startswith("\"") and not arg.endswith("\""):
-                held += arg
+        elements = message.split(" ")
+        # The first element should be the command
+        command, arguments = elements[0], elements[1:]
+        if not command.startswith(DiscordBot.PREFIX):  # Not a command
+            return None, None
+        command = command.replace(DiscordBot.PREFIX, str())
+        # The command is valid, so now the arguments for it must be parsed
+        hold, args = str(), list()
+        for element in arguments:
+            # If the element starts with a quote, then it should be held
+            if element.startswith("\""):
+                element = element.replace("\"", str())
+                hold += element + " "
                 continue
-            if arg.endswith("\""):
-                held += " " + arg
-                held = held.replace("\"", "")
+            # If an argument is on hold, the quotes are not closed
+            if len(hold) != 0:
+                # If the element ends with a quote, then append the argument
+                if element.endswith("\""):
+                    element = element.replace("\"", str())
+                    hold += element
+                    args.append(hold)
+                    hold = str()
+                    continue
+                # The element is one in between quotes
+                hold += element + " "
+                continue
+            # The argument is a normal argument
+            args.append(element)
+        # Parse arguments required as dates or datetimes
+        if command in DiscordBot.DATES:
+            dates = DiscordBot.DATES[command]
+            for i, (arg, date) in enumerate(zip(args, dates)):
+                if date is True:
+                    try:
+                        args[i] = parse_date(arg)
+                    except ValueError:
+                        return False, False
+        return command, args
+
+    async def build_calculator(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Build calculator controllable with the Discord Bot commands
+
+        Valid build calculator commands:
+        - create base name public
+        - select identifier/category/component/upgrades
+        - stats identifier
+        - show identifier
+        - search {name:} {owner:} {public:} {pw:} {pw2:}
+        """
+        command, args = args[0], args[1:]
+        if command in DiscordBot.BUILD_COMMANDS:
+            n_args, func = DiscordBot.BUILD_COMMANDS[command]
+            if len(args) in n_args:
                 try:
-                    held = parse_date(held)
-                    if held is None:
-                        raise ValueError
-                    if isinstance(held, timedelta):
-                        held = datetime.now() - held
-                except ValueError:
-                    await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
-                    return list()
-                arguments.append(held)
-                held = str()
-                continue
-            if held != "":
-                held += " " + arg
-                continue
-            date = parse_date(arg)
-            arguments.append(arg if date is None else date)
-        return arguments
+                    await self.__getattribute__(func)(channel, user, args)
+                except Exception as e:
+                    self.logger.debug(traceback.format_exc())
+                    await self.bot.send_message(channel, e)
+                return
+        await self.bot.send_message(channel, INVALID_ARGS)
+
+    async def build_create(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Create a new build in the database for the user
+
+        Command Arguments:
+            base: r2s, i2s, etc. as ship identifier
+            name: name of the build
+            public, optional: If the public flag is set, then the build
+                is created publicly. If the channel is not private, then
+                the build is set to be public by default.
+        """
+        base, name = args[0], args[1]
+        public = len(args) == 3 and args[2] == "public"
+        owner = generate_tag(user)
+        ship = Ship.from_base(base)
+        data = ship.serialize()
+        number = self.db.insert_build(owner, name, data, public)
+        if number is None:
+            raise ValueError("You already have a build with that name")
+        self.ship_cache[number] = (datetime.now(), ship)
+        await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
+
+    async def build_select(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Select a specific component or crew member for a given ship
+
+        Also checks ownership of the build. The build can only be
+        altered by its owner.
+        """
+        build, element = args
+        tag = generate_tag(user)
+        build = self.db.get_build_id(build, tag)
+        if not self.db.get_build_owner(build) == tag:
+            raise PermissionError("Shame on you. That build is not yours.")
+        if build in self.ship_cache:
+            _, ship = self.ship_cache[build]
+        else:
+            data = self.db.get_build_data(build)
+            ship = Ship.deserialize(data)
+        self.ship_cache[build] = (datetime.now(), ship)
+        if not isinstance(ship, Ship):
+            raise TypeError("Something went horribly wrong, sorry.")
+        result = ship.update_element(element, None)
+        data = ship.serialize()
+        self.db.update_build_data(build, data)
+        await self.bot.send_message(channel, result)
+
+    async def build_stats(self, channel: Channel, user: DiscordUser, args: tuple):
+        pass
+
+    async def build_show(self, channel: Channel, user: DiscordUser, args: tuple):
+        pass
+
+    async def build_search(self, channel: Channel, user: DiscordUser, args: tuple):
+        pass
+
+    async def build_delete(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Delete a specific build owner by the user either by name or ID
+        """
+        build, = args
+        name = self.db.delete_build(build, generate_tag(user))
+        await self.bot.send_message(channel, BUILD_DELETE.format(name))
