@@ -234,6 +234,8 @@ class Ship(object):
             return ship
         # There are components and crew members to parse
         for element in elements[1:]:
+            if element == "":
+                continue
             ship.update_element(element, ships_data)
         return ship
 
