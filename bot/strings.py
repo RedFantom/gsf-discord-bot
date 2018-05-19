@@ -96,11 +96,10 @@ async def build_string_from_ship(ship: Ship, name: str):
     components, crew = str(), str()
     for category in component_keys:
         component = ship.components[category]
-        category_string = component_strings[component_types[category]]
         if component is None or not isinstance(component, Component):
             continue
-        components += "- {}: {}/{}\n".format(
-            category_string, component.name,
+        components += "- {}/{}\n".format(
+            component.name,
             ship.build_upgrade_string(component.upgrades, component.type))
     for role, member in ship.crew.items():
         if member is None:
