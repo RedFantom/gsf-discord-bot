@@ -638,7 +638,7 @@ class DiscordBot(object):
         if not self.db.get_build_owner(build) == tag:
             raise PermissionError("Shame on you. That build is not yours.")
         if build in self.ship_cache:
-            ship = self.ship_cache[build]
+            _, ship = self.ship_cache[build]
         else:
             data = self.db.get_build_data(build)
             ship = Ship.deserialize(data)
