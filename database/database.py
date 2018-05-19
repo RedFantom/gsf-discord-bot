@@ -150,9 +150,9 @@ class DatabaseHandler(object):
             match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths, ship=ship)
         self.exec_command(command)
 
-    def insert_build(self, owner: str, name: str, data: str, public: bool)->(int, None):
+    def insert_build(self, owner: str, name: str, data: str, public: bool) -> (int, None):
         """Insert a new build into the database"""
-        if self.get_build_id(name, owner) is not None:
+        if self.get_build_id(name, owner, required=False) is not None:
             return None
         self.exec_command(insert.INSERT_BUILD.format(owner=owner, name=name, public=int(public), data=data))
         return self.get_build_id(name, owner)
@@ -208,7 +208,7 @@ class DatabaseHandler(object):
         self.exec_command(delete.DELETE_CHARACTERS.format(discord_id=tag))
         self.exec_command(delete.DELETE_USER.format(discord_id=tag))
 
-    def get_user_in_database(self, tag: str)->bool:
+    def get_user_in_database(self, tag: str) -> bool:
         """Return whether a certain Discord user is in the database"""
         result = self.exec_query(select.GET_USER_ID.format(discord_id=tag))
         return len(result) != 0
@@ -267,7 +267,7 @@ class DatabaseHandler(object):
         """Return the results of players participating in a match"""
         return self.exec_query(select.GET_MATCH_RESULTS.format(server=server, date=date, start=start))
 
-    def get_build_id(self, name: str, owner: str):
+    def get_build_id(self, name: str, owner: str, required=True):
         """Return the build ID and whether its public"""
         if name.isdigit():
             name = int(name)
@@ -275,6 +275,8 @@ class DatabaseHandler(object):
         else:
             results = self.exec_query(select.GET_BUILD_BY_NAME.format(name=name, owner=owner))
         if len(results) == 0:
+            if not required:
+                return None
             raise ValueError("I cannot find that build. Have you used a number identifier if it is not your own build?")
         if len(results) > 1:
             self.logger.error("Major issue detected: two builds with the same name and owner exist: {}, {}".
@@ -283,7 +285,7 @@ class DatabaseHandler(object):
         build, _ = results[0]
         return build
 
-    def get_build_data(self, build: (int, str))->(None, Ship):
+    def get_build_data(self, build: (int, str)) -> (None, Ship):
         """Return the data (bytes) of a build"""
         if isinstance(build, str):
             build = int(build)
@@ -303,7 +305,7 @@ class DatabaseHandler(object):
         tag, = results[0]
         return tag
 
-    def check_build_owner(self, build: (int, str), owner: str)->bool:
+    def check_build_owner(self, build: (int, str), owner: str) -> bool:
         return self.get_build_owner(build) == owner
 
     def build_read_access(self, build: (int, str), user: str):
@@ -314,7 +316,7 @@ class DatabaseHandler(object):
         owner = self.get_build_owner(build)
         return owner == user or public
 
-    def get_public_builds(self)->list:
+    def get_public_builds(self) -> list:
         """Return all public builds in (build, name, data)"""
         results = self.exec_query(select.GET_BUILDS_PUBLIC)
         for result in results:
