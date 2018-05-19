@@ -136,7 +136,7 @@ class Ship(object):
         component = Component(ships_data[self.ship_name][category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        return "{} now set to {}.".format(category, component)
+        return "{} now set to {}.".format(category, component.name)
 
     def __setitem__(self, item: str, value):
         """
