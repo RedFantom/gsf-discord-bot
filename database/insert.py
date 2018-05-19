@@ -51,3 +51,16 @@ INSERT_RESULT = """
     INSERT OR IGNORE INTO Result(match, char, assists, dmgd, dmgt, deaths, ship) VALUES 
         ({match}, {char}, {assists}, {dmgd}, {dmgt}, {deaths}, '{ship}');
 """
+
+INSERT_BUILD = """
+    INSERT OR IGNORE INTO Builds(owner, name, data, public) VALUES
+        ('{owner}', '{name}', '{data}', {public});
+"""
+
+UPDATE_BUILD_DATA = """
+    UPDATE Builds SET data = '{data}' WHERE build = {build};
+"""
+
+UPDATE_BUILD_PUBLIC = """
+    UPDATE Builds SET public = {public} WHERE build = {build};
+"""

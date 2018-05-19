@@ -48,3 +48,31 @@ GET_MATCH_RESULTS = """
         INNER JOIN 'Match' ON 'Match'.id = 'Result'.match 
     WHERE Match.date = '{date}' AND Match.server = '{server}' AND Match.start = '{start}';
 """
+
+GET_BUILD_BY_NAME = """
+    SELECT build, public FROM Builds WHERE name = '{name}';
+"""
+
+GET_BUILD_BY_ID = """
+    SELECT build, public FROM Builds WHERE build = {build};
+"""
+
+GET_BUILD_OWNER = """
+    SELECT owner FROM Builds WHERE build = {build};
+"""
+
+GET_BUILD_PUBLIC = """
+    SELECT public FROM Builds WHERE build = {build};
+"""
+
+GET_BUILDS_BY_OWNER = """
+    SELECT build, name, data, public FROM Builds WHERE owner = '{owner}';
+"""
+
+GET_BUILDS_PUBLIC = """
+    SELECT build, name, data FROM Builds WHERE public = 1;
+"""
+
+GET_BUILD_DATA = """
+    SELECT data FROM Builds WHERE build = {build};
+"""

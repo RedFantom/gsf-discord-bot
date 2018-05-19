@@ -128,3 +128,5 @@ Last update: {}
 MATCHES_ROW = " {:<6} | {:<13}| {:<4} | {:<18} | {:.2f}{} | {}min \n"
 
 RANDOM_SHIP = "Your wish is my command: **{}**"
+
+BUILD_CREATE = "Build '{}' created for ship '{}'. The identifier is `{}`."

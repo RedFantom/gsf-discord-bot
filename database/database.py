@@ -4,13 +4,15 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from threading import Lock
-import sqlite3 as sql
 from contextlib import closing
 from datetime import datetime, timedelta
+import _pickle as pickle  # cPickle
+import sqlite3 as sql
+from threading import Lock
 # Project Modules
 from database import create, insert, select, delete
 from data.servers import SERVER_NAMES
+from parsing.ships import Ship
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 
@@ -50,14 +52,14 @@ class DatabaseHandler(object):
         self.exec_command(insert.INSERT_SERVERS)
         return True
 
-    def exec_command(self, command: str):
+    def exec_command(self, command: str, *args):
         """Execute a command on the database"""
         self.debug("Acquiring database lock.")
         self._db_lock.acquire()
         try:
             with self.cursor as cursor:
                 self.debug("Executing command: {}".format(command))
-                cursor.execute(command)
+                cursor.execute(command, *args)
                 self.debug("Executed command: {}".format(command))
         except sql.OperationalError as e:
             self.logger.error("Execution of command failed: {}.".format(e))
@@ -112,7 +114,6 @@ class DatabaseHandler(object):
     def update_match(self, server: str, date: str, start: str, id_fmt: str,
                      score: float = None, map: str = None, end: str = None):
         """Insert the match score into the database"""
-
         if self.get_match_id(server, date, id_fmt) is None:
             self.logger.debug("Match {}, {}, {} was not in database, inserting now...")
             self.insert_match(server, date, start, id_fmt)
@@ -148,6 +149,20 @@ class DatabaseHandler(object):
         command = insert.INSERT_RESULT.format(
             match=match_id, char=char, assists=assists, dmgd=dmgd, dmgt=dmgt, deaths=deaths, ship=ship)
         self.exec_command(command)
+
+    def insert_build(self, owner: str, name: str, data: str, public: bool)->(int, None):
+        """Insert a new build into the database"""
+        if self.get_build_id(name, owner) is not None:
+            return None
+        self.exec_command(insert.INSERT_BUILD.format(owner=owner, name=name, public=int(public), data=data))
+        return self.get_build_id(name, owner)
+
+    def update_build_data(self, build: (int, str), data: str):
+        """Update an existing build in the database"""
+        self.exec_command(insert.UPDATE_BUILD_DATA.format(build=build, data=data))
+
+    def update_build_public(self, build: (int, str), public: bool):
+        self.exec_command(insert.UPDATE_BUILD_PUBLIC.format(build=build, public=int(public)))
 
     def get_match_id(self, server: str, date: str, id_fmt: str):
         """Return the match ID from the database"""
@@ -251,3 +266,54 @@ class DatabaseHandler(object):
     def get_match_results(self, server: str, date: str, start: str):
         """Return the results of players participating in a match"""
         return self.exec_query(select.GET_MATCH_RESULTS.format(server=server, date=date, start=start))
+
+    def get_build_id(self, name: str, owner: str):
+        """Return the build ID and whether its public"""
+        if name.isdigit():
+            name = int(name)
+            results = self.exec_query(select.GET_BUILD_BY_ID.format(build=name))
+        else:
+            results = self.exec_query(select.GET_BUILD_BY_NAME.format(name=name))
+        if len(results) == 0:
+            return None
+        if len(results) > 1:
+            return True
+        public, build = results[0]
+        registered = self.get_build_owner(build)
+        if not public and registered != owner:
+            return False
+        return build
+
+    def get_build_data(self, build: (int, str))->(None, Ship):
+        """Return the data (bytes) of a build"""
+        if isinstance(build, str):
+            build = int(build)
+        results = self.exec_query(select.GET_BUILD_DATA.format(build=build))
+        if len(results) == 0:
+            return None
+        data, = results[0]
+        return pickle.loads(data)
+
+    def get_build_owner(self, build: (int, str)):
+        """Return the tag of the build owner"""
+        if isinstance(build, str):
+            build = int(build)
+        results = self.exec_query(select.GET_BUILD_OWNER.format(build=build))
+        if len(results) == 0:
+            return None
+        tag, = results[0]
+        return tag
+
+    def get_public_builds(self)->list:
+        """Return all public builds in (build, name, data)"""
+        results = self.exec_query(select.GET_BUILDS_PUBLIC)
+        for result in results:
+            build, name, data = result
+            yield build, name, data
+
+    def get_builds_owner(self, owner: str):
+        """Return all builds of an owner in (build, name, data, public)"""
+        results = self.exec_query(select.GET_BUILDS_BY_OWNER.format(owner=owner))
+        for result in results:
+            build, name, data, public = result
+            yield build, name, data, public

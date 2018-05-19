@@ -13,7 +13,7 @@ import requests
 from semantic_version import Version
 # Project Modules
 from data.servers import SERVERS
-from data.ships import ship_tier_letters, ship_tiers
+from data.ships import ship_tier_letters
 
 
 BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
