@@ -93,7 +93,10 @@ class Ship(object):
             ships_data = load_ship_data()
         element = element.strip(";")
         if element.startswith("crew"):  # Crew member!
-            _, category, name = element.split("/")
+            try:
+                category, name = element.split("/")
+            except ValueError:
+                raise ValueError("Invalid crew member element string: `{}`".format(element))
             # Category and name matching
             match = False
             for role, members in crew[self.faction].items():
@@ -109,7 +112,14 @@ class Ship(object):
             self[category] = (self.faction, category, name)
             return "{} now set to {}.".format(category, name)
         # shorthandcategory/fullname/upgrades;
-        category, name, upgrades = element.split("/")
+        elems = element.split("/")
+        if len(elems) == 2:
+            category, name = elems
+            upgrades = ""
+        elif len(elems) == 3:
+            category, name, upgrades = elems
+        else:
+            raise ValueError("Invalid component element string: `{}`".format(element))
         category = self.identify_component_category(category)
         name = self.identify_component_shorthand(name, category)
         category = component_types[category]
