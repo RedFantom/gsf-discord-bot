@@ -6,7 +6,6 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 from contextlib import closing
 from datetime import datetime, timedelta
-import _pickle as pickle  # cPickle
 import sqlite3 as sql
 from threading import Lock
 # Project Modules
@@ -293,7 +292,7 @@ class DatabaseHandler(object):
         if len(results) == 0:
             return None
         data, = results[0]
-        return pickle.loads(data)
+        return data
 
     def get_build_owner(self, build: (int, str)):
         """Return the tag of the build owner"""
