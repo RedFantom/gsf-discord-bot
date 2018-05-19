@@ -644,7 +644,9 @@ class DiscordBot(object):
             data = self.db.get_build_data(build)
             ship = Ship.deserialize(data)
         self.ship_cache[build] = (datetime.now(), ship)
-        result = ship.update_element(element)
+        if not isinstance(ship, Ship):
+            raise TypeError("Something went horribly wrong, sorry.")
+        result = ship.update_element(element, None)
         data = ship.serialize()
         self.db.update_build_data(build, data)
         await self.bot.send_message(channel, result)
