@@ -86,3 +86,5 @@ ship_key_to_shorthand = {
     "thrusters": "t",
     "capacitor": "c"
 }
+
+shorthand_to_ship_key = {value: key for key, value in ship_key_to_shorthand.items()}
