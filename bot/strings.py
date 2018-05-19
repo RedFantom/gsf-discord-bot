@@ -103,6 +103,7 @@ async def build_string_from_ship(ship: Ship, name: str):
     for role, member in ship.crew.items():
         if member is None:
             crew += "- {}: Unknown\n".format(role)
+            continue
         _, _, member = member
         crew += "- {}: {}\n".format(role, member)
     string = string.format(name, ship.name, components, crew)
