@@ -94,7 +94,7 @@ class Ship(object):
         element = element.strip(";")
         if element.startswith("crew"):  # Crew member!
             try:
-                category, name = element.split("/")
+                _, category, name = element.split("/")
             except ValueError:
                 raise ValueError("Invalid crew member element string: `{}`".format(element))
             # Category and name matching
