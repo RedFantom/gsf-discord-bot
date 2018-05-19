@@ -336,6 +336,9 @@ class DatabaseHandler(object):
             raise ValueError("Invalid identifier or this build does not exist")
         if not self.build_read_access(build, owner):
             raise PermissionError("You do not have read access to that build.")
+        return self.get_build_name_id(build)
+
+    def get_build_name_id(self, build):
         results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
         if len(results) == 0:
             raise ValueError("That build does not exist.")

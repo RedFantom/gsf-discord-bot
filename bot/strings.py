@@ -8,6 +8,7 @@ from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
 from data.servers import SERVER_NAMES
+from parsing.ships import Ship, Component
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
 from utils.utils import TIME_FORMAT
 
@@ -86,3 +87,23 @@ def build_matches_overview_string(matches: dict):
         rows.append(MATCHES_ROW.format(state, server, type, map, score, faction, time // 60))
     message = str().join(rows)
     return message
+
+
+async def build_string_from_ship(ship: Ship, name: str):
+    message = "```markdown\n{}\n```"
+    string = "# {}\n{}\n\nComponents:\n{}\nCrew:\n{}\n"
+    components, crew = str(), str()
+    for category, component in ship.components.items():
+        if component is None or not isinstance(component, Component):
+            components += "- {}: Unkown\n".format(category)
+            continue
+        components += "- {}: {}/{}\n".format(
+            component.category, component.name,
+            ship.build_upgrade_string(component.upgrades, component.type))
+    for role, member in ship.crew.items():
+        if member is None:
+            crew += "- {}: Unknown\n".format(role)
+        _, _, member = member
+        crew += "- {}: {}\n".format(role, member)
+    string = string.format(name, ship.name, components, crew)
+    return message.format(string)
