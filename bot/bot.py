@@ -517,7 +517,7 @@ class DiscordBot(object):
     async def process_command(self, message: Message):
         """Split the message into command and arguments"""
         content, channel = message.content, message.channel
-        command, arguments = DiscordBot.parse_command(content)
+        command, arguments = await DiscordBot.parse_command(content)
         if command is None:
             return
         if command is False:
