@@ -343,7 +343,7 @@ class Component(object):
         }
         for category in component_types.keys():
             category = category.replace("2", str())
-            if self.name in getattr(abilities, category):
+            if self.name in getattr(abilities, category).values():
                 for type in ["majors", "middle", "minors"]:
                     if category in getattr(abilities, type):
                         self.type = type.replace("s", str())
