@@ -10,6 +10,7 @@ import pickle as pickle
 # Project Modules
 from data import abilities
 from data.components import *
+from data.crew import crew
 from data.ships import ship_names, ships_names_reverse, ship_tier_factions
 from utils.utils import get_assets_directory
 
@@ -80,16 +81,7 @@ class Ship(object):
             "CoPilot": None
         }
 
-    def update_element_raw(self, element: str):
-        """
-        Update an element of the ship with a raw element string
-
-        The element string can be in different formats. The goal of
-        this function is to build a unified element string and then
-        update the element.
-        """
-
-    def update_element(self, element: str, ships_data: dict)->(bool, None):
+    def update_element(self, element: str, ships_data: (dict, None))->(bool, None):
         """
         Update an element of this ship with a string
 
@@ -97,13 +89,29 @@ class Ship(object):
             category_short_hand/full_component_name/upgrades;
             crew/full_category/full_name;
         """
+        if ships_data is None:
+            ships_data = load_ship_data()
         element = element.strip(";")
         if element.startswith("crew"):  # Crew member!
             _, category, name = element.split("/")
+            # Category and name matching
+            match = False
+            for role, members in crew[self.faction].items():
+                if category in role:
+                    for member in members:
+                        if name in member:
+                            category = role
+                            name = member
+                            match = True
+                            break
+            if match is False:
+                raise ValueError("Invalid crew member name or category identifier")
             self[category] = (self.faction, category, name)
             return True
         # shorthandcategory/fullname/upgrades;
         category, name, upgrades = element.split("/")
+        category = self.identify_component_category(category)
+        name = self.identify_component_shorthand(name)
         category = component_types[category]
         if category not in ships_data[self.ship_name]:
             raise ValueError("Component category '{}' not available for ship '{}'".format(category, self.name))
@@ -256,6 +264,7 @@ class Ship(object):
         """
         Identify the component by its shorthand and return the full name
         """
+        category = category.replace("2", str())
         shorthand = shorthand.lower()
         category = getattr(abilities, category)
         if shorthand in category:
@@ -272,9 +281,13 @@ class Ship(object):
         raise ValueError("Invalid component name shorthand: {}".format(shorthand))
 
     @staticmethod
-    def identify_component_category(string: str):
-        """Identify a component category string in different formats"""
-        pass
+    def identify_component_category(category: str):
+        if category in component_short_hand:
+            return component_short_hand[category]
+        for to_match in component_short_hand.values():
+            if category in to_match:
+                return to_match
+        raise ValueError("Invalid component category identifier: {}".format(category))
 
     @staticmethod
     def from_base(base: str):

@@ -273,15 +273,14 @@ class DatabaseHandler(object):
             name = int(name)
             results = self.exec_query(select.GET_BUILD_BY_ID.format(build=name))
         else:
-            results = self.exec_query(select.GET_BUILD_BY_NAME.format(name=name))
+            results = self.exec_query(select.GET_BUILD_BY_NAME.format(name=name, owner=owner))
         if len(results) == 0:
-            return None
+            raise ValueError("I cannot find that build. Have you used a number identifier if it is not your own build?")
         if len(results) > 1:
-            return True
-        public, build = results[0]
-        registered = self.get_build_owner(build)
-        if not public and registered != owner:
-            return False
+            self.logger.error("Major issue detected: two builds with the same name and owner exist: {}, {}".
+                              format(name, owner))
+            raise RuntimeError("This is a design flaw.")
+        build, _ = results[0]
         return build
 
     def get_build_data(self, build: (int, str))->(None, Ship):
@@ -300,9 +299,20 @@ class DatabaseHandler(object):
             build = int(build)
         results = self.exec_query(select.GET_BUILD_OWNER.format(build=build))
         if len(results) == 0:
-            return None
+            raise ValueError("That build does not exist.")
         tag, = results[0]
         return tag
+
+    def check_build_owner(self, build: (int, str), owner: str)->bool:
+        return self.get_build_owner(build) == owner
+
+    def build_read_access(self, build: (int, str), user: str):
+        public = self.exec_query(select.GET_BUILD_PUBLIC.format(build=build))
+        if len(public) == 0:
+            raise ValueError("That build does not exist.")
+        public, = public[0]
+        owner = self.get_build_owner(build)
+        return owner == user or public
 
     def get_public_builds(self)->list:
         """Return all public builds in (build, name, data)"""
@@ -317,3 +327,30 @@ class DatabaseHandler(object):
         for result in results:
             build, name, data, public = result
             yield build, name, data, public
+
+    def get_build_name(self, name: str, owner: str):
+        """Return the name of a build"""
+        build = int(name) if name.isdigit() else self.get_build_id(name, owner)
+        if build is None:
+            raise ValueError("Invalid identifier or this build does not exist")
+        if not self.build_read_access(build, owner):
+            raise PermissionError("You do not have read access to that build.")
+        results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
+        if len(results) == 0:
+            raise ValueError("That build does not exist.")
+        name, = results[0]
+        return name
+
+    def delete_build(self, build: (int, str), owner: str):
+        """Delete a build by a unique identifier"""
+        if isinstance(build, str):
+            build = int(build)
+        results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
+        if len(results) == 0:
+            raise ValueError("That build does not exist")
+        build, = results[0]
+        if self.get_build_owner(build) != owner:
+            raise PermissionError("You are not the owner of that build.")
+        name = self.get_build_name(build, owner)
+        self.exec_command(delete.DELETE_BUILD_BY_ID.format(build=build))
+        return name

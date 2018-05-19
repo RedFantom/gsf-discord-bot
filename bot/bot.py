@@ -66,7 +66,7 @@ class DiscordBot(object):
         "random": ((0, 1), "random_ship"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
-        "build": ((2, 3, 4, 5, 6), "build_calculator")
+        "build": (range(2, 20), "build_calculator"),
     }
 
     DATES = {
@@ -95,6 +95,7 @@ class DiscordBot(object):
         "show": ((1,), "build_show"),
         "stats": ((1,), "build_stats"),
         "search": (range(1, 15), "build_search"),
+        "delete": ((1,), "build_delete"),
     }
 
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
@@ -232,7 +233,7 @@ class DiscordBot(object):
         self.loop.create_task(self.matches_monitor())
 
     @property
-    def validated_channels(self)->list:
+    def validated_channels(self) -> list:
         """Generator for all valid channels this Bot is in"""
         channels = list()
         for server in self.bot.servers:
@@ -243,7 +244,7 @@ class DiscordBot(object):
         return channels
 
     @property
-    def overview_channels(self)->list:
+    def overview_channels(self) -> list:
         channels = list()
         for server in self.bot.servers:
             for channel in server.channels:
@@ -261,7 +262,10 @@ class DiscordBot(object):
         if len(args) == 0:
             args = ("commands",)
         command, = args
-        await self.bot.send_message(channel, MANUAL[command])
+        message = MANUAL[command]
+        if not channel.is_private:
+            message += "Hint: You can use PM to use this command."
+        await self.bot.send_message(channel, message)
 
     async def print_help(self, channel: Channel, user: DiscordUser, args: tuple):
         """Print the HELP message"""
@@ -296,7 +300,7 @@ class DiscordBot(object):
             return
         await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
 
-    async def register_user(self, channel: Channel,  user: DiscordUser, args: tuple):
+    async def register_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Register a new user into the database"""
         tag = generate_tag(user)
         self.logger.debug("Initializing registration of a user: {}".format(tag))
@@ -479,7 +483,7 @@ class DiscordBot(object):
             return None
         await self.bot.send_file(channel, path)
 
-    async def get_images(self, message: Message, to_edit: Message=None)->dict:
+    async def get_images(self, message: Message, to_edit: Message = None) -> dict:
         """
         Download and return a list of Image objects from the attachments
 
@@ -528,7 +532,7 @@ class DiscordBot(object):
         return command, tuple(arguments)
 
     @staticmethod
-    async def parse_command(message: str)->tuple:
+    async def parse_command(message: str) -> tuple:
         """
         Parse a given command message for the command and the arguments
 
@@ -595,7 +599,7 @@ class DiscordBot(object):
                 try:
                     await self.__getattribute__(func)(channel, user, args)
                 except Exception as e:
-                    await self.bot.send_message(channel, "The Bot found an issue with your command: {}".format(e))
+                    await self.bot.send_message(channel, e)
                 return
         await self.bot.send_message(channel, INVALID_ARGS)
 
@@ -622,7 +626,27 @@ class DiscordBot(object):
         await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
 
     async def build_select(self, channel: Channel, user: DiscordUser, args: tuple):
-        pass
+        """
+        Select a specific component or crew member for a given ship
+
+        Also checks ownership of the build. The build can only be
+        altered by its owner.
+        """
+        build, element = args
+        tag = generate_tag(user)
+        build = self.db.get_build_id(build, tag)
+        if not self.db.get_build_owner(build) == tag:
+            raise PermissionError("Shame on you. That build is not yours.")
+        if build in self.ship_cache:
+            ship = self.ship_cache[build]
+        else:
+            data = self.db.get_build_data(build)
+            ship = Ship.deserialize(data)
+        self.ship_cache[build] = (datetime.now(), ship)
+        result = ship.update_element(element)
+        data = ship.serialize()
+        self.db.update_build_data(build, data)
+        await self.bot.send_message(channel, result)
 
     async def build_stats(self, channel: Channel, user: DiscordUser, args: tuple):
         pass
@@ -630,6 +654,13 @@ class DiscordBot(object):
     async def build_show(self, channel: Channel, user: DiscordUser, args: tuple):
         pass
 
-    async def build_search(self, channel: Channel, user: DiscordUser, args:tuple):
+    async def build_search(self, channel: Channel, user: DiscordUser, args: tuple):
         pass
 
+    async def build_delete(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Delete a specific build owner by the user either by name or ID
+        """
+        build, = args
+        name = self.db.delete_build(build, generate_tag(user))
+        await self.bot.send_message(channel, BUILD_DELETE.format(name))

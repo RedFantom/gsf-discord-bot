@@ -50,7 +50,7 @@ GET_MATCH_RESULTS = """
 """
 
 GET_BUILD_BY_NAME = """
-    SELECT build, public FROM Builds WHERE name = '{name}';
+    SELECT build, public FROM Builds WHERE name = '{name}' AND owner = '{owner}';
 """
 
 GET_BUILD_BY_ID = """
@@ -75,4 +75,12 @@ GET_BUILDS_PUBLIC = """
 
 GET_BUILD_DATA = """
     SELECT data FROM Builds WHERE build = {build};
+"""
+
+GET_BUILD_NAME = """
+    SELECT name FROM Builds WHERE build = {build};
+"""
+
+GET_BUILD_PUBLIC = """
+    SELECT public FROM Builds WHERE build = {build};
 """
