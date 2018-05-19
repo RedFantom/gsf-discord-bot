@@ -343,14 +343,10 @@ class DatabaseHandler(object):
 
     def delete_build(self, build: (int, str), owner: str):
         """Delete a build by a unique identifier"""
-        if isinstance(build, str):
-            build = int(build)
-        results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
-        if len(results) == 0:
-            raise ValueError("That build does not exist")
-        build, = results[0]
+        if isinstance(build, str) and not build.isdigit():
+            raise TypeError("Builds can only be deleted with their identifiers")
         if self.get_build_owner(build) != owner:
-            raise PermissionError("You are not the owner of that build.")
+            raise PermissionError("Shame on you. You are not the owner of that build.")
         name = self.get_build_name(build, owner)
         self.exec_command(delete.DELETE_BUILD_BY_ID.format(build=build))
         return name
