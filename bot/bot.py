@@ -666,7 +666,7 @@ class DiscordBot(object):
             ship = Ship.deserialize(data)
         self.ship_cache[build] = (datetime.now(), ship)
         name = self.db.get_build_name_id(build)
-        message = build_string_from_ship(ship, name)
+        message = await build_string_from_ship(ship, name)
         await self.bot.send_message(channel, message)
 
     async def build_search(self, channel: Channel, user: DiscordUser, args: tuple):
