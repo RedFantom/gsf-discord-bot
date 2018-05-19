@@ -81,7 +81,7 @@ class Ship(object):
             "CoPilot": None
         }
 
-    def update_element(self, element: str, ships_data: (dict, None))->(bool, None):
+    def update_element(self, element: str, ships_data: (dict, None))->str:
         """
         Update an element of this ship with a string
 
@@ -107,7 +107,7 @@ class Ship(object):
             if match is False:
                 raise ValueError("Invalid crew member name or category identifier")
             self[category] = (self.faction, category, name)
-            return True
+            return "{} now set to {}.".format(category, name)
         # shorthandcategory/fullname/upgrades;
         category, name, upgrades = element.split("/")
         category = self.identify_component_category(category)
@@ -126,7 +126,7 @@ class Ship(object):
         component = Component(ships_data[self.ship_name][category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        return True
+        return "{} now set to {}.".format(category, component)
 
     def __setitem__(self, item: str, value):
         """
