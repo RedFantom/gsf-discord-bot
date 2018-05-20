@@ -689,6 +689,7 @@ class DiscordBot(object):
                 raise ValueError("Invalid crew member path: `{}`. Use `crew/part_of_name`".format(path))
             name = elems[1]
             crew_dict = await lookup_crew(name)
-            await self.bot.send_message(channel, build_string_from_crew_dict(crew_dict))
+            message = await build_string_from_crew_dict(crew_dict)
+            await self.bot.send_message(channel, message)
             return
         raise NotImplementedError("This feature has not yet been implemented.")
