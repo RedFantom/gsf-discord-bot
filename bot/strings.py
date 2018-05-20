@@ -144,7 +144,6 @@ def justify_with_indent(string: str, length: int = 80, indent: int = 4)->str:
         if len(line + word) + indent > length:
             total += " " * indent + line + "\n"
             line = str()
-            continue
         line += word + " "
     if len(line) != 0:
         total += " " * indent + line
