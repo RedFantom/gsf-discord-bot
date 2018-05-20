@@ -137,7 +137,7 @@ thrusters = {
 
 majors = ["primary", "primary2", "secondary", "secondary2", "systems"]
 middle = ["engine", "shields"]
-minors = ["reactor", "magazine", "thrusters", "sensors", "capacitor"]
+minors = ["reactor", "magazine", "thrusters", "sensors", "capacitor", "armor"]
 
 upgrades = {
     "major": [0, 1, 2, (3, 0), (3, 1), (4, 0), (4, 1)],
