@@ -109,3 +109,43 @@ async def build_string_from_ship(ship: Ship, name: str):
         crew += "- {}: {}\n".format(role, member)
     string = string.format(name, ship.name, components, crew)
     return message.format(string)
+
+
+async def build_string_from_crew_dict(crew_dict: dict) -> str:
+    """
+    Build a human readable message string from a crew member dictionary
+    """
+    message = "```markdown\n{}\n```"
+    string = "# {}\n" \
+             "Ability: {}\n" \
+             "{}\n\n" \
+             "Passive: {}\n" \
+             "{}\n\n" \
+             "Passive: {}\n" \
+             "{}\n"
+    name = crew_dict["Name"]
+    ability = crew_dict["AbilityName"]
+    passive1 = crew_dict["PassiveName"]
+    passive2 = crew_dict["SecondaryPassiveName"]
+    abilityd = crew_dict["AbilityDescription"]
+    passive1d = crew_dict["PassiveDescription"]
+    passive2d = crew_dict["SecondaryPassiveDescription"]
+    string = string.format(
+        name, ability, justify_with_indent(abilityd),
+        passive1, justify_with_indent(passive1d),
+        passive2, justify_with_indent(passive2d))
+    return message.format(string)
+
+
+def justify_with_indent(string: str, length: int = 80, indent: int = 4)->str:
+    words = string.split(" ")
+    total, line = str(), str()
+    for word in words:
+        if len(line + word) + indent > length:
+            total += " " * indent + line + "\n"
+            line = str()
+            continue
+        line += word + " "
+    if len(line) != 0:
+        total += " " * indent + line
+    return total

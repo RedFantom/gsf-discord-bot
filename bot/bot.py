@@ -96,6 +96,7 @@ class DiscordBot(object):
         "stats": ((1,), "build_stats"),
         "search": (range(1, 15), "build_search"),
         "delete": ((1,), "build_delete"),
+        "lookup": ((1,), "build_lookup"),
     }
 
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
@@ -679,3 +680,15 @@ class DiscordBot(object):
         build, = args
         name = self.db.delete_build(build, generate_tag(user))
         await self.bot.send_message(channel, BUILD_DELETE.format(name))
+
+    async def build_lookup(self, channel: Channel, user: DiscordUser, args: tuple):
+        path, = args
+        if path.startswith("crew"):
+            elems = path.split("/")
+            if len(elems) != 2:
+                raise ValueError("Invalid crew member path: `{}`. Use `crew/part_of_name`".format(path))
+            name = elems[1]
+            crew_dict = await lookup_crew(name)
+            await self.bot.send_message(channel, build_string_from_crew_dict(crew_dict))
+            return
+        raise NotImplementedError("This feature has not yet been implemented.")

@@ -5,6 +5,8 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from io import BytesIO
+import os
+import _pickle as pickle  # cPickle
 import random
 # Packages
 from github import Github, GithubException
@@ -14,6 +16,7 @@ from semantic_version import Version
 # Project Modules
 from data.servers import SERVERS
 from data.ships import ship_tier_letters
+from utils.utils import get_assets_directory
 
 
 BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
@@ -110,3 +113,20 @@ async def get_random_ship(category: str = None):
     if category not in ship_tier_letters:
         return None
     return string.format(tier=tier, category=category)
+
+
+async def lookup_crew(name: str)->dict:
+    """
+    Lookup a crew member by name, or part of the name
+
+    Returns the data dictionary of that crew member. Uses assets/crew.db
+    so it does not require a faction or category to be specified.
+    """
+    with open(os.path.join(get_assets_directory(), "crew.db"), "rb") as fi:
+        crew = pickle.load(fi)
+    name = name.lower()
+    for member in crew.keys():
+        # Now perform name matching
+        if name in member.lower():
+            return crew[member]
+    raise ValueError("Could not find a crew member with identifier `{}`".format(name))
