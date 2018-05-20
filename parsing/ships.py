@@ -289,7 +289,7 @@ class Ship(object):
             key = str().join(word[0].lower() for word in value.split(" "))
             if key == shorthand:
                 return value
-        raise ValueError("Invalid component name shorthand: {}".format(shorthand))
+        raise ValueError("I could not find a component with that identfier for this ship: {}".format(shorthand))
 
     def identify_component_category(self, category: str):
         if category in self.components:
@@ -381,3 +381,38 @@ class Component(object):
     def __iter__(self):
         for key, value in self.upgrades.items():
             yield key, value
+
+
+if __name__ == '__main__':
+    import _pickle as pickle
+    ships_data = load_ship_data()
+    results = dict()
+    for ship, ship_dict in ships_data.items():
+        for category, category_list in ship_dict.items():
+            if not isinstance(category_list, list) or not category in component_types.values():
+                continue
+            if category not in results:
+                results[category] = dict()
+            for component_dict in category_list:
+                name = component_dict["Name"]
+                if name in results[category]:
+                    continue
+                results[category][name] = component_dict
+    with open("components.db", "wb") as fo:
+        pickle.dump(results, fo)
+
+    with open(path.join(get_assets_directory(), "companions.db"), "rb") as fi:
+        companions = pickle.load(fi)
+
+    results = dict()
+    for faction_list in companions.values():
+        for category_dict in faction_list:
+            for companion_list in category_dict.values():
+                for companion in companion_list:
+                    name = companion["Name"]
+                    results[name] = companion
+    with open("crew.db", "wb") as fo:
+        pickle.dump(results, fo)
+
+    from pprint import pprint
+    pprint(results)
