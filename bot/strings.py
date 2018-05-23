@@ -13,6 +13,11 @@ from parsing.ships import Ship, Component
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
 from utils.utils import TIME_FORMAT
 
+UPGRADE_STR = {
+    "R": "Right",
+    "L": "Left"
+}
+
 
 def build_string_from_servers(servers: dict):
     """Return a formatted string from a server: match_count dict"""
@@ -98,9 +103,11 @@ async def build_string_from_ship(ship: Ship, name: str):
         component = ship.components[category]
         if component is None or not isinstance(component, Component):
             continue
-        components += "- {}/{}\n".format(
+        components += "- {} {}\n".format(
             component.name,
-            ship.build_upgrade_string(component.upgrades, component.type))
+            build_upgrade_string(
+                ship.build_upgrade_string(
+                    component.upgrades, component.type)))
     for role, member in ship.crew.items():
         if member is None:
             crew += "- {}: Unknown\n".format(role)
@@ -148,3 +155,32 @@ def justify_with_indent(string: str, length: int = 80, indent: int = 4)->str:
     if len(line) != 0:
         total += " " * indent + line
     return total
+
+
+def build_upgrade_string(upgrade_str: str):
+    """
+    Build a human-readable string showing upgrades from an upgrade str
+
+    123RL -> (Right, Left)
+    123LR -> (Left, Right)
+    123R -> (Right, None)
+    123 -> (Level 3)
+    12L -> (Left)
+    """
+    string = str()
+    if len(upgrade_str) == 0:
+        return "(No upgrades)"
+    t_choice = None
+    for upgrade in upgrade_str:
+        if upgrade.isdigit():
+            string = "(Level {})".format(upgrade)
+            continue
+        upgrade = UPGRADE_STR[upgrade]
+        if t_choice is None:
+            string = "({})".format(upgrade)
+            t_choice = upgrade
+        else:
+            string = "({}, {})".format(t_choice, upgrade)
+    return string
+        
+
