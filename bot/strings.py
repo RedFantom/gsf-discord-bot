@@ -97,7 +97,7 @@ def build_matches_overview_string(matches: dict):
 
 async def build_string_from_ship(ship: Ship, name: str):
     message = "```markdown\n{}\n```"
-    string = "# {}\n{}\n\nComponents:\n{}\nCrew:\n{}\n"
+    string = "# {} ({})\n\nComponents:\n{}\nCrew:\n{}\n"
     components, crew = str(), str()
     for category in component_keys:
         component = ship.components[category]

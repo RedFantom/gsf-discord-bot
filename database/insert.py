@@ -5,7 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 
 INSERT_USER = """
-    INSERT INTO User(id, code) VALUES ('{discord}', '{code}');
+    INSERT INTO User(id, code, last) VALUES ('{discord}', '{code}', '{last}');
 """
 
 UPDATE_CODE = """
@@ -63,4 +63,8 @@ UPDATE_BUILD_DATA = """
 
 UPDATE_BUILD_PUBLIC = """
     UPDATE Builds SET public = {public} WHERE build = {build};
+"""
+
+UPDATE_USER_LAST = """
+    UPDATE User SET last = '{date}' WHERE id = '{tag}'
 """

@@ -95,13 +95,22 @@ class DatabaseHandler(object):
     def insert_user(self, user_id: str, code: str):
         """Insert a new Discord user into the database"""
         self.info("Inserting a new user into the Database: {}".format(user_id))
-        command = insert.INSERT_USER.format(discord=user_id, code=code)
+        date = datetime.now().strftime(DATE_FORMAT)
+        command = insert.INSERT_USER.format(discord=user_id, code=code, last=date)
         self.exec_command(command)
 
     def update_auth_code(self, user_id: str, code: str):
         """Update the authentication code of a user in the database"""
         self.info("Updating authentication code of {}.".format(user_id))
         command = insert.UPDATE_CODE.format(discord=user_id, code=code)
+        self.exec_command(command)
+
+    def update_user_date(self, user_id: str, date: str):
+        """Update the date the user last inserted data into the database"""
+        if isinstance(date, datetime):
+            date = datetime.strftime(date, DATE_FORMAT)
+        self.info("Updating the date {} last inserted data to {}".format(user_id, date))
+        command = insert.UPDATE_USER_LAST.format(tag=user_id, date=date)
         self.exec_command(command)
 
     def insert_match(self, server: str, date: str, start: str, id_fmt: str):
@@ -211,6 +220,15 @@ class DatabaseHandler(object):
         """Return whether a certain Discord user is in the database"""
         result = self.exec_query(select.GET_USER_ID.format(discord_id=tag))
         return len(result) != 0
+
+    def get_user_accessed_valid(self, tag: str):
+        """Return whether the user has contributed data recently enough"""
+        result = self.exec_query(select.GET_USER_LAST.format(discord=tag))
+        if len(result) == 0:
+            return None
+        last = datetime.strptime(result[0][0], DATE_FORMAT)
+        today = datetime.now()
+        return (today - last).days < 14
 
     def get_character_owner(self, server: str, name: str):
         """Return the owner tag of a given character"""

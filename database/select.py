@@ -26,6 +26,8 @@ GET_CHARACTER_IDS = """
 
 GET_USER_ID = "SELECT id FROM User WHERE id = '{discord_id}';"
 
+GET_USER_LAST = "SELECT last FROM User WHERE id = '{discord}';"
+
 GET_CHARACTER_OWNER = """
     SELECT 'User'.id FROM 'User', 'Character' 
     WHERE  'Character'.name = '{name}' AND 'Character'.server = '{server}';

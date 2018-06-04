@@ -17,7 +17,8 @@ CREATE_TABLE_USER = """
     CREATE TABLE IF NOT EXISTS User(
         id TEXT PRIMARY KEY,
         home TEXT REFERENCES Server(id),
-        code TEXT NOT NULL 
+        code TEXT NOT NULL,
+        last TEXT NOT NULL 
     );
 """
 

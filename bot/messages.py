@@ -132,3 +132,6 @@ RANDOM_SHIP = "Your wish is my command: **{}**"
 BUILD_CREATE = "Build '{}' created for ship '{}'. The identifier is `{}`."
 
 BUILD_DELETE = "Build '{}' was successfully deleted."
+
+INACTIVE = "You have not contributed data in the last two weeks. Please " \
+           "contribute new data before trying to access data again."

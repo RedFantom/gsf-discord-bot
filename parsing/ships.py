@@ -12,7 +12,10 @@ from data import abilities
 from data.components import *
 from data.crew import crew
 from data.ships import ship_names, ships_names_reverse, ship_tier_factions
-from utils.utils import get_assets_directory
+from utils.utils import get_assets_directory, setup_logger, logging
+
+
+logger = setup_logger("Ship", "ship.log", logging.DEBUG)
 
 
 def get_ship_category(ship_name: str):
@@ -224,6 +227,7 @@ class Ship(object):
 
         This is a rather complicated bit.
         """
+        logger.debug("Deserializing: {}".format(string))
         ships_data = load_ship_data()
         elements = string.split(";")
         # First element is FQSN
@@ -255,6 +259,7 @@ class Ship(object):
                 continue
             # The upgrade is not set
             break
+        logger.debug("Built upgrade string {} for component type {}".format(string, type))
         return string
 
     @staticmethod
