@@ -165,7 +165,7 @@ class DiscordBot(object):
                 if valid is False:
                     await self.bot.send_message(author, NOT_PRIVATE)
                     return
-            if self.validate_message(content) is False:
+            if await self.validate_message(message) is False:
                 return
             command, args = await self.process_command(message)
             if command is None:
@@ -321,9 +321,6 @@ class DiscordBot(object):
     async def unregister_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Remove a user fully from the database"""
         tag = generate_tag(user)
-        if self.db.get_user_in_database(tag) is False:
-            await self.bot.send_message(channel, NOT_REGISTERED)
-            return
         self.db.delete_user(tag)
         self.logger.info("Unregistered {}.".format(tag))
         await self.bot.send_message(channel, UNREGISTER_PUBLIC)
@@ -332,9 +329,6 @@ class DiscordBot(object):
     async def forgot_code(self, channel: Channel, user: DiscordUser, args: tuple):
         """Generate a new access code for the user"""
         tag = generate_tag(user)
-        if self.db.get_auth_code(tag) is None:
-            await self.bot.send_message(channel, NOT_REGISTERED.format(user))
-            return
         self.logger.info("Generating new access code for {}.".format(tag))
         code = generate_code()
         self.db.update_auth_code(tag, code)
@@ -509,9 +503,17 @@ class DiscordBot(object):
             results[name] = await download_image(link)
         return results
 
-    @staticmethod
-    def validate_message(content: str):
+    async def validate_message(self, message: Message):
         """Check if this message is a valid command for the bot"""
+        author, channel, content = message.author, message.channel, message.content
+        # Validate that the user is registered and has contribute data recently
+        tag = generate_tag(author)
+        if not self.db.get_user_in_database(tag):
+            await self.bot.send_message(channel, NOT_REGISTERED)
+            return False
+        if not self.db.get_user_accessed_valid(tag):
+            await self.bot.send_message(channel, INACTIVE)
+            return False
         return isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX
 
     @staticmethod

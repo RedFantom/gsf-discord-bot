@@ -99,9 +99,11 @@ class Server(object):
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """
-        Authenticate a user based on Discord tag and authentication
-        code. Only users with valid code for the given user will be
-        authenticated.
+        Return whether the auth code is valid for this user
+
+        The Discord tag and the hashed authentication code are stored in
+        the server, this function checks the given credentials against
+        the database.
         :param tag: Discord Tag ('@TestUser#1111')
         :param code: Authentication code in str format
         :return: boolean, authenticated
