@@ -12,10 +12,10 @@ from data import abilities
 from data.components import *
 from data.crew import crew
 from data.ships import ship_names, ships_names_reverse, ship_tier_factions
-from utils.utils import get_assets_directory, setup_logger, logging
+from utils.utils import get_assets_directory, setup_logger
 
 
-logger = setup_logger("Ship", "ship.log", logging.DEBUG)
+logger = setup_logger("Ship", "ship.log")
 
 
 def get_ship_category(ship_name: str):
@@ -258,9 +258,6 @@ class Ship(object):
                     continue
                 string += str(upgrade + 1)
                 continue
-            # The upgrade is not set
-            break
-        logger.debug("Built upgrade string {} for {}".format(string, upgrades))
         return string
 
     @staticmethod
