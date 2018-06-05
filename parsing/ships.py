@@ -113,7 +113,7 @@ class Ship(object):
             if match is False:
                 raise ValueError("Invalid crew member name or category identifier")
             self[category] = (self.faction, category, name)
-            return "{} now set to {}.".format(category, name)
+            return "Crew member for {} now set to {}.".format(category, name)
         # shorthandcategory/fullname/upgrades;
         elems = element.split("/")
         if len(elems) == 2:
@@ -139,7 +139,7 @@ class Ship(object):
         component = Component(ships_data[self.ship_name][category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        return "{} now set to {}.".format(category, component.name)
+        return "{} now set to {} with upgrades {}.".format(category, component.name, upgrades)
 
     def __setitem__(self, item: str, value):
         """
@@ -203,7 +203,8 @@ class Ship(object):
             Fully-Qualified Ship Name;
             component_category_short_hand/index/upgrades
         """
-        string = self.ship_name + ";" # FQN
+        logger.debug("Serializing ship {}".format(self.ship_name))
+        string = self.ship_name + ";"  # FQN
         for key, component in self.components.items():
             # component is None or Component instance
             if component is None or not isinstance(component, Component):
