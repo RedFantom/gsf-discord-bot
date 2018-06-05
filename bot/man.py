@@ -217,7 +217,7 @@ MANUAL = {
         "Use the manual of build_global for general information.\n"
         "```",
     "build_global":
-        "\n"
+        "```markdown\n"
         "# Global build calculator definitions\n"
         "- ship identifier: The common way of referring to a ship is by\n"
         "     tier string. This bot requires a similar format that also\n"
@@ -242,8 +242,10 @@ MANUAL = {
         "     supported.\n\n"
         "     Examples:\n"
         "     crew/engineering/blizz - Engineering, Blizz (Imperial)\n"
-        "     crew/d/bro - Defensive, Broonmark (Republic)\n\n",
+        "     crew/d/bro - Defensive, Broonmark (Republic)\n"
+        "```",
     "build_commands":
+        "```markdown\n"
         "# Subcommands:\n"
         "- create: Create a new build in the build calculator\n"
         "    Arguments: ship identifier, name (in quotes!), public (optional)\n"
