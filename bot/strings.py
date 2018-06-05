@@ -123,13 +123,14 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
     Build a human readable message string from a crew member dictionary
     """
     message = "```markdown\n{}\n```"
-    string = "# {}\n" \
+    string = "# {} ({})\n" \
              "Ability: {}\n" \
              "{}\n\n" \
              "Passive: {}\n" \
              "{}\n\n" \
              "Passive: {}\n" \
              "{}\n"
+    role = crew_dict["Category"]
     name = crew_dict["Name"]
     ability = crew_dict["AbilityName"]
     passive1 = crew_dict["PassiveName"]
@@ -138,7 +139,7 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
     passive1d = crew_dict["PassiveDescription"]
     passive2d = crew_dict["SecondaryPassiveDescription"]
     string = string.format(
-        name, ability, justify_with_indent(abilityd),
+        name, role, ability, justify_with_indent(abilityd),
         passive1, justify_with_indent(passive1d),
         passive2, justify_with_indent(passive2d))
     return message.format(string)

@@ -12,10 +12,10 @@ from data import abilities
 from data.components import *
 from data.crew import crew
 from data.ships import ship_names, ships_names_reverse, ship_tier_factions
-from utils.utils import get_assets_directory, setup_logger, logging
+from utils.utils import get_assets_directory, setup_logger
 
 
-logger = setup_logger("Ship", "ship.log", logging.DEBUG)
+logger = setup_logger("Ship", "ship.log")
 
 
 def get_ship_category(ship_name: str):
@@ -113,7 +113,7 @@ class Ship(object):
             if match is False:
                 raise ValueError("Invalid crew member name or category identifier")
             self[category] = (self.faction, category, name)
-            return "{} now set to {}.".format(category, name)
+            return "Crew member for {} now set to {}.".format(category, name)
         # shorthandcategory/fullname/upgrades;
         elems = element.split("/")
         if len(elems) == 2:
@@ -139,7 +139,7 @@ class Ship(object):
         component = Component(ships_data[self.ship_name][category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        return "{} now set to {}.".format(category, component.name)
+        return "{} now set to {} with upgrades {}.".format(category, component.name, upgrades)
 
     def __setitem__(self, item: str, value):
         """
@@ -203,7 +203,8 @@ class Ship(object):
             Fully-Qualified Ship Name;
             component_category_short_hand/index/upgrades
         """
-        string = self.ship_name + ";" # FQN
+        logger.debug("Serializing ship {}".format(self.ship_name))
+        string = self.ship_name + ";"  # FQN
         for key, component in self.components.items():
             # component is None or Component instance
             if component is None or not isinstance(component, Component):
@@ -257,9 +258,6 @@ class Ship(object):
                     continue
                 string += str(upgrade + 1)
                 continue
-            # The upgrade is not set
-            break
-        logger.debug("Built upgrade string {} for component type {}".format(string, type))
         return string
 
     @staticmethod
@@ -412,9 +410,13 @@ if __name__ == '__main__':
     results = dict()
     for faction_list in companions.values():
         for category_dict in faction_list:
+            category = list(category_dict.keys())[0]
+            if category == "CoPilot":
+                continue
             for companion_list in category_dict.values():
                 for companion in companion_list:
                     name = companion["Name"]
+                    companion["Category"] = category
                     results[name] = companion
     with open("crew.db", "wb") as fo:
         pickle.dump(results, fo)
