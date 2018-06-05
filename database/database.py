@@ -223,7 +223,7 @@ class DatabaseHandler(object):
 
     def get_user_accessed_valid(self, tag: str):
         """Return whether the user has contributed data recently enough"""
-        result = self.exec_query(select.GET_USER_LAST.format(tag))
+        result = self.exec_query(select.GET_USER_LAST.format(discord=tag))
         if len(result) == 0:
             return None
         last = datetime.strptime(result[0][0], DATE_FORMAT)
