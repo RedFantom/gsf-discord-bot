@@ -506,15 +506,20 @@ class DiscordBot(object):
     async def validate_message(self, message: Message):
         """Check if this message is a valid command for the bot"""
         author, channel, content = message.author, message.channel, message.content
+        if not self.validate_channel(channel):
+            return False
+        if not (isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX):
+            return False
         # Validate that the user is registered and has contribute data recently
         tag = generate_tag(author)
-        if not self.db.get_user_in_database(tag):
+        if not self.db.get_user_in_database(tag) and "register" not in content:
             await self.bot.send_message(channel, NOT_REGISTERED)
+            self.logger.debug("{} not in database.".format(tag))
             return False
         if not self.db.get_user_accessed_valid(tag):
             await self.bot.send_message(channel, INACTIVE)
             return False
-        return isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX
+        return True
 
     @staticmethod
     def validate_channel(channel: Channel):
