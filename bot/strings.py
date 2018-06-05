@@ -122,8 +122,8 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
     """
     Build a human readable message string from a crew member dictionary
     """
-    message = "```markdown\n{} ({})\n```"
-    string = "# {}\n" \
+    message = "```markdown\n{}\n```"
+    string = "# {} ({})\n" \
              "Ability: {}\n" \
              "{}\n\n" \
              "Passive: {}\n" \
