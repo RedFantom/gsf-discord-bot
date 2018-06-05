@@ -410,9 +410,13 @@ if __name__ == '__main__':
     results = dict()
     for faction_list in companions.values():
         for category_dict in faction_list:
+            category = list(category_dict.keys())[0]
+            if category == "CoPilot":
+                continue
             for companion_list in category_dict.values():
                 for companion in companion_list:
                     name = companion["Name"]
+                    companion["Category"] = category
                     results[name] = companion
     with open("crew.db", "wb") as fo:
         pickle.dump(results, fo)
