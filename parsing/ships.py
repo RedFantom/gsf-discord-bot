@@ -260,7 +260,7 @@ class Ship(object):
                 continue
             # The upgrade is not set
             break
-        logger.debug("Built upgrade string {} for component type {}".format(string, type))
+        logger.debug("Built upgrade string {} for {}".format(string, upgrades))
         return string
 
     @staticmethod
@@ -274,7 +274,6 @@ class Ship(object):
             # letter is a Letter!
             side = {"L": 0, "R": 1}[letter]
             dictionary[(level, side)] = True
-        logger.debug("Parsed upgrade string {} to: {}".format(upgrades, dictionary))
         return dictionary
 
     @staticmethod
