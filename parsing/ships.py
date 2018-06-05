@@ -274,6 +274,7 @@ class Ship(object):
             # letter is a Letter!
             side = {"L": 0, "R": 1}[letter]
             dictionary[(level, side)] = True
+        logger.debug("Parsed upgrade string {} to: {}".format(upgrades, dictionary))
         return dictionary
 
     @staticmethod
