@@ -388,6 +388,8 @@ class Component(object):
 
 if __name__ == '__main__':
     import _pickle as pickle
+    from pprint import pprint
+
     ships_data = load_ship_data()
     results = dict()
     for ship, ship_dict in ships_data.items():
@@ -403,6 +405,7 @@ if __name__ == '__main__':
                 results[category][name] = component_dict
     with open("components.db", "wb") as fo:
         pickle.dump(results, fo)
+    pprint(results)
 
     with open(path.join(get_assets_directory(), "companions.db"), "rb") as fi:
         companions = pickle.load(fi)
@@ -421,5 +424,4 @@ if __name__ == '__main__':
     with open("crew.db", "wb") as fo:
         pickle.dump(results, fo)
 
-    from pprint import pprint
     pprint(results)
