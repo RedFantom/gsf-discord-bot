@@ -516,7 +516,7 @@ class DiscordBot(object):
             await self.bot.send_message(channel, NOT_REGISTERED)
             self.logger.debug("{} not in database.".format(tag))
             return False
-        if not self.db.get_user_accessed_valid(tag):
+        if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
             await self.bot.send_message(channel, INACTIVE)
             return False
         return True
