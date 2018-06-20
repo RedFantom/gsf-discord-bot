@@ -735,6 +735,6 @@ class DiscordBot(object):
         else:
             await self.bot.send_message(channel, "I don't understand your meaning.")
             return
-        with open("requirements.txt", "w") as fo:
+        with open("participants.txt", "w") as fo:
             for name in self.participants:
                 fo.write("{}\n".format(name))
