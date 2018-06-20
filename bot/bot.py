@@ -100,6 +100,8 @@ class DiscordBot(object):
         "lookup": ((1,), "build_lookup"),
     }
 
+    NOT_REGISTERED_ALLOWED = ["register", "event"]
+
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
         :param database: DatabaseHandler instance
@@ -519,6 +521,9 @@ class DiscordBot(object):
             await self.bot.send_message(channel, NOT_REGISTERED)
             self.logger.debug("{} not in database.".format(tag))
             return False
+        for command in self.NOT_REGISTERED_ALLOWED:
+            if command in content:
+                return True
         if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
             await self.bot.send_message(channel, INACTIVE)
             return False
