@@ -5,7 +5,6 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-from datetime import datetime
 import traceback
 # Packages
 from dateparser import parse as parse_date
@@ -67,6 +66,8 @@ class DiscordBot(object):
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
         "build": (range(2, 20), "build_calculator"),
+
+        "event": ((1, 2), "event", True),
     }
 
     DATES = {
@@ -99,12 +100,16 @@ class DiscordBot(object):
         "lookup": ((1,), "build_lookup"),
     }
 
+    NOT_REGISTERED_ALLOWED = ["register", "event"]
+
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
         :param database: DatabaseHandler instance
         :param server: The server linked to this bot
         :param loop: The asyncio loop this bot is running in
         """
+        with open("participants.txt") as fi:
+            self.participants = [line.strip() for line in fi.readlines()]
         self.bot = commands.Bot(self.PREFIX, description=self.DESCRIPTION)
         self.db = database
         self.logger = setup_logger("DiscordBot", "bot.log")
@@ -516,6 +521,9 @@ class DiscordBot(object):
             await self.bot.send_message(channel, NOT_REGISTERED)
             self.logger.debug("{} not in database.".format(tag))
             return False
+        for command in self.NOT_REGISTERED_ALLOWED:
+            if command in content:
+                return True
         if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
             await self.bot.send_message(channel, INACTIVE)
             return False
@@ -700,3 +708,41 @@ class DiscordBot(object):
             await self.bot.send_message(channel, message)
             return
         raise NotImplementedError("This feature has not yet been implemented.")
+
+    async def event(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
+        command = args[0]
+        if command == "participate":
+            name = user.name
+            if len(args) == 2:
+                name = args[1]
+            if name in self.participants:
+                await self.bot.send_message(channel, "You are already registered as a participant.")
+                return
+            self.participants.append(name)
+        elif command == "quit":
+            if user.name not in self.participants:
+                await self.bot.send_message(channel, "You are not participating.")
+                return
+            self.participants.remove(user.name)
+        elif command == "roll":
+            for name in self.participants:
+                if name.strip() == "":
+                    continue
+                user = None
+                for member in message.server.members:
+                    if name == member.name:
+                        user = member
+                mention = user.mention if user is not None else name
+                ship = await get_random_ship()
+                await self.bot.send_message(
+                    channel, "{}, you are playing {}.".format(mention, ship))
+        elif command == "dissolve":
+            self.participants.clear()
+            await self.bot.send_message(channel, "The participant list has been cleared.")
+        else:
+            await self.bot.send_message(channel, "I don't understand your meaning.")
+            return
+        with open("participants.txt", "w") as fo:
+            for name in self.participants:
+                fo.write("{}\n".format(name))
+            fo.write("\n")
