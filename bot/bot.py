@@ -5,7 +5,6 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-from datetime import datetime
 import traceback
 # Packages
 from dateparser import parse as parse_date
@@ -67,6 +66,8 @@ class DiscordBot(object):
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
         "build": (range(2, 20), "build_calculator"),
+
+        "event": ((1,), "event", True),
     }
 
     DATES = {
@@ -105,6 +106,8 @@ class DiscordBot(object):
         :param server: The server linked to this bot
         :param loop: The asyncio loop this bot is running in
         """
+        with open("participants.txt") as fi:
+            self.participants = [line.strip() for line in fi.readlines()]
         self.bot = commands.Bot(self.PREFIX, description=self.DESCRIPTION)
         self.db = database
         self.logger = setup_logger("DiscordBot", "bot.log")
@@ -700,3 +703,33 @@ class DiscordBot(object):
             await self.bot.send_message(channel, message)
             return
         raise NotImplementedError("This feature has not yet been implemented.")
+
+    async def event(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
+        command, = args
+        if command == "participate":
+            if user.name in self.participants:
+                await self.bot.send_message(channel, "You are already registered as a participant.")
+                return
+            self.participants.append(user.name)
+        elif command == "quit":
+            if user.name not in self.participants:
+                await self.bot.send_message(channel, "You are not participating.")
+                return
+            self.participants.remove(user.name)
+        elif command == "roll":
+            for name in self.participants:
+                user = None
+                for member in message.server.members:
+                    if name == member.name:
+                        user = member
+                if user is None or not isinstance(user, DiscordUser):
+                    continue
+                ship = await get_random_ship()
+                await self.bot.send_message(
+                    channel, "{}, you are playing {}.".format(user.mention, ship))
+        else:
+            await self.bot.send_message(channel, "I don't understand your meaning.")
+            return
+        with open("requirements.txt", "w") as fo:
+            for name in self.participants:
+                fo.write("{}\n".format(name))
