@@ -726,6 +726,8 @@ class DiscordBot(object):
             self.participants.remove(user.name)
         elif command == "roll":
             for name in self.participants:
+                if name.strip() == "":
+                    continue
                 user = None
                 for member in message.server.members:
                     if name == member.name:
