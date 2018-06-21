@@ -67,7 +67,7 @@ class DiscordBot(object):
         "scoreboard": ((0, 1), "parse_scoreboard", True),
         "build": (range(2, 20), "build_calculator"),
 
-        "event": ((1,), "event", True),
+        "event": ((1, 2), "event", True),
     }
 
     DATES = {
@@ -710,12 +710,15 @@ class DiscordBot(object):
         raise NotImplementedError("This feature has not yet been implemented.")
 
     async def event(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
-        command, = args
+        command = args[0]
         if command == "participate":
-            if user.name in self.participants:
+            name = user.name
+            if len(args) == 2:
+                name = args[1]
+            if name in self.participants:
                 await self.bot.send_message(channel, "You are already registered as a participant.")
                 return
-            self.participants.append(user.name)
+            self.participants.append(name)
         elif command == "quit":
             if user.name not in self.participants:
                 await self.bot.send_message(channel, "You are not participating.")
@@ -727,11 +730,10 @@ class DiscordBot(object):
                 for member in message.server.members:
                     if name == member.name:
                         user = member
-                if user is None or not isinstance(user, DiscordUser):
-                    continue
+                mention = user.mention if user is not None else name
                 ship = await get_random_ship()
                 await self.bot.send_message(
-                    channel, "{}, you are playing {}.".format(user.mention, ship))
+                    channel, "{}, you are playing {}.".format(mention, ship))
         else:
             await self.bot.send_message(channel, "I don't understand your meaning.")
             return
