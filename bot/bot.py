@@ -738,7 +738,7 @@ class DiscordBot(object):
                     channel, "{}, you are playing {}.".format(mention, ship))
         elif command == "dissolve":
             self.participants.clear()
-            await self.bot.send_message("The participant list has been cleared.")
+            await self.bot.send_message(channel, "The participant list has been cleared.")
         else:
             await self.bot.send_message(channel, "I don't understand your meaning.")
             return
