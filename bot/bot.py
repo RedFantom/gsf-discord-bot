@@ -736,9 +736,13 @@ class DiscordBot(object):
                 ship = await get_random_ship()
                 await self.bot.send_message(
                     channel, "{}, you are playing {}.".format(mention, ship))
+        elif command == "dissolve":
+            self.participants.clear()
+            await self.bot.send_message("The participant list has been cleared.")
         else:
             await self.bot.send_message(channel, "I don't understand your meaning.")
             return
         with open("participants.txt", "w") as fo:
             for name in self.participants:
                 fo.write("{}\n".format(name))
+            fo.write("\n")
