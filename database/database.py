@@ -73,12 +73,14 @@ class DatabaseHandler(object):
     def exec_query(self, query: str):
         """Execute a query on the database and return results"""
         self._db_lock.acquire()
-        with self.cursor as cursor:
-            self.debug("Executing query: {}".format(query))
-            cursor.execute(query)
-            results = cursor.fetchall()
-            self.debug("Query results: {}".format(results))
-        self._db_lock.release()
+        try:
+            with self.cursor as cursor:
+                self.debug("Executing query: {}".format(query))
+                cursor.execute(query)
+                results = cursor.fetchall()
+                self.debug("Query results: {}".format(results))
+        finally:
+            self._db_lock.release()
         return results
 
     @property
