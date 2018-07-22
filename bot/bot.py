@@ -769,6 +769,9 @@ class DiscordBot(object):
 
         if command == "list":
             strategies = self.db.get_strategies(tag)
+            if strategies is None or len(strategies) == 0:
+                await self.bot.send_message(channel, "You have uploaded no strategies.")
+                return
             message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
                 user.mention, "\n".join("- {}".format(a for a in strategies)))
             await self.bot.send_message(channel, message)
