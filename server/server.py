@@ -27,7 +27,7 @@ class Server(object):
     """
 
     MAX_ATTEMPTS = 50
-    BUFFER_SIZE = 100
+    BUFFER_SIZE = 32
     MIN_VERSION = "v5.0.0"
 
     def __init__(self, database: DatabaseHandler, host: str, port: int, name: str="Server"):
@@ -54,7 +54,9 @@ class Server(object):
         The result of the process_command function is sent back to the
         client.
         """
+        self.logger.debug("Accepted a new client.")
         try:
+            self.logger.debug("Reading command from client...")
             command = await self.read_command(reader)
             split = await self.split_command(command)
             if split is None:
@@ -90,6 +92,7 @@ class Server(object):
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
                     break
+                self.logger.debug("Read: {}".format(data))
                 result += data
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
