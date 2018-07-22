@@ -26,8 +26,8 @@ class Server(object):
        requires a new connection.
     """
 
-    MAX_ATTEMPTS = 20
-    BUFFER_SIZE = 1024
+    MAX_ATTEMPTS = 50
+    BUFFER_SIZE = 100
     MIN_VERSION = "v5.0.0"
 
     def __init__(self, database: DatabaseHandler, host: str, port: int, name: str="Server"):
@@ -88,8 +88,9 @@ class Server(object):
             for i in range(self.MAX_ATTEMPTS):
                 data = await reader.read(self.BUFFER_SIZE)
                 data = data.decode()
-                if data != "":
-                    result += data
+                if data == "":
+                    break
+                result += data
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
