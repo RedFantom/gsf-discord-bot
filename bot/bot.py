@@ -793,7 +793,7 @@ class DiscordBot(object):
 
         elif command == "show":
             message = build_string_from_strategy(tag, strategy)
-            await self.bot.send_message(user, message)
+            await self.bot.send_message(channel, message)
 
         elif command == "render":
             phase_name = args[2]
