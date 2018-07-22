@@ -27,8 +27,8 @@ class Server(object):
     """
 
     MAX_ATTEMPTS = 20
-    BUFFER_SIZE = 100
-    MIN_VERSION = "v4.0.2"
+    BUFFER_SIZE = 1024
+    MIN_VERSION = "v5.0.0"
 
     def __init__(self, database: DatabaseHandler, host: str, port: int, name: str="Server"):
         """
@@ -58,21 +58,21 @@ class Server(object):
             command = await self.read_command(reader)
             split = await self.split_command(command)
             if split is None:
-                raise ValueError
+                raise ValueError("Command split failed")
             # Authenticate the user and check version
             tag, auth, version, command, args = split
             if self.authenticate_user(tag, auth) is False:
                 writer.write(b"unauth")
-                raise ValueError
+                raise PermissionError("Unauthorized usage")
             if self.check_version(version) is False:
                 writer.write(b"version")
-                raise ValueError
+                raise ValueError("Version mismatch")
             # Process the command
             result = await self.process_command(tag, command, args)
             if result is None:  # Command execution failed
                 self.logger.error("Command execution failed: {}, {}".format(command, args))
                 writer.write(b"error")
-                raise ValueError
+                raise RuntimeError("Command execution failed")
             to_write = result.encode()
             writer.write(to_write)
         except Exception:
@@ -83,19 +83,19 @@ class Server(object):
 
     async def read_command(self, reader: asyncio.StreamReader)->(str, None):
         """Read data from the stream"""
-        data = ""
+        result = ""
         try:
             for i in range(self.MAX_ATTEMPTS):
                 data = await reader.read(self.BUFFER_SIZE)
                 data = data.decode()
                 if data != "":
-                    break
+                    result += data
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
-        if data == "":
+        if result == "":
             return None
-        return data.replace("+", "")
+        return result.replace("+", "")
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """
