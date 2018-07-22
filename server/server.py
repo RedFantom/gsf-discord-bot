@@ -5,6 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
+import chardet
 import traceback
 from semantic_version import Version
 # Project Modules
@@ -90,8 +91,9 @@ class Server(object):
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
                     break
+                encoding = chardet.detect(data)["encoding"]
                 self.logger.debug("Appending: {}".format(data))
-                result += data.decode()
+                result += data.decode(encoding=encoding)
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
