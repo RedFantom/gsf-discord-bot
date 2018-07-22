@@ -70,5 +70,5 @@ UPDATE_USER_LAST = """
 """
 
 INSERT_STRATEGY = """
-    INSERT OR REPLACE INTO Strategies(owner, name, data) VALUES ('{owner}', '{name}', '{data}');
+    INSERT OR REPLACE INTO Strategies(owner, name, data) VALUES ('{owner}', '{name}', ?)');
 """

@@ -380,8 +380,8 @@ class DatabaseHandler(object):
     def insert_strategy(self, owner: str, strategy: Strategy):
         """Insert a Strategy into the database"""
         name, data = strategy.name, strategy.serialize()
-        command = insert.INSERT_STRATEGY.format(owner=owner, name=name, data=data)
-        return self.exec_command(command)
+        command = insert.INSERT_STRATEGY.format(owner=owner, name=name)
+        return self.exec_command(command, (data,))
 
     def get_strategies(self, owner: str):
         """Return all strategies owned by a certain client"""
