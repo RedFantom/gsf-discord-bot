@@ -780,7 +780,7 @@ class DiscordBot(object):
             await self.bot.send_message(channel, message)
             return
 
-        _, name = args
+        name = args[1]
         strategy = self.db.get_strategy_data(tag, name)
         if strategy is None:
             await self.bot.send_message(channel, UNKNOWN_STRATEGY)
