@@ -75,7 +75,7 @@ CREATE_TABLE_STRATEGIES = """
     CREATE TABLE IF NOT EXISTS 'Strategies'(
         owner TEXT REFERENCES User(id),
         name TEXT,
-        data TEXT,
+        data BLOB,
         PRIMARY KEY (owner, name)
     );
 """

@@ -379,7 +379,7 @@ class DatabaseHandler(object):
 
     def insert_strategy(self, owner: str, strategy: Strategy):
         """Insert a Strategy into the database"""
-        name, data = strategy.name, strategy.serialize()
+        name, data = strategy.name, strategy.serialize().encode()
         command = insert.INSERT_STRATEGY.format(owner=owner, name=name)
         return self.exec_command(command, (data,))
 
@@ -397,7 +397,7 @@ class DatabaseHandler(object):
         r = self.exec_query(query)
         if len(r) == 0:
             return None
-        return r[0]
+        return r[0].decode()
 
     def delete_strategy(self, owner, name):
         """Delete a strategy given a strategy name and owner"""
