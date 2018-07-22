@@ -230,7 +230,10 @@ class DiscordBot(object):
             message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
             for channel in self.overview_channels:
                 if channel in self.overview_messages:
-                    await self.bot.edit_message(self.overview_messages[channel], message)
+                    try:
+                        await self.bot.edit_message(self.overview_messages[channel], message)
+                    except RuntimeError:
+                        await self.bot.login()
                     continue
                 async for message in self.bot.logs_from(channel, limit=1):
                     if message.author.display_name == "GSF Parser":

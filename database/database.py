@@ -386,7 +386,10 @@ class DatabaseHandler(object):
     def get_strategies(self, owner: str):
         """Return all strategies owned by a certain client"""
         query = select.GET_STRATEGIES.format(owner=owner)
-        return self.exec_query(query)
+        r = self.exec_query(query)
+        if len(r) == 0:
+            return None
+        return r
 
     def get_strategy_data(self, owner: str, name: str):
         """Return the serialized strategy data"""
