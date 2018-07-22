@@ -32,7 +32,8 @@ def _render_item(item: Item, image: Image.Image)->None:
     coords = int(item["x"] / 768 * W), int(item["y"] / 768 * H)
     draw = ImageDraw.Draw(image)
     font_size = font[1]  # Font Family is shamelessly ignored
-    font = ImageFont.FreeTypeFont(size=font_size)
+    font = ImageFont.FreeTypeFont(
+        font="/usr/share/fonts/truetype/freefont/FreeMono.ttf", size=font_size)
     box = (*coords, *draw.textsize(text, font=font))
     draw.rectangle(box, fill=color)
     draw.text(coords, text, font=font)
