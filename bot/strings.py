@@ -4,6 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
+from ast import literal_eval
 from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
@@ -154,10 +155,7 @@ def build_string_from_strategy(tag: str, strategy: Strategy):
     details = "# {} by {}\n".format(strategy.name.replace("strategy_", ""), name)
     for phase_name in strategy.phases.keys():
         details += "- {}\n".format(phase_name)
-    try:
-        map_type, map_name = strategy.map
-    except ValueError as e:
-        raise ValueError("{}: {}".format(type(strategy.map), strategy.map)) from e
+    map_type, map_name = strategy.map
     details += "{}".format(map_names[map_type][map_name])
     return template.format(details)
 

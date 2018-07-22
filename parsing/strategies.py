@@ -73,7 +73,7 @@ class Strategy(object):
         s_name, s_descr, s_map = strategy_elements[0:3]
         phases = strategy_elements[3:]
         # Generate a new Strategy Object
-        strategy = Strategy(s_name, s_map)
+        strategy = Strategy(s_name, literal_eval(s_map))
         strategy.description = s_descr
         # Create the Phases for the Strategy from strings
         for phase_string in phases:
