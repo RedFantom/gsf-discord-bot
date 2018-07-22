@@ -816,7 +816,7 @@ class DiscordBot(object):
             embed.title = "{} - {}".format(strategy.name, phase_name)
             embed._colour = 3844661
             embed.set_image(url=link)
-            self.bot.send_message(channel, embed=embed)
+            await self.bot.send_message(channel, embed=embed)
 
         else:
             await self.bot.send_message(channel, INVALID_ARGS)
