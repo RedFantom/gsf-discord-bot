@@ -151,5 +151,7 @@ class DiscordServer(Server):
     def process_strategy(self, tag: str, data: str):
         """Insert a new strategy into the database for a Discord user"""
         # Check if it is a valid Strategy
+        self.logger.debug("Processing new strategy from {}".format(tag))
         strategy = Strategy.deserialize(data)
+        self.logger.debug("Strategy: {}, Phases: {}".format(strategy.name, tuple(strategy.phases.values())))
         self.db.insert_strategy(tag, strategy)

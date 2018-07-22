@@ -102,7 +102,11 @@ class Server(object):
             return None
         if result == "":
             return None
-        return result.decode().replace("+", "")
+        try:
+            return result.decode().replace("+", "")
+        except Exception:
+            self.logger.error("Error while decoding: {}".format(traceback.format_exc()))
+            return None
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """
