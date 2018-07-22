@@ -88,7 +88,7 @@ class Server(object):
         result = b""
         try:
             while True:
-                data = await reader.read(self.BUFFER_SIZE)
+                data = await asyncio.wait_for(reader.read(self.BUFFER_SIZE), timeout=1)
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
                     break
