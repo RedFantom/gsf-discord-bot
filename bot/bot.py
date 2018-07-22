@@ -8,8 +8,10 @@ import asyncio
 import traceback
 # Packages
 from dateparser import parse as parse_date
+import discord
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message, Embed
+from raven import Client as RavenClient
 # Project Modules
 from bot.func import *
 from bot.strings import *
@@ -36,7 +38,7 @@ class DiscordBot(object):
     PREFIX = "$"
     DESCRIPTION = "A friendly bot to socially interact with GSF " \
                   "statistics and for research"
-    CHANNELS = ("general", "code", "bots", "bot", "parser",)
+    CHANNELS = ("general", "code", "bots", "bot", "parser", "exceptions")
     CHANNELS_ENFORCED = True
 
     OVERVIEW_CHANNELS = ("matches",)
@@ -106,6 +108,8 @@ class DiscordBot(object):
 
     NOT_REGISTERED_ALLOWED = ["register", "event"]
 
+    EXCEPTION_CHANNEL = "exceptions"
+
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
         :param database: DatabaseHandler instance
@@ -125,6 +129,7 @@ class DiscordBot(object):
         self.loop.create_task(self.matches_monitor())
         self.ship_cache = dict()
         self.loop.create_task(self.cleanup_cache())
+        self.raven = self.open_raven_client()
 
     async def cleanup_cache(self):
         """
@@ -186,7 +191,9 @@ class DiscordBot(object):
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
             await func(*arguments)
         except Exception:
-            await self.bot.send_message(message.channel, "That hurt! ```python\n{}```".format(traceback.format_exc()))
+            await self.bot.send_message(
+                message.channel, "Sorry, I encountered an error. It has been reported.")
+            self.raven.captureException()
 
     def run(self, token: str):
         """Run the Bot loop"""
@@ -240,8 +247,7 @@ class DiscordBot(object):
                         self.overview_messages[channel] = message
                 self.overview_messages[channel] = await self.bot.send_message(channel, message)
         except Exception:
-            self.logger.error("An error occurred while building the overview message:\n{}".
-                              format(traceback.format_exc()))
+            self.raven.captureException()
         await asyncio.sleep(30)
         self.loop.create_task(self.matches_monitor())
 
@@ -275,6 +281,9 @@ class DiscordBot(object):
         if len(args) == 0:
             args = ("commands",)
         command, = args
+        if command not in MANUAL:
+            await self.bot.send_message(channel, "That is not a command in my manual.")
+            return
         message = MANUAL[command]
         if not channel.is_private:
             message += "Hint: You can use PM to use this command."
@@ -622,8 +631,8 @@ class DiscordBot(object):
                 try:
                     await self.__getattribute__(func)(channel, user, args)
                 except Exception as e:
-                    self.logger.debug(traceback.format_exc())
-                    await self.bot.send_message(channel, e)
+                    await self.bot.send_message(channel, "An error occurred while processing your command.")
+                    self.raven.captureException()
                 return
         await self.bot.send_message(channel, INVALID_ARGS)
 
@@ -645,7 +654,8 @@ class DiscordBot(object):
         data = ship.serialize()
         number = self.db.insert_build(owner, name, data, public)
         if number is None:
-            raise ValueError("You already have a build with that name")
+            await self.bot.send_message(channel, "You already have a build with that name.")
+            return
         self.ship_cache[number] = (datetime.now(), ship)
         await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
 
@@ -776,11 +786,11 @@ class DiscordBot(object):
                 await self.bot.send_message(channel, "You have uploaded no strategies.")
                 return
             message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
-                user.mention, "\n".join("- {}".format(a for a in strategies)))
+                user.mention, "\n".join(list("- {}".format(a) for a in strategies)))
             await self.bot.send_message(channel, message)
             return
 
-        _, name = args
+        name = args[1]
         strategy = self.db.get_strategy_data(tag, name)
         if strategy is None:
             await self.bot.send_message(channel, UNKNOWN_STRATEGY)
@@ -793,27 +803,66 @@ class DiscordBot(object):
 
         elif command == "show":
             message = build_string_from_strategy(tag, strategy)
-            await self.bot.send_message(user, message)
+            await self.bot.send_message(channel, message)
 
         elif command == "render":
+            if len(args) != 3:
+                await self.bot.send_message(channel, INVALID_ARGS)
+                return
             phase_name = args[2]
             if phase_name not in strategy.phases:
                 await self.bot.send_message(
                     channel, INVALID_PHASE_NAME.format(name, phase_name))
                 return
-            image = render_phase(strategy[phase_name])
-            file_name = get_temp_file(".png", user)
-            image.save(file_name)
-            message = await self.bot.send_file(channel, image)
-            link = message.attachments[0]["url"]
-            await self.bot.delete_message(message)
-            embed = Embed()
-            embed.set_footer(text="Generated by GSF Parser Discord Bot. Copyright (C) 2018 RedFantom")
-            embed.description = strategy.description
-            embed.title = "{} - {}".format(strategy.name, phase_name)
-            embed._colour = 3844661
-            embed.set_image(url=link)
-            self.bot.send_message(channel, embed=embed)
-
+            phase = strategy[phase_name]
+            image = render_phase(phase)
+            name = tag.split("#")[0][1:]
+            title = "{} - {}: {}".format(name, strategy.name, phase.name)
+            embed = await self.build_embed(title, phase.description, image)
+            try:
+                await self.bot.send_message(channel, embed=embed)
+            except discord.errors.Forbidden:
+                await self.bot.send_message(channel, EMBED_PERMISSION_ERROR)
         else:
             await self.bot.send_message(channel, INVALID_ARGS)
+
+    async def build_embed(self, title, description, image: Image.Image)->Embed:
+        """Build a Discord Embed from the given parameters"""
+        if len(description) > 2048:
+            description = description[:2040] + "..."
+        embed = Embed(title="**{}**".format(title), description=description, colour=3844661)
+        embed.set_footer(text="Generated by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
+        embed.set_image(url=await self.upload_image(image, title))
+        return embed
+
+    async def upload_image(self, image: Image.Image, title: str)->str:
+        """Upload an image to the GSF Parser server for use in embeds"""
+        title = title.replace(" ", "_").replace(":", "_")
+        path = "/var/www/discord.gsfparser.tk/images/{}.png".format(title)
+        image.save(path)
+        return "http://discord.gsfparser.tk/images/{}.png".format(title)
+
+    def exception_handler(self, loop: asyncio.AbstractEventLoop, context: dict):
+        """Handle all exceptions raised in the asyncio tasks"""
+        self.raven.captureException()
+        exc = context["exception"] if "exceptexception" in context else Exception
+        description = "**Message**: {}\n".format(context["message"]) + \
+                      "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
+        embed = Embed(title=repr(type(exc)), colour=0xFF0000, description=description)
+        embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
+        channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
+        loop.create_task(self.bot.send_message(channel, embed=embed))
+
+    def get_channel_by_name(self, name: str)->(Channel, None):
+        """Search for a channel by name in available channels"""
+        for channel in self.validated_channels:
+            if channel.name == name:
+                return channel
+        return None
+
+    @staticmethod
+    def open_raven_client():
+        with open("sentry") as fi:
+            link = fi.read().strip()
+        client = RavenClient(link)
+        return client

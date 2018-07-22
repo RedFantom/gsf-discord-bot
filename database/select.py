@@ -88,7 +88,7 @@ GET_BUILD_PUBLIC = """
 """
 
 GET_STRATEGY_DATA = """
-    SELECT data FROM Stategies WHERE owner = '{owner}' AND name = '{name}';
+    SELECT data FROM Strategies WHERE owner = '{owner}' AND name = '{name}';
 """
 
 GET_STRATEGIES = """

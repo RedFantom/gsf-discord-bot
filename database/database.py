@@ -73,12 +73,14 @@ class DatabaseHandler(object):
     def exec_query(self, query: str):
         """Execute a query on the database and return results"""
         self._db_lock.acquire()
-        with self.cursor as cursor:
-            self.debug("Executing query: {}".format(query))
-            cursor.execute(query)
-            results = cursor.fetchall()
-            self.debug("Query results: {}".format(results))
-        self._db_lock.release()
+        try:
+            with self.cursor as cursor:
+                self.debug("Executing query: {}".format(query))
+                cursor.execute(query)
+                results = cursor.fetchall()
+                self.debug("Query results: {}".format(results))
+        finally:
+            self._db_lock.release()
         return results
 
     @property
@@ -219,6 +221,8 @@ class DatabaseHandler(object):
             self.exec_command(delete.DELETE_RESULTS_CHARACTER.format(char_id=character))
         self.exec_command(delete.DELETE_CHARACTERS.format(discord_id=tag))
         self.exec_command(delete.DELETE_USER.format(discord_id=tag))
+        for strategy in self.get_strategies(tag):
+            self.delete_strategy(tag, strategy)
 
     def get_user_in_database(self, tag: str) -> bool:
         """Return whether a certain Discord user is in the database"""
@@ -379,9 +383,9 @@ class DatabaseHandler(object):
 
     def insert_strategy(self, owner: str, strategy: Strategy):
         """Insert a Strategy into the database"""
-        name, data = strategy.name, strategy.serialize()
-        command = insert.INSERT_STRATEGY.format(owner=owner, name=name, data=data)
-        return self.exec_command(command)
+        name, data = strategy.name, strategy.serialize().encode()
+        command = insert.INSERT_STRATEGY.format(owner=owner, name=name)
+        return self.exec_command(command, (data,))
 
     def get_strategies(self, owner: str):
         """Return all strategies owned by a certain client"""
@@ -389,7 +393,7 @@ class DatabaseHandler(object):
         r = self.exec_query(query)
         if len(r) == 0:
             return None
-        return r
+        return tuple(a[0] for a in r)
 
     def get_strategy_data(self, owner: str, name: str):
         """Return the serialized strategy data"""
@@ -397,7 +401,7 @@ class DatabaseHandler(object):
         r = self.exec_query(query)
         if len(r) == 0:
             return None
-        return r[0]
+        return r[0][0].decode()
 
     def delete_strategy(self, owner, name):
         """Delete a strategy given a strategy name and owner"""

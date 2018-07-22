@@ -4,11 +4,13 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
+from ast import literal_eval
 from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
 from data.servers import SERVER_NAMES
 from data.components import component_keys
+from data.maps import map_names
 from parsing.ships import Ship, Component
 from parsing.strategies import Strategy
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
@@ -148,10 +150,13 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
 
 def build_string_from_strategy(tag: str, strategy: Strategy):
     """Build a human-readable string with the details of a strategy"""
+    name = tag.split("#")[0][1:]
     template = "```markdown\n{}\n```"
-    details = "# {}: {}\n".format(tag, strategy.name)
-    for phase_name in strategy.phases.values():
+    details = "# {} by {}\n".format(strategy.name.replace("strategy_", ""), name)
+    for phase_name in strategy.phases.keys():
         details += "- {}\n".format(phase_name)
+    map_type, map_name = strategy.map
+    details += "{}".format(map_names[map_type][map_name])
     return template.format(details)
 
 

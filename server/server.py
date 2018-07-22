@@ -26,9 +26,9 @@ class Server(object):
        requires a new connection.
     """
 
-    MAX_ATTEMPTS = 20
-    BUFFER_SIZE = 100
-    MIN_VERSION = "v4.0.2"
+    MAX_ATTEMPTS = 50
+    BUFFER_SIZE = 32
+    MIN_VERSION = "v5.0.0"
 
     def __init__(self, database: DatabaseHandler, host: str, port: int, name: str="Server"):
         """
@@ -54,25 +54,27 @@ class Server(object):
         The result of the process_command function is sent back to the
         client.
         """
+        self.logger.debug("Accepted a new client.")
         try:
+            self.logger.debug("Reading command from client...")
             command = await self.read_command(reader)
             split = await self.split_command(command)
             if split is None:
-                raise ValueError
+                raise ValueError("Command split failed")
             # Authenticate the user and check version
             tag, auth, version, command, args = split
             if self.authenticate_user(tag, auth) is False:
                 writer.write(b"unauth")
-                raise ValueError
+                raise PermissionError("Unauthorized usage")
             if self.check_version(version) is False:
                 writer.write(b"version")
-                raise ValueError
+                raise ValueError("Version mismatch")
             # Process the command
             result = await self.process_command(tag, command, args)
             if result is None:  # Command execution failed
                 self.logger.error("Command execution failed: {}, {}".format(command, args))
                 writer.write(b"error")
-                raise ValueError
+                raise RuntimeError("Command execution failed")
             to_write = result.encode()
             writer.write(to_write)
         except Exception:
@@ -83,19 +85,28 @@ class Server(object):
 
     async def read_command(self, reader: asyncio.StreamReader)->(str, None):
         """Read data from the stream"""
-        data = ""
+        result = b""
         try:
-            for i in range(self.MAX_ATTEMPTS):
-                data = await reader.read(self.BUFFER_SIZE)
-                data = data.decode()
-                if data != "":
+            while True:
+                try:
+                    data = await asyncio.wait_for(reader.read(self.BUFFER_SIZE), timeout=1)
+                except (Exception, TimeoutError):
+                    data = None
+                if data is None:
+                    self.logger.debug("Reading complete.")
                     break
+                self.logger.debug("Read: {}".format(data))
+                result += data
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
-        if data == "":
+        if result == "":
             return None
-        return data.replace("+", "")
+        try:
+            return result.decode().replace("+", "")
+        except Exception:
+            self.logger.error("Error while decoding: {}".format(traceback.format_exc()))
+            return None
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """

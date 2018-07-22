@@ -18,10 +18,14 @@ map_dictionary = {
 }
 
 map_names = {
-    "DOM Kuat Mesas": "dom_kuatmesas",
-    "DOM Lost Shipyards": "dom_lostshipyards",
-    "DOM Denon Exosphere": "dom_denon_exosphere",
-    "TDM Kuat Mesas": "tdm_kuatmesas",
-    "TDM Lost Shipyards": "tdm_lostshipyards",
-    "TDM Battle over Iokath": "tdm_iokath"
+    "tdm": {
+        "km": "TDM Kuat Mesas",
+        "ls": "TDM Lost Shipyards",
+        "io": "TDM Battle over Iokath",
+    },
+    "dom": {
+        "km": "DOM Kuat Mesas",
+        "ls": "DOM Lost Shipyards",
+        "de": "DOM Denon Exosphere"
+    }
 }

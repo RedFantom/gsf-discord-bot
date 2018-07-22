@@ -71,9 +71,10 @@ class Strategy(object):
         strategy_elements = string.split("~")
         # strategy_elements: "strategy_{name}", description: str, map: tuple in str
         s_name, s_descr, s_map = strategy_elements[0:3]
+        s_name = s_name.replace("strategy_", "")
         phases = strategy_elements[3:]
         # Generate a new Strategy Object
-        strategy = Strategy(s_name, s_map)
+        strategy = Strategy(s_name, literal_eval(s_map))
         strategy.description = s_descr
         # Create the Phases for the Strategy from strings
         for phase_string in phases:
