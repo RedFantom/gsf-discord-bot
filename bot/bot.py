@@ -776,7 +776,7 @@ class DiscordBot(object):
                 await self.bot.send_message(channel, "You have uploaded no strategies.")
                 return
             message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
-                user.mention, "\n".join("- {}".format(a for a in strategies)))
+                user.mention, "\n".join(("- {}".format(a) for a in strategies)))
             await self.bot.send_message(channel, message)
             return
 
