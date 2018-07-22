@@ -815,6 +815,7 @@ class DiscordBot(object):
             embed.title = "{} - {}".format(strategy.name, phase_name)
             embed.set_image(url=link)
             await self.bot.send_message(channel, embed=embed)
-            await self.bot.delete_message(message)
+            # await self.bot.delete_message(message)
+
         else:
             await self.bot.send_message(channel, INVALID_ARGS)
