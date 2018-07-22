@@ -90,6 +90,7 @@ class Server(object):
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
                     break
+                self.logger.debug("Appending: {}".format(data))
                 result += data.decode()
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
