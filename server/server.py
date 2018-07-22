@@ -85,12 +85,12 @@ class Server(object):
         """Read data from the stream"""
         result = ""
         try:
-            for i in range(self.MAX_ATTEMPTS):
+            while True:
                 data = await reader.read(self.BUFFER_SIZE)
-                data = data.decode()
-                if data == "":
+                if len(data) == 0:
+                    self.logger.debug("Reading complete:", result)
                     break
-                result += data
+                result += data.decode()
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
