@@ -28,7 +28,7 @@ def _open_map(phase: Phase)->Image.Image:
 
 def _render_item(item: Item, image: Image.Image)->None:
     """Render a single Item onto a Strategy image render"""
-    text, font, color = item["text"], item["font"], item["color"]
+    text, font, color = item["name"], item["font"], item["color"]
     coords = int(item["x"] / 768 * W), int(item["y"] / 768 * H)
     draw = ImageDraw.Draw(image)
     font_size = font[1]  # Font Family is shamelessly ignored

@@ -796,6 +796,9 @@ class DiscordBot(object):
             await self.bot.send_message(channel, message)
 
         elif command == "render":
+            if len(args) != 3:
+                await self.bot.send_message(channel, INVALID_ARGS)
+                return
             phase_name = args[2]
             if phase_name not in strategy.phases:
                 await self.bot.send_message(
