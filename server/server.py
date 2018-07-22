@@ -90,7 +90,7 @@ class Server(object):
             while True:
                 try:
                     data = await asyncio.wait_for(reader.read(self.BUFFER_SIZE), timeout=1)
-                except TimeoutError:
+                except (Exception, TimeoutError):
                     data = b""
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
