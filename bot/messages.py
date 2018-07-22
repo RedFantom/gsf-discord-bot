@@ -31,6 +31,7 @@ UNKNOWN_CHARACTER = "The character `{}` on `{}` is not in my database."
 UNKNOWN_DATE_FORMAT = "I support many different date and time formats. For formats that consist of " \
                       "multiple elements (with spaces), please enclose them in quotes. If in doubt, " \
                       "use `YYYY-MM-DD` or `HH:MM`."
+UNKNOWN_STRATEGY = "There is no Strategy in my database with that name owned by you."
 UNSUPPORTED_IMAGE_TYPE = "File `{}` has an unsupported file type for images."
 
 CHARACTER_OWNER = "`{}` owns that character."
@@ -126,12 +127,12 @@ Last update: {}
 """
 
 MATCHES_ROW = " {:<6} | {:<13}| {:<4} | {:<18} | {:.2f}{} | {}min \n"
-
 RANDOM_SHIP = "Your wish is my command: **{}**"
-
 BUILD_CREATE = "Build '{}' created for ship '{}'. The identifier is `{}`."
-
 BUILD_DELETE = "Build '{}' was successfully deleted."
 
 INACTIVE = "You have not contributed data in the last two weeks. Please " \
            "contribute new data before trying to access data again."
+STRATEGY_DELETE = "Strategy '{}' deleted successfully."
+
+INVALID_PHASE_NAME = "Strategy '{}' does not have phase '{}'."

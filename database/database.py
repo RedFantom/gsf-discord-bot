@@ -12,6 +12,7 @@ from threading import Lock
 from database import create, insert, select, delete
 from data.servers import SERVER_NAMES
 from parsing.ships import Ship
+from parsing.strategies import Strategy
 from utils import setup_logger
 from utils.utils import DATE_FORMAT
 
@@ -60,11 +61,14 @@ class DatabaseHandler(object):
                 self.debug("Executing command: {}".format(command))
                 cursor.execute(command, *args)
                 self.debug("Executed command: {}".format(command))
+            r = True
         except sql.OperationalError as e:
             self.logger.error("Execution of command failed: {}.".format(e))
+            r = False
         self.db.commit()
         self._db_lock.release()
         self.debug("Database lock released.")
+        return r
 
     def exec_query(self, query: str):
         """Execute a query on the database and return results"""
@@ -372,3 +376,30 @@ class DatabaseHandler(object):
         name = self.get_build_name(build, owner)
         self.exec_command(delete.DELETE_BUILD_BY_ID.format(build=build))
         return name
+
+    def insert_strategy(self, owner: str, strategy: Strategy):
+        """Insert a Strategy into the database"""
+        name, data = strategy.name, strategy.serialize()
+        command = insert.INSERT_STRATEGY.format(owner=owner, name=name, data=data)
+        return self.exec_command(command)
+
+    def get_strategies(self, owner: str):
+        """Return all strategies owned by a certain client"""
+        query = select.GET_STRATEGIES.format(owner=owner)
+        r = self.exec_query(query)
+        if len(r) == 0:
+            return None
+        return r[0]
+
+    def get_strategy_data(self, owner: str, name: str):
+        """Return the serialized strategy data"""
+        query = select.GET_STRATEGY_DATA.format(owner=owner, name=name)
+        r = self.exec_query(query)
+        if len(r) == 0:
+            return None
+        return r[0]
+
+    def delete_strategy(self, owner, name):
+        """Delete a strategy given a strategy name and owner"""
+        command = delete.DELETE_STRATEGY.format(owner=owner, name=name)
+        return self.exec_command(command)

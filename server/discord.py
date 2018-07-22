@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import traceback
 # Project Modules
 from database import DatabaseHandler
+from parsing.strategies import Strategy
 from server.server import Server
 from utils.utils import DATE_FORMAT, TIME_FORMAT
 from utils import UNKNOWN_MAP, UNKNOWN_END, UNKNOWN_SCORE
@@ -82,7 +83,7 @@ class DiscordServer(Server):
                 self.logger.error("An error occurred while processing queue:\n{}".format(traceback.format_exc()))
             await asyncio.sleep(1)
 
-    async def process_command(self, command: str, args: tuple):
+    async def process_command(self, tag: str, command: str, args: tuple):
         """Process a command given by a Client"""
         try:
             if command == "match":
@@ -97,6 +98,8 @@ class DiscordServer(Server):
                 self.process_end(*args)
             elif command == "character":
                 self.process_character(*args)
+            elif command == "strategy":
+                self.process_strategy(tag, *args)
             else:
                 self.logger.error("Invalid command received: {}.".format(command))
             self.queue.append((command, args))
@@ -144,3 +147,9 @@ class DiscordServer(Server):
         self.logger.debug("Inserting new character into dtaabase: {}".format(
             server, faction, name, discord))
         self.db.insert_character(name, server, faction, discord)
+
+    def process_strategy(self, tag: str, data: str):
+        """Insert a new strategy into the database for a Discord user"""
+        # Check if it is a valid Strategy
+        strategy = Strategy.deserialize(data)
+        self.db.insert_strategy(tag, strategy)

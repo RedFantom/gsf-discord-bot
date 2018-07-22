@@ -86,3 +86,11 @@ GET_BUILD_NAME = """
 GET_BUILD_PUBLIC = """
     SELECT public FROM Builds WHERE build = {build};
 """
+
+GET_STRATEGY_DATA = """
+    SELECT data FROM Stategies WHERE owner = '{owner}' AND name = '{name}';
+"""
+
+GET_STRATEGIES = """
+    SELECT name FROM Strategies WHERE owner = '{owner}';
+"""
