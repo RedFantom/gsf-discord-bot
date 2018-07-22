@@ -8,8 +8,9 @@ from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
 from data.servers import SERVER_NAMES
-from data.components import component_strings, component_types, component_keys
+from data.components import component_keys
 from parsing.ships import Ship, Component
+from parsing.strategies import Strategy
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
 from utils.utils import TIME_FORMAT
 
@@ -143,6 +144,15 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
         passive1, justify_with_indent(passive1d),
         passive2, justify_with_indent(passive2d))
     return message.format(string)
+
+
+def build_string_from_strategy(tag: str, strategy: Strategy):
+    """Build a human-readable string with the details of a strategy"""
+    template = "```markdown\n{}\n```"
+    details = "# {}: {}\n".format(tag, strategy.name)
+    for phase_name in strategy.phases.values():
+        details += "- {}\n".format(phase_name)
+    return template.format(details)
 
 
 def justify_with_indent(string: str, length: int = 80, indent: int = 4)->str:

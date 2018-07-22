@@ -68,7 +68,7 @@ class Server(object):
                 writer.write(b"version")
                 raise ValueError
             # Process the command
-            result = await self.process_command(command, args)
+            result = await self.process_command(tag, command, args)
             if result is None:  # Command execution failed
                 self.logger.error("Command execution failed: {}, {}".format(command, args))
                 writer.write(b"error")
@@ -148,6 +148,6 @@ class Server(object):
         (tag, auth, version, command), args = elements[:4], tuple(elements[4:])
         return tag, auth, version, command, args
 
-    async def process_command(self, command: str, args: tuple)->(str, None):
+    async def process_command(self, tag: str, command: str, args: tuple)->(str, None):
         """Abstract function to be implemented for performing tasks"""
         raise NotImplementedError

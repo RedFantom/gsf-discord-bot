@@ -9,7 +9,7 @@ import traceback
 # Packages
 from dateparser import parse as parse_date
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message
+from discord import User as DiscordUser, Channel, Message, Embed
 # Project Modules
 from bot.func import *
 from bot.strings import *
@@ -19,7 +19,9 @@ from bot.man import MANUAL
 from data.servers import SERVER_NAMES
 from database import DatabaseHandler
 from parsing import scoreboards as sb
+from parsing.renderer import render_phase
 from parsing.ships import Ship
+from parsing.strategies import Strategy
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
@@ -63,6 +65,7 @@ class DiscordBot(object):
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
         "random": ((0, 1), "random_ship"),
+        "strategy": ((0, 1, 2, 3), "strategy"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
         "build": (range(2, 20), "build_calculator"),
@@ -88,6 +91,7 @@ class DiscordBot(object):
         "link",
         "help",
         "build",
+        "strategy",
     ]
 
     BUILD_COMMANDS = {
@@ -524,9 +528,9 @@ class DiscordBot(object):
         for command in self.NOT_REGISTERED_ALLOWED:
             if command in content:
                 return True
-        if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
-            await self.bot.send_message(channel, INACTIVE)
-            return False
+        # if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
+        #     await self.bot.send_message(channel, INACTIVE)
+        #     return False
         return True
 
     @staticmethod
@@ -689,9 +693,7 @@ class DiscordBot(object):
         pass
 
     async def build_delete(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Delete a specific build owner by the user either by name or ID
-        """
+        """Delete a specific build owner by the user either by name or ID"""
         build, = args
         name = self.db.delete_build(build, generate_tag(user))
         await self.bot.send_message(channel, BUILD_DELETE.format(name))
@@ -710,6 +712,7 @@ class DiscordBot(object):
         raise NotImplementedError("This feature has not yet been implemented.")
 
     async def event(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
+        """Random ship event bot command"""
         command = args[0]
         if command == "participate":
             name = user.name
@@ -746,3 +749,65 @@ class DiscordBot(object):
             for name in self.participants:
                 fo.write("{}\n".format(name))
             fo.write("\n")
+
+    async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
+        """
+        Strategy manager for the Discord bot
+
+        Commands:
+        - list (default): List all the strategies owned by the user
+        - show {strategy}: Show the details of a specific strategy
+        - render {strategy}: Render a strategy's phases to PNG and show
+        - delete {strategy}: Delete a given strategy by name
+        """
+        if len(args) == 0:
+            args = ("list",)
+        command = args[0]
+        if command != "list" and len(args) == 1:
+            await self.bot.send_message(channel, INVALID_ARGS)
+        tag = generate_tag(user)
+
+        if command == "list":
+            strategies = self.db.get_strategies(tag)
+            message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
+                user.mention, "\n".join("- {}".format(a for a in strategies)))
+            await self.bot.send_message(channel, message)
+            return
+
+        _, name = args
+        strategy = self.db.get_strategy_data(tag, name)
+        if strategy is None:
+            await self.bot.send_message(channel, UNKNOWN_STRATEGY)
+            return
+        strategy = Strategy.deserialize(strategy)
+
+        if command == "delete":
+            self.db.delete_strategy(tag, name)
+            await self.bot.send_message(channel, STRATEGY_DELETE.format(name))
+
+        elif command == "show":
+            message = build_string_from_strategy(tag, strategy)
+            await self.bot.send_message(user, message)
+
+        elif command == "render":
+            phase_name = args[2]
+            if phase_name not in strategy.phases:
+                await self.bot.send_message(
+                    channel, INVALID_PHASE_NAME.format(name, phase_name))
+                return
+            image = render_phase(strategy[phase_name])
+            file_name = get_temp_file(".png", user)
+            image.save(file_name)
+            message = await self.bot.send_file(channel, image)
+            link = message.attachments[0]["url"]
+            await self.bot.delete_message(message)
+            embed = Embed()
+            embed.set_footer(text="Generated by GSF Parser Discord Bot. Copyright (C) 2018 RedFantom")
+            embed.description = strategy.description
+            embed.title = "{} - {}".format(strategy.name, phase_name)
+            embed._colour = 3844661
+            embed.set_image(url=link)
+            self.bot.send_message(channel, embed=embed)
+
+        else:
+            await self.bot.send_message(channel, INVALID_ARGS)

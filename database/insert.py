@@ -68,3 +68,7 @@ UPDATE_BUILD_PUBLIC = """
 UPDATE_USER_LAST = """
     UPDATE User SET last = '{date}' WHERE id = '{tag}'
 """
+
+INSERT_STRATEGY = """
+    INSERT OR REPLACE INTO Strategies(owner, name, data) VALUES ('{owner}', '{name}', '{data}');
+"""

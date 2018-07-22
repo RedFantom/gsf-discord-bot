@@ -69,3 +69,13 @@ CREATE_TABLE_BUILDS = """
         public INTEGER
     );
 """
+
+
+CREATE_TABLE_STRATEGIES = """
+    CREATE TABLE IF NOT EXISTS 'Strategies'(
+        owner TEXT REFERENCES User(id),
+        name TEXT,
+        data TEXT,
+        PRIMARY KEY (owner, name)
+    );
+"""
