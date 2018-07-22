@@ -41,7 +41,7 @@ class DatabaseHandler(object):
     def init_db(self):
         """Initialize the database connection and tables"""
         self._db = sql.connect(self._file_name)
-        for table in ["SERVER", "USER", "CHARACTER", "MATCH", "RESULT", "BUILDS"]:
+        for table in ["SERVER", "USER", "CHARACTER", "MATCH", "RESULT", "BUILDS", "STRATEGIES"]:
             command = getattr(create, "CREATE_TABLE_{}".format(table))
             try:
                 self.exec_command(command)
