@@ -83,21 +83,20 @@ class Server(object):
 
     async def read_command(self, reader: asyncio.StreamReader)->(str, None):
         """Read data from the stream"""
-        result = ""
+        result = b""
         try:
             while True:
                 data = await reader.read(self.BUFFER_SIZE)
                 if len(data) == 0:
                     self.logger.debug("Reading complete:", result)
                     break
-                self.logger.debug("Appending: {}".format(data))
-                result += data.decode(encoding="utf-8")
+                result += data
         except Exception:
             self.logger.error("Error occurred while reading from stream:\n{}".format(traceback.format_exc()))
             return None
         if result == "":
             return None
-        return result.replace("+", "")
+        return result.decode().replace("+", "")
 
     async def authenticate_user(self, tag: str, code: str)->bool:
         """
