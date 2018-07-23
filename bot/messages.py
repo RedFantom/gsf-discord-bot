@@ -136,3 +136,5 @@ INACTIVE = "You have not contributed data in the last two weeks. Please " \
 STRATEGY_DELETE = "Strategy '{}' deleted successfully."
 
 INVALID_PHASE_NAME = "Strategy '{}' does not have phase '{}'."
+
+EMBED_PERMISSION_ERROR = "I do not have permission to post embeds in this server :disappointed:."

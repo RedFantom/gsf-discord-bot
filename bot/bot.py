@@ -8,6 +8,7 @@ import asyncio
 import traceback
 # Packages
 from dateparser import parse as parse_date
+import discord
 from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message, Embed, Colour
 # Project Modules
@@ -811,7 +812,10 @@ class DiscordBot(object):
             url = await self.upload_image(image)
             title = "{}: {}".format(strategy.name, phase.name)
             embed = await self.build_embed(title, phase.description, url)
-            await self.bot.send_message(channel, embed=embed)
+            try:
+                await self.bot.send_message(channel, embed=embed)
+            except discord.errors.Forbidden:
+                await self.bot.send_message(channel, EMBED_PERMISSION_ERROR)
 
         else:
             await self.bot.send_message(channel, INVALID_ARGS)
