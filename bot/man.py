@@ -25,6 +25,8 @@ MANUAL = {
         "- matches\n"
         "- results\n"
         "- character\n"
+        "- strategy\n"
+        "- build\n"
         "\n"
         "# Utilities\n"
         "- random\n"
