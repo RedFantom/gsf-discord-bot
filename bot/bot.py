@@ -831,7 +831,7 @@ class DiscordBot(object):
 
     async def upload_image(self, image: Image.Image, title: str)->str:
         """Upload an image to the GSF Parser server for use in embeds"""
-        title = title.replace(" ", "_")
+        title = title.replace(" ", "_").replace(":", "_")
         path = "/var/www/discord.gsfparser.tk/images/{}.png".format(title)
         image.save(path)
         return "http://discord.gsfparser.tk/images/{}.png".format(title)
