@@ -809,7 +809,8 @@ class DiscordBot(object):
                 return
             phase = strategy[phase_name]
             image = render_phase(phase)
-            title = "{}: {}".format(strategy.name, phase.name)
+            name = tag.split("#")[0][1:]
+            title = "{} - {}: {}".format(name, strategy.name, phase.name)
             embed = await self.build_embed(title, phase.description, image)
             try:
                 await self.bot.send_message(channel, embed=embed)
