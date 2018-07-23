@@ -36,7 +36,7 @@ class DiscordBot(object):
     PREFIX = "$"
     DESCRIPTION = "A friendly bot to socially interact with GSF " \
                   "statistics and for research"
-    CHANNELS = ("general", "code", "bots", "bot", "parser",)
+    CHANNELS = ("general", "code", "bots", "bot", "parser", "img_park")
     CHANNELS_ENFORCED = True
 
     OVERVIEW_CHANNELS = ("matches",)
@@ -827,12 +827,12 @@ class DiscordBot(object):
         """Upload an image to the GSF Parser server for use in embeds"""
         ch = None
         for channel in self.validated_channels:
-            if not isinstance(channel, Channel):
-                raise ValueError
-            if channel.name != "img_park":
+            if channel.name != self.IMAGE_CHANNEL:
                 continue
             ch = channel
             break
+        if ch is None:
+            raise ValueError("Could not find a channel to park images")
         path = os.path.join(get_temp_directory(), "temp.png")
         image.save(path)
         message = await self.bot.send_file(ch, path)
