@@ -221,6 +221,8 @@ class DatabaseHandler(object):
             self.exec_command(delete.DELETE_RESULTS_CHARACTER.format(char_id=character))
         self.exec_command(delete.DELETE_CHARACTERS.format(discord_id=tag))
         self.exec_command(delete.DELETE_USER.format(discord_id=tag))
+        for strategy in self.get_strategies(tag):
+            self.delete_strategy(tag, strategy)
 
     def get_user_in_database(self, tag: str) -> bool:
         """Return whether a certain Discord user is in the database"""
@@ -391,7 +393,7 @@ class DatabaseHandler(object):
         r = self.exec_query(query)
         if len(r) == 0:
             return None
-        return r
+        return tuple(a[0] for a in r)
 
     def get_strategy_data(self, owner: str, name: str):
         """Return the serialized strategy data"""

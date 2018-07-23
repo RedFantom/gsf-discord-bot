@@ -266,5 +266,22 @@ MANUAL = {
         "- search: Search for public builds with certain criteria. See\n"
         "    the manual of build_search for more information.\n"
         "- ttk: Calculate the Time-To-Kill of one build against another.\n"
+        "```",
+    "strategy":
+        "```markdown\n"
+        "# Strategy Manager Companion for GSF Parser\n"
+        "Command: strategy\n"
+        "The GSF Parser allows users to upload their strategies to the\n"
+        "Discord Bot to be used with this command. All strategies are\n"
+        "private and can only be manipulated by the owner.\n"
+        "\n"
+        "# Subcommands\n"
+        "- list: List all the strategies uploaded\n"
+        "- show {strategy}: Show the phase names and map type for an\n"
+        "      uploaded strategy owned by you\n"
+        "- render {strategy} {phase}: Render a phase of a strategy to\n"
+        "      an image and upload it in a rich embed with the text\n"
+        "      description of the phase.\n"
+        "- delete {strategy}: Delete a strategy from the database\n"
         "```"
 }
