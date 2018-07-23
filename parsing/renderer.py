@@ -33,13 +33,14 @@ def _open_map(phase: Phase)->Image.Image:
 def _render_item(item: Item, image: Image.Image)->None:
     """Render a single Item onto a Strategy image render"""
     text, font, color = item["name"], item["font"], item["color"]
-    coords = int(item["x"] / 768 * W), int(item["y"] / 768 * H)
+    coords = x, y = int(item["x"] / 768 * W), int(item["y"] / 768 * H)
     logger.debug("Rendering '{}' at +{}+{}".format(text, *coords))
     draw = ImageDraw.Draw(image)
     font_size = font[1]  # Font Family is shamelessly ignored
     font = ImageFont.FreeTypeFont(
-        font="/usr/share/fonts/truetype/freefont/FreeMono.ttf", size=int(font_size) + 1)
-    box = (*coords, *draw.textsize(text, font=font))
+        font="/usr/share/fonts/truetype/freefont/FreeMono.ttf", size=int(font_size) + 2)
+    w, h = draw.textsize(text, font=font)
+    box = (x, y, x + w, y + h)
     draw.rectangle(box, fill=color)
     draw.text(coords, text, font=font, fill="black")
 
