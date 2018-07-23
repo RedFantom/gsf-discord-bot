@@ -38,9 +38,9 @@ def _render_item(item: Item, image: Image.Image)->None:
     draw = ImageDraw.Draw(image)
     font_size = font[1]  # Font Family is shamelessly ignored
     font = ImageFont.FreeTypeFont(
-        font="/usr/share/fonts/truetype/freefont/FreeMono.ttf", size=int(font_size) + 2)
+        font="/usr/share/fonts/truetype/freefont/FreeMono.ttf", size=int(font_size) + 8)
     w, h = draw.textsize(text, font=font)
-    box = (x, y, x + w, y + h)
+    box = (x - 2, y - 2, x + w, y + h)
     draw.rectangle(box, fill=color)
     draw.text(coords, text, font=font, fill="black")
 
