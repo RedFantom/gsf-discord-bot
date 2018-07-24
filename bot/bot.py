@@ -10,7 +10,8 @@ import traceback
 from dateparser import parse as parse_date
 import discord
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message, Embed, Colour
+from discord import User as DiscordUser, Channel, Message, Embed
+from raven import Client as RavenClient
 # Project Modules
 from bot.func import *
 from bot.strings import *
@@ -25,7 +26,7 @@ from parsing.ships import Ship
 from parsing.strategies import Strategy
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag, hash_auth, generate_code
-from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file, get_temp_directory
+from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
 
 class DiscordBot(object):
@@ -37,7 +38,7 @@ class DiscordBot(object):
     PREFIX = "$"
     DESCRIPTION = "A friendly bot to socially interact with GSF " \
                   "statistics and for research"
-    CHANNELS = ("general", "code", "bots", "bot", "parser", "img_park")
+    CHANNELS = ("general", "code", "bots", "bot", "parser", "exceptions")
     CHANNELS_ENFORCED = True
 
     OVERVIEW_CHANNELS = ("matches",)
@@ -105,9 +106,9 @@ class DiscordBot(object):
         "lookup": ((1,), "build_lookup"),
     }
 
-    IMAGE_CHANNEL = "img_park"
-
     NOT_REGISTERED_ALLOWED = ["register", "event"]
+
+    EXCEPTION_CHANNEL = "exceptions"
 
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
@@ -128,6 +129,7 @@ class DiscordBot(object):
         self.loop.create_task(self.matches_monitor())
         self.ship_cache = dict()
         self.loop.create_task(self.cleanup_cache())
+        self.raven = self.open_raven_client()
 
     async def cleanup_cache(self):
         """
@@ -189,7 +191,8 @@ class DiscordBot(object):
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
             await func(*arguments)
         except Exception:
-            await self.bot.send_message(message.channel, "That hurt! ```python\n{}```".format(traceback.format_exc()))
+            await self.bot.send_message(
+                message.channel, "Sorry, I encountered an error. It has been reported.")
 
     def run(self, token: str):
         """Run the Bot loop"""
@@ -278,6 +281,9 @@ class DiscordBot(object):
         if len(args) == 0:
             args = ("commands",)
         command, = args
+        if command not in MANUAL:
+            await self.bot.send_message(channel, "That is not a command in my manual.")
+            return
         message = MANUAL[command]
         if not channel.is_private:
             message += "Hint: You can use PM to use this command."
@@ -835,3 +841,28 @@ class DiscordBot(object):
         path = "/var/www/discord.gsfparser.tk/images/{}.png".format(title)
         image.save(path)
         return "http://discord.gsfparser.tk/images/{}.png".format(title)
+
+    def exception_handler(self, loop: asyncio.AbstractEventLoop, context: dict):
+        """Handle all exceptions raised in the asyncio tasks"""
+        self.raven.captureException()
+        exc = context["exception"] if "exception" in context else Exception
+        description = "**Message**: {}\n".format(context["message"]) + \
+                      "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
+        embed = Embed(title=repr(type(exc)), colour=0xFF0000, description=description)
+        embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
+        channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
+        loop.create_task(self.bot.send_message(channel, embed=embed))
+
+    def get_channel_by_name(self, name: str)->(Channel, None):
+        """Search for a channel by name in available channels"""
+        for channel in self.validated_channels:
+            if channel.name == name:
+                return channel
+        return None
+
+    @staticmethod
+    def open_raven_client():
+        with open("sentry") as fi:
+            link = fi.read().strip()
+        client = RavenClient(link)
+        return client

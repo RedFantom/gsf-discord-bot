@@ -81,6 +81,7 @@ class DiscordServer(Server):
                 self.queue.clear()
             except Exception:
                 self.logger.error("An error occurred while processing queue:\n{}".format(traceback.format_exc()))
+                raise
             await asyncio.sleep(1)
 
     async def process_command(self, tag: str, command: str, args: tuple):

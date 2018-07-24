@@ -39,6 +39,7 @@ if __name__ == '__main__':
     bot = DiscordBot(database, server, loop)
     loop.create_task(server.start())
     loop.create_task(run_bot(bot, token))
+    loop.set_exception_handler(bot.exception_handler)
     try:
         loop.run_forever()
     except KeyboardInterrupt:
