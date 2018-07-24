@@ -193,6 +193,7 @@ class DiscordBot(object):
         except Exception:
             await self.bot.send_message(
                 message.channel, "Sorry, I encountered an error. It has been reported.")
+            self.raven.captureException()
 
     def run(self, token: str):
         """Run the Bot loop"""
@@ -246,8 +247,7 @@ class DiscordBot(object):
                         self.overview_messages[channel] = message
                 self.overview_messages[channel] = await self.bot.send_message(channel, message)
         except Exception:
-            self.logger.error("An error occurred while building the overview message:\n{}".
-                              format(traceback.format_exc()))
+            self.raven.captureException()
         await asyncio.sleep(30)
         self.loop.create_task(self.matches_monitor())
 
@@ -631,8 +631,8 @@ class DiscordBot(object):
                 try:
                     await self.__getattribute__(func)(channel, user, args)
                 except Exception as e:
-                    self.logger.debug(traceback.format_exc())
-                    await self.bot.send_message(channel, e)
+                    await self.bot.send_message(channel, "An error occurred while processing your command.")
+                    self.raven.captureException()
                 return
         await self.bot.send_message(channel, INVALID_ARGS)
 
@@ -654,7 +654,8 @@ class DiscordBot(object):
         data = ship.serialize()
         number = self.db.insert_build(owner, name, data, public)
         if number is None:
-            raise ValueError("You already have a build with that name")
+            await self.bot.send_message(channel, "You already have a build with that name.")
+            return
         self.ship_cache[number] = (datetime.now(), ship)
         await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
 
@@ -822,7 +823,6 @@ class DiscordBot(object):
                 await self.bot.send_message(channel, embed=embed)
             except discord.errors.Forbidden:
                 await self.bot.send_message(channel, EMBED_PERMISSION_ERROR)
-
         else:
             await self.bot.send_message(channel, INVALID_ARGS)
 
@@ -845,7 +845,7 @@ class DiscordBot(object):
     def exception_handler(self, loop: asyncio.AbstractEventLoop, context: dict):
         """Handle all exceptions raised in the asyncio tasks"""
         self.raven.captureException()
-        exc = context["exception"] if "exception" in context else Exception
+        exc = context["exception"] if "exceptexception" in context else Exception
         description = "**Message**: {}\n".format(context["message"]) + \
                       "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
         embed = Embed(title=repr(type(exc)), colour=0xFF0000, description=description)
