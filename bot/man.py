@@ -38,65 +38,50 @@ MANUAL = {
         "Display the amount of matches registered for each server on "
         "any given day in a table format."
     ),
-    "week":
-        "```markdown\n"
-        "Command: week\n"
-        "Arguments: None\n"
-        "\n"
-        "Display the amount of matches registered for each server for the\n"
-        "last seven days in a table format.\n"
-        "```",
-    "period":
-        "```markdown\n"
-        "Command: period\n"
-        "Arguments:\n"
-        "- start date, mandatory\n"
-        "- end date, optional, assumes today if not given\n"
-        "\n"
-        "Display the amount of matches registered for each server in any \n"
-        "given period in a table format.\n"
-        "```",
-    "servers":
-        "```markdown\n"
-        "Command: servers\n"
-        "Arguments: None\n"
-        "\n"
-        "Display the servers in the Discord Bot database and their current\n"
-        "status.\n"
-        "```",
-    "matches":
-        "```markdown\n"
-        "Command: servers\n"
-        "Arguments:\n"
-        "- server code, mandatory\n"
-        "- date, optional, assumes today if not given\n"
-        "\n"
-        "Display the matches registered on each server in a table format with\n"
-        "additional information, including the start and end time, match type\n"
-        "and map type if available and end score.\n"
-        "```",
-    "results":
-        "```markdown\n"
-        "Command: results\n"
-        "Arguments:\n"
-        "- server code, mandatory\n"
-        "- date, mandatory\n"
-        "- start, mandatory\n"
-        "\n"
-        "Display the registered results of a specific match in a table format,\n"
-        "including damage dealt, damage taken and other statistics.\n"
-        "```",
-    "character":
-        "```markdown\n"
-        "Command: character"
-        "Arguments:\n"
-        "- server code, mandatory\n"
-        "- player name, mandatory\n"
-        "\n"
-        "Display the Discord tag of the owner of a certain character on a\n"
-        "given server. This is only possible if the owner has chosen to share\n"
-        "this information.\n"
-        "```",
+    "week": (
+        "week",
+        [],
+        "Display the amount of matches registered for each server for the "
+        "last seven days in a table format."
+    ),
+    "period": (
+        "period",
+        [("start", "Start date of the period", False, None),
+         ("end", "End date of the period", True, "today")],
+        "Display the amount of matches registered for each server in a "
+        "given period in a table format."
+    ),
+    "servers": (
+        "servers",
+        [],
+        "Display the known SWTOR servers and their current status."
+    ),
+    "matches": (
+        "matches",
+        [("server", "Three-letter server code", False, None),
+         ("date", "Date of the day to display matches for", True, "today")],
+        "Display the matches registered on a given server in a table "
+        "format with additional information, including the start and "
+        "end time, match type, map type and end score if available."
+    ),
+    "results": (
+        "results",
+        [("server", "Three-letter server code"), False, None,
+         ("date", "Date of the match", False, None),
+         ("start", "Start time of the match", False, None)],
+        "Display the registered results of a specific match in a table "
+        "format, including damage dealt, damage taken and other "
+        "statistics. Only displays results that have been shared through "
+        "the GSF Parser."
+    ),
+    "character": (
+        "character",
+        [("server", "Three-letter server code", False, None),
+         ("name", "Name of the character to lookup", False, None)],
+        "Display the Discord tag of the owner of a certain character on "
+        "a given server. This is only possible if the owner has chosen "
+        "to share this information."
+    ),
     # Bot Information
     "author":
         "```markdown\n"
