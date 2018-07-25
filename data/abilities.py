@@ -58,7 +58,7 @@ systems = {
     "telemetry": "Targeting Telemetry",
     "bo": "Blaster Overcharge",
     "blaster": "Blaster Overcharge",
-    "booster": "Booster Overcharge",
+    "booster": "Booster Recharge",
     "cc": "Combat Command",
     "combat": "Combat Command",
     "command": "Combat Command",
@@ -143,4 +143,20 @@ upgrades = {
     "major": [0, 1, 2, (3, 0), (3, 1), (4, 0), (4, 1)],
     "middle": [0, 1, (2, 0), (2, 1)],
     "minor": [0, 1, 2]
+}
+
+
+COMPONENTS = {
+    "PrimaryWeapon": primary,
+    "PrimaryWeapon2": primary,
+    "SecondaryWeapon": secondary,
+    "SecondaryWeapon2": secondary,
+    "ShieldProjector": shields,
+    "Systems": systems,
+    "Engine": engine,
+    "Thruster": thrusters,
+    "Reactor": reactor,
+    "Capacitor": capacitor,
+    "Magazine": magazine,
+    "Sensor": sensors,
 }

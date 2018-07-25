@@ -94,49 +94,48 @@ class Ship(object):
         """
         if ships_data is None:
             ships_data = load_ship_data()
-        element = element.strip(";")
-        if element.startswith("crew"):  # Crew member!
-            try:
-                _, category, name = element.split("/")
-            except ValueError:
-                raise ValueError("Invalid crew member element string: `{}`".format(element))
-            # Category and name matching
-            match = False
-            for role, members in crew[self.faction].items():
-                if category.lower() in role.lower():
-                    for member in members:
-                        if name.lower() in member.lower():
-                            category = role
-                            name = member
-                            match = True
-                            break
-            if match is False:
-                raise ValueError("Invalid crew member name or category identifier")
-            self[category] = (self.faction, category, name)
-            return "Crew member for {} now set to {}.".format(category, name)
-        # shorthandcategory/fullname/upgrades;
-        elems = element.split("/")
-        if len(elems) == 2:
-            category, name = elems
-            upgrades = ""
-        elif len(elems) == 3:
-            category, name, upgrades = elems
+        path = element.strip(";")
+        if element.startswith("crew"):
+            return self.update_crew_member(path)
         else:
-            raise ValueError("Invalid component element string: `{}`".format(element))
-        category = self.identify_component_category(category)
-        name = self.identify_component_shorthand(name, category)
-        category = component_types[category]
-        if category not in ships_data[self.ship_name]:
-            raise ValueError("Component category '{}' not available for ship '{}'".format(category, self.name))
-        category_list = ships_data[self.ship_name][category]
+            return self.update_component(path, ships_data)
+
+    def update_crew_member(self, path: str):
+        """Update the crew member of a specific role"""
+        elems = path.split("/")
+        if len(elems) != 2:
+            return "Crew member path should be two elements: `role/name`."
+        member = lookup_crew(elems[1])
+        category, name = member["Category"], member["Name"]
+        if member is None:
+            return "Invalid crew member name or category identifier"
+        self[category] = (self.faction, category, name)
+        return "Crew member for {} now set to {}.".format(category, name)
+
+    def update_component(self, path: str, data: dict):
+        """Update the component in a certain category on this ship"""
+        elems = tuple(path.split("/"))
+        if len(elems) not in (2, 3):
+            return "Invalid number of elements in component path: `{}`".format(path)
+        category, name, upgrades = elems if len(elems) == 3 else elems + ("",)
+        fqn_category = identify_category(category)
+        if fqn_category is None:
+            return "Invalid component category identifier: `{}`.".format(category)
+        category = component_types_reverse[fqn_category]
+        comp_name = identify_component(fqn_category, name)
+        if name is None:
+            return "Invalid component name identifier: `{}`.".format(name)
+        if fqn_category not in data[self.ship_name]:
+            return "Component category '{}' not available for ship '{}'".format(category, self.name)
+        category_list = data[self.ship_name][category]
         i = -1
         for j, component in enumerate(category_list):
-            if component["Name"] == name:
+            if component["Name"] == comp_name:
                 i = j
                 break
         if i == -1:
-            raise ValueError("Invalid component '{}' for ship '{}'".format(name, self.name))
-        component = Component(ships_data[self.ship_name][category][i], i, category)
+            return "Invalid component '{}' for ship '{}'".format(name, self.name)
+        component = Component(data[self.ship_name][category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
         return "{} now set to {} with upgrades {}.".format(category, component.name, upgrades)
@@ -185,6 +184,8 @@ class Ship(object):
             item = item.lower()
         elif item in component_short_hand:
             return component_short_hand[item]
+        if item not in self.components:
+            return None
         return item
 
     def update(self, dictionary):
@@ -228,7 +229,6 @@ class Ship(object):
 
         This is a rather complicated bit.
         """
-        logger.debug("Deserializing: {}".format(string))
         ships_data = load_ship_data()
         elements = string.split(";")
         # First element is FQSN
@@ -273,36 +273,6 @@ class Ship(object):
             dictionary[(level, side)] = True
         return dictionary
 
-    @staticmethod
-    def identify_component_shorthand(shorthand: str, category: str):
-        """
-        Identify the component by its shorthand and return the full name
-        """
-        category = category.replace("2", str())
-        shorthand = shorthand.lower()
-        category = getattr(abilities, category)
-        if shorthand in category:
-            return category[shorthand]
-        for key, value in category.items():
-            if key.startswith(shorthand):
-                return value
-            if value.lower().startswith(shorthand):
-                return value
-        for _, value in category.items():
-            key = str().join(word[0].lower() for word in value.split(" "))
-            if key == shorthand:
-                return value
-        raise ValueError("I could not find a component with that identfier for this ship: {}".format(shorthand))
-
-    def identify_component_category(self, category: str):
-        if category in self.components:
-            return category
-        if category in shorthand_to_ship_key:
-            return shorthand_to_ship_key[category]
-        for key, to_match in shorthand_to_ship_key.items():
-            if category in to_match:
-                return shorthand_to_ship_key[key]
-        raise ValueError("Invalid component category identifier: {}".format(category))
 
     @staticmethod
     def from_base(base: str):
@@ -386,42 +356,69 @@ class Component(object):
             yield key, value
 
 
-if __name__ == '__main__':
-    import _pickle as pickle
-    from pprint import pprint
+def lookup_crew(name: str)->(None, dict):
+    """
+    Lookup a crew member by name, or part of the name
 
-    ships_data = load_ship_data()
-    results = dict()
-    for ship, ship_dict in ships_data.items():
-        for category, category_list in ship_dict.items():
-            if not isinstance(category_list, list) or not category in component_types.values():
-                continue
-            if category not in results:
-                results[category] = dict()
-            for component_dict in category_list:
-                name = component_dict["Name"]
-                if name in results[category]:
-                    continue
-                results[category][name] = component_dict
-    with open("components.db", "wb") as fo:
-        pickle.dump(results, fo)
-    pprint(results)
+    Returns the data dictionary of that crew member. Uses assets/crew.db
+    so it does not require a faction or category to be specified.
+    """
+    with open(path.join(get_assets_directory(), "crew.db"), "rb") as fi:
+        crew = pickle.load(fi)
+    name = name.lower()
+    for member in crew.keys():
+        # Now perform name matching
+        if name in member.lower():
+            return crew[member]
+    return None
 
-    with open(path.join(get_assets_directory(), "companions.db"), "rb") as fi:
-        companions = pickle.load(fi)
 
-    results = dict()
-    for faction_list in companions.values():
-        for category_dict in faction_list:
-            category = list(category_dict.keys())[0]
-            if category == "CoPilot":
-                continue
-            for companion_list in category_dict.values():
-                for companion in companion_list:
-                    name = companion["Name"]
-                    companion["Category"] = category
-                    results[name] = companion
-    with open("crew.db", "wb") as fo:
-        pickle.dump(results, fo)
+def lookup_component(category, name)->(dict, None):
+    """
+    Lookup a component by category and name identifiers
 
-    pprint(results)
+    Returns the data dictionary of the specified component or None if
+    it cannot be found.
+    """
+    category = identify_category(category)
+    if category is None:
+        return None
+    name = identify_component(category, name)
+    if name is None:
+        return None
+    with open(path.join(get_assets_directory(), "components.db"), "rb") as fi:
+        components = pickle.load(fi)
+    return components[category][name]
+
+
+def identify_category(category: str)->(str, None):
+    """Return a FQN category for a category identifier"""
+    if category in component_short_hand:
+        return component_short_hand[category]
+    if category in ship_key_to_shorthand.keys():
+        return component_short_hand[ship_key_to_shorthand[category]]
+    for full_name in component_short_hand.values():
+        if full_name.lower().startswith(category.lower()):
+            return full_name
+    return None
+
+
+def identify_component(category: str, component: str)->(str, None):
+    """Identify a component by its identifier"""
+    if category in component_types_reverse:
+        category = component_types_reverse[category]
+    category = category.replace("2", str())
+    shorthand = component.lower()
+    category = getattr(abilities, category)
+    if shorthand in category:
+        return category[shorthand]
+    for key, value in category.items():
+        if key.startswith(shorthand):
+            return value
+        if value.lower().startswith(shorthand):
+            return value
+    for _, value in category.items():
+        key = str().join(word[0].lower() for word in value.split(" "))
+        if key == shorthand:
+            return value
+    return None
