@@ -5,6 +5,9 @@ Copyright (C) 2018 RedFantom
 """
 # Packages
 from discord import Embed
+# Project Modules
+from data.components import component_keys
+from parsing.ships import Ship, Component
 
 
 component_colors = {
@@ -59,3 +62,53 @@ def embed_from_component(component: dict) -> Embed:
             title = "__{}__: {}".format(header, talent["Name"])
             embed.add_field(name=title, value=talent["Description"], inline=False)
     return embed
+
+
+def embed_from_manual(entry: tuple) -> Embed:
+    """Build a manual embed"""
+    command, arguments, description = entry
+    title = "Command Manual: `{}`".format(command)
+    embed = Embed(title=title, description=description, colour=0xFFFFFF)
+    for name, descr, optional, default in arguments:
+        field = "__Argument__: `{}`".format(name)
+        if optional is True:
+            field = "{} [`{}`]".format(field, default)
+        embed.add_field(name=field, value=descr)
+    return embed
+
+
+def embed_from_ship(ship: Ship, name)->Embed:
+    """Build an embed from a Ship with component and crew details"""
+    title = "__{}__ ({})".format(name, ship.name)
+    comps_field = str()
+    for key in component_keys:
+        component = ship.components[key]
+        if component is None or not isinstance(component, Component):
+            continue
+        string = "{}: *{}* ({})\n".format(
+            key, component.name, ship.build_upgrade_string(component.upgrades, component.type))
+        comps_field += string
+    crew_field = str()
+    for role, member in ship.crew.items():
+        if member is None:
+            member = (None, None, "Unknown")
+        _, _, member = member
+        crew_field += "{}: *{}*".format(role, member)
+    embed = Embed(title=title, colour=0x646464)
+    embed.add_field(name="Components", value=comps_field)
+    embed.add_field(name="Crew", value=crew_field)
+    return embed
+
+
+def embed_from_builds(builds: list, owner: str, private: bool) -> Embed:
+    """Build a list of builds in embed form"""
+    title = "Builds created by {}".format(owner.split("#")[0][1:])
+    strings = list()
+    for build, name, public, data in builds:
+        if private is False and bool(public) is False:
+            continue
+        ship = Ship.deserialize(data)
+        strings.append("__{}__: {} ({})".format(build, name, ship.name))
+    description = "\n".join(strings)
+    return Embed(title=title, description=description, colour=0x646464)
+

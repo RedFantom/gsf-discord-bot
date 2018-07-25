@@ -8,9 +8,8 @@ from datetime import datetime
 # Packages
 from discord import Channel, User as DiscordUser
 # Project Modules
-from bot.embeds import embed_from_crew_dict, embed_from_component
+from bot.embeds import *
 from bot.messages import *
-from bot.strings import build_string_from_ship
 from parsing.ships import Ship, lookup_crew, lookup_component
 from utils import generate_tag
 
@@ -22,7 +21,10 @@ BUILD_COMMANDS = {
     "search": tuple(range(1, 15)),
     "delete": (1,),
     "lookup": (1,),
+    "list": (0,),
 }
+
+_list = list
 
 
 async def create(self, channel: Channel, user: DiscordUser, args: tuple):
@@ -91,8 +93,8 @@ async def show(self, channel: Channel, user: DiscordUser, args: tuple):
         ship = Ship.deserialize(data)
     self.ship_cache[build] = (datetime.now(), ship)
     name = self.db.get_build_name_id(build)
-    message = await build_string_from_ship(ship, name)
-    await self.bot.send_message(channel, message)
+    embed = embed_from_ship(ship, name)
+    await self.bot.send_message(channel, embed=embed)
 
 
 async def search(self, channel: Channel, user: DiscordUser, args: tuple):
@@ -128,6 +130,17 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
             return
         embed = embed_from_component(component)
         await self.bot.send_message(channel, embed=embed)
+
+
+async def list(self, channel: Channel, user: DiscordUser, args: tuple):
+    """List all the builds owned by a certain user"""
+    tag = generate_tag(user)
+    builds = _list(self.db.get_builds_owner(tag))
+    if len(builds) == 0:
+        await self.bot.send_message(channel, "You have not created any builds.")
+        return
+    embed = embed_from_builds(builds, tag, channel.is_private)
+    await self.bot.send_message(channel, embed=embed)
 
 
 async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):

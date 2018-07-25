@@ -6,6 +6,7 @@ Copyright (C) 2018 RedFantom
 # Packages
 from discord import Channel, User as DiscordUser
 # Project Modules
+from bot.embeds import embed_from_manual
 from .man import MANUAL
 from .static import *
 from .messages import *
@@ -21,6 +22,10 @@ async def manual(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, "That is not a command in my manual.")
         return
     message = MANUAL[command]
+    if isinstance(message, tuple):
+        embed = embed_from_manual(message)
+        await self.bot.send_message(channel, embed=embed)
+        return
     if not channel.is_private:
         message += "Hint: You can use PM to use this command."
     await self.bot.send_message(channel, message)
