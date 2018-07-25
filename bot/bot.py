@@ -17,8 +17,7 @@ from raven import Client as RavenClient
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
-from bot.static import *
-from bot.man import MANUAL
+from bot import print
 from data.servers import SERVER_NAMES
 from data.maps import map_names
 from database import DatabaseHandler
@@ -49,14 +48,14 @@ class DiscordBot(object):
 
     COMMANDS = {
         # Help commands
-        "man": ((0, 1), "print_manual"),
-        "servers": ((0,), "print_servers"),
-        "author": ((0,), "print_author"),
-        "privacy": ((0,), "print_privacy"),
-        "purpose": ((0,), "print_purpose"),
-        "setup": ((0,), "print_setup"),
-        "help": ((0,), "print_help"),
-        "link": ((0,), "print_link"),
+        "man": ((0, 1), "print.manual"),
+        "servers": ((0,), "print.servers"),
+        "author": ((0,), "print.author"),
+        "privacy": ((0,), "print.privacy"),
+        "purpose": ((0,), "print.purpose"),
+        "setup": ((0,), "print.setup"),
+        "help": ((0,), "print.help"),
+        "link": ((0,), "print.link"),
         # User Commands
         "register": ((0,), "register_user"),
         "unregister": ((0,), "unregister_user"),
@@ -188,9 +187,13 @@ class DiscordBot(object):
                 await self.invalid_command(channel, author)
                 return
             command = DiscordBot.COMMANDS[command]
-            func = self.__getattribute__(command[1])
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
+            if command[1] in globals():
+                func = globals()[command[1]]
+                arguments = (self, *arguments)
+            else:
+                func = self.__getattribute__(command[1])
             await func(*arguments)
         except Exception as e:
             await self.bot.send_message(
@@ -279,53 +282,6 @@ class DiscordBot(object):
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
         await self.bot.send_message(channel, INVALID_COMMAND)
-
-    async def print_manual(self, channel: Channel, author: DiscordUser, args: tuple):
-        """Send the DiscordBot manual to a channel"""
-        if len(args) == 0:
-            args = ("commands",)
-        command, = args
-        if command not in MANUAL:
-            await self.bot.send_message(channel, "That is not a command in my manual.")
-            return
-        message = MANUAL[command]
-        if not channel.is_private:
-            message += "Hint: You can use PM to use this command."
-        await self.bot.send_message(channel, message)
-
-    async def print_help(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Print the HELP message"""
-        await self.bot.send_message(channel, HELP)
-
-    async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send a list of servers to the channel with server statuses"""
-        servers = await get_server_status()
-        if servers is None:
-            await self.bot.send_message(channel, "I could not contact the SWTOR website for information.")
-            return
-        self.logger.debug("Server statuses: {}".format(servers))
-        await self.bot.send_message(channel, SERVER_STATUS.format(**servers))
-
-    async def print_author(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Print the author information message as an embed"""
-        embed = await self.build_embed(*AUTHOR_EMBED, fields=[CONTENT_LICENSE, CODE_LICENSE], colour=0x0000FF)
-        await self.bot.send_message(channel, embed=embed)
-
-    async def print_privacy(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, PRIVACY)
-
-    async def print_purpose(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, PURPOSE)
-
-    async def print_setup(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, SETUP)
-
-    async def print_link(self, channel: Channel, user: DiscordUser, args: tuple):
-        links = await get_download_link()
-        if links is None:
-            await self.bot.send_message(channel, GITHUB_RATE_LIMIT)
-            return
-        await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
 
     async def register_user(self, channel: Channel, user: DiscordUser, args: tuple):
         """Register a new user into the database"""
