@@ -32,15 +32,12 @@ MANUAL = {
         "- random\n"
         "```",
     # Data Retrieval
-    "day":
-        "```markdown\n"
-        "Command: day\n"
-        "Arguments:\n"
-        "- date, optional, assumes today if not given\n"
-        "\n"
-        "Display the amount of matches registered for each server on any\n"
-        "given day in a table format.\n"
-        "```",
+    "day": (
+        "day",
+        ("date", "Optional, assumes today if not given"),
+        "Display the amount of matches registered for each server on "
+        "any given day in a table format."
+    ),
     "week":
         "```markdown\n"
         "Command: week\n"

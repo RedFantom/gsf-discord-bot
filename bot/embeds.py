@@ -59,3 +59,14 @@ def embed_from_component(component: dict) -> Embed:
             title = "__{}__: {}".format(header, talent["Name"])
             embed.add_field(name=title, value=talent["Description"], inline=False)
     return embed
+
+
+def embed_from_manual(entry: tuple) -> Embed:
+    """Build a manual embed"""
+    command, arguments, description = entry
+    title = "Command Manual: {}".format(command)
+    embed = Embed(title=title, description=description, colour=0xFFFFFF)
+    for (name, descr) in arguments:
+        field = "__Argument__: {}".format(name)
+        embed.add_field(name=field, value=descr)
+    return embed
