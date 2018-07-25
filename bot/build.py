@@ -8,9 +8,10 @@ from datetime import datetime
 # Packages
 from discord import Channel, User as DiscordUser
 # Project Modules
+from bot.embeds import embed_from_crew_dict
 from bot.func import lookup_crew
 from bot.messages import *
-from bot.strings import build_string_from_ship, build_string_from_crew_dict
+from bot.strings import build_string_from_ship
 from parsing.ships import Ship
 from utils import generate_tag
 
@@ -114,9 +115,8 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
             raise ValueError("Invalid crew member path: `{}`. Use `crew/part_of_name`".format(path))
         name = elems[1]
         crew_dict = await lookup_crew(name)
-        message = await build_string_from_crew_dict(crew_dict)
-        await self.bot.send_message(channel, message)
-        return
+        embed = embed_from_crew_dict(crew_dict)
+        await self.bot.send_message(channel, embed=embed)
     raise NotImplementedError("This feature has not yet been implemented.")
 
 
