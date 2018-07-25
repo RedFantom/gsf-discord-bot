@@ -18,7 +18,8 @@ def embed_from_crew_dict(member: dict) -> Embed:
         fields.append((member["{}Name".format(key)], member["{}Description".format(key)]))
     image = "http://discord.gsfparser.tk/icons/{}.jpg".format(member["Icon"].lower())
     colour = 0xb90505 if member["Faction"] == "Imperial" else 0x085195
-    embed = Embed(title=title, description=description, colour=colour, image=image)
+    embed = Embed(title=title, description=description, colour=colour)
+    embed.set_image(url=image)
     for header, (name, value) in zip(("Ability", "Passive", "Passive"), fields):
         embed.add_field(name="{}: {}".format(header, name), value=value, inline=False)
     return embed
