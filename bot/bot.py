@@ -17,8 +17,6 @@ from raven import Client as RavenClient
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
-from bot.static import *
-from bot.man import MANUAL
 from data.servers import SERVER_NAMES
 from data.maps import map_names
 from database import DatabaseHandler
@@ -27,7 +25,7 @@ from parsing.renderer import render_phase
 from parsing.ships import Ship
 from parsing.strategies import Strategy
 from server.discord import DiscordServer
-from utils import setup_logger, generate_tag, hash_auth, generate_code
+from utils import setup_logger, generate_tag
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
 
 
@@ -49,31 +47,30 @@ class DiscordBot(object):
 
     COMMANDS = {
         # Help commands
-        "man": ((0, 1), "print_manual"),
-        "servers": ((0,), "print_servers"),
-        "author": ((0,), "print_author"),
-        "privacy": ((0,), "print_privacy"),
-        "purpose": ((0,), "print_purpose"),
-        "setup": ((0,), "print_setup"),
-        "help": ((0,), "print_help"),
-        "link": ((0,), "print_link"),
+        "man": ((0, 1), "print.manual"),
+        "servers": ((0,), "print.servers"),
+        "author": ((0,), "print.author"),
+        "privacy": ((0,), "print.privacy"),
+        "purpose": ((0,), "print.purpose"),
+        "setup": ((0,), "print.setup"),
+        "help": ((0,), "print.help"),
+        "link": ((0,), "print.link"),
         # User Commands
-        "register": ((0,), "register_user"),
-        "unregister": ((0,), "unregister_user"),
-        "forgot_code": ((0,), "forgot_code"),
+        "register": ((0,), "user.register"),
+        "unregister": ((0,), "user.unregister"),
+        "forgot_code": ((0,), "user.forgot_code"),
         # Data Retrieval
-        "period": ((1, 2), "period_overview"),
-        "day": ((0, 1), "day_overview"),
-        "week": ((0,), "week_overview"),
-        "matches": ((1, 2), "matches_overview"),
+        "period": ((1, 2), "overview.period"),
+        "day": ((0, 1), "overview.day"),
+        "week": ((0,), "overview.week"),
+        "matches": ((1, 2), "overview.matches"),
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
         "random": ((0, 1), "random_ship"),
         "strategy": ((0, 1, 2, 3), "strategy"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
-        "build": (range(2, 20), "build_calculator"),
-
+        "build": (range(2, 20), "build.calculator"),
         "event": ((1, 2), "event", True),
     }
 
@@ -97,16 +94,6 @@ class DiscordBot(object):
         "build",
         "strategy",
     ]
-
-    BUILD_COMMANDS = {
-        "create": ((2, 3), "build_create"),
-        "select": ((2,), "build_select"),
-        "show": ((1,), "build_show"),
-        "stats": ((1,), "build_stats"),
-        "search": (range(1, 15), "build_search"),
-        "delete": ((1,), "build_delete"),
-        "lookup": ((1,), "build_lookup"),
-    }
 
     NOT_REGISTERED_ALLOWED = ["register", "event"]
 
@@ -188,9 +175,15 @@ class DiscordBot(object):
                 await self.invalid_command(channel, author)
                 return
             command = DiscordBot.COMMANDS[command]
-            func = self.__getattribute__(command[1])
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
+            func_name = command[1]
+            if "." in func_name:
+                exec("from bot.{} import {}".format(*func_name.split(".")))
+                func = locals()[func_name.split(".")[1]]
+                arguments = (self, *arguments)
+            else:
+                func = self.__getattribute__(func_name)
             await func(*arguments)
         except Exception as e:
             await self.bot.send_message(
@@ -280,116 +273,6 @@ class DiscordBot(object):
         """Send the INVALID_COMMAND message to a user"""
         await self.bot.send_message(channel, INVALID_COMMAND)
 
-    async def print_manual(self, channel: Channel, author: DiscordUser, args: tuple):
-        """Send the DiscordBot manual to a channel"""
-        if len(args) == 0:
-            args = ("commands",)
-        command, = args
-        if command not in MANUAL:
-            await self.bot.send_message(channel, "That is not a command in my manual.")
-            return
-        message = MANUAL[command]
-        if not channel.is_private:
-            message += "Hint: You can use PM to use this command."
-        await self.bot.send_message(channel, message)
-
-    async def print_help(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Print the HELP message"""
-        await self.bot.send_message(channel, HELP)
-
-    async def print_servers(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send a list of servers to the channel with server statuses"""
-        servers = await get_server_status()
-        if servers is None:
-            await self.bot.send_message(channel, "I could not contact the SWTOR website for information.")
-            return
-        self.logger.debug("Server statuses: {}".format(servers))
-        await self.bot.send_message(channel, SERVER_STATUS.format(**servers))
-
-    async def print_author(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Print the author information message as an embed"""
-        embed = await self.build_embed(*AUTHOR_EMBED, fields=[CONTENT_LICENSE, CODE_LICENSE], colour=0x0000FF)
-        await self.bot.send_message(channel, embed=embed)
-
-    async def print_privacy(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, PRIVACY)
-
-    async def print_purpose(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, PURPOSE)
-
-    async def print_setup(self, channel: Channel, user: DiscordUser, args: tuple):
-        await self.bot.send_message(channel, SETUP)
-
-    async def print_link(self, channel: Channel, user: DiscordUser, args: tuple):
-        links = await get_download_link()
-        if links is None:
-            await self.bot.send_message(channel, GITHUB_RATE_LIMIT)
-            return
-        await self.bot.send_message(channel, GITHUB_DOWNLOAD_LINK.format(*links))
-
-    async def register_user(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Register a new user into the database"""
-        tag = generate_tag(user)
-        self.logger.debug("Initializing registration of a user: {}".format(tag))
-        if self.db.get_auth_code(tag) is not None:
-            await self.bot.send_message(channel, ALREADY_REGISTERED)
-            self.logger.debug("{} is already registered.".format(tag))
-            return
-        code = generate_code()
-        message = UPON_REGISTER.format(code)
-        self.logger.debug("Sending registration message to {}.".format(tag))
-        await self.bot.send_message(user, message)
-        self.logger.info("Registering new user {}.".format(tag))
-        self.db.insert_user(generate_tag(user), hash_auth(code))
-        self.logger.debug("Sending public registration message to {}.".format(channel.name))
-        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC)
-
-    async def unregister_user(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Remove a user fully from the database"""
-        tag = generate_tag(user)
-        self.db.delete_user(tag)
-        self.logger.info("Unregistered {}.".format(tag))
-        await self.bot.send_message(channel, UNREGISTER_PUBLIC)
-        await self.bot.send_message(user, UNREGISTER)
-
-    async def forgot_code(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Generate a new access code for the user"""
-        tag = generate_tag(user)
-        self.logger.info("Generating new access code for {}.".format(tag))
-        code = generate_code()
-        self.db.update_auth_code(tag, code)
-        await self.bot.send_message(user, NEW_CODE.format(code))
-
-    async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send an overview for a specific day"""
-        day, = args if len(args) != 0 else datetime.now(),
-        day = day.strftime(DATE_FORMAT)
-        servers = {server: 0 for server in SERVER_NAMES.keys()}
-        servers.update(self.db.get_matches_count_by_day(day))
-        message = build_string_from_servers(servers)
-        message = MATCH_COUNT_DAY.format(day, message)
-        await self.bot.send_message(channel, message)
-
-    async def period_overview(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send the overview like that of a day for a period"""
-        if len(args) == 1:
-            args += (datetime.now(),)
-        start, end = args
-        start_s, end_s = map(lambda dt: dt.strftime(DATE_FORMAT), (start, end))
-        if end <= start:
-            await self.bot.send_message(channel, INVALID_DATE_RANGE)
-            return
-        servers = self.db.get_matches_count_by_period(start, end)
-        message = build_string_from_servers(servers)
-        message = MATCH_COUNT_PERIOD.format(start_s, end_s, message)
-        await self.bot.send_message(channel, message)
-
-    async def week_overview(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send the overview like that of a day for the last week"""
-        servers = self.db.get_matches_count_by_week()
-        message = build_string_from_servers(servers)
-        await self.bot.send_message(channel, MATCH_COUNT_WEEK.format(message))
-
     async def find_character_owner(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the owner of a character to the channel"""
         server = args[0]
@@ -406,23 +289,6 @@ class DiscordBot(object):
             await self.bot.send_message(channel, UNKNOWN_CHARACTER.format(name, SERVER_NAMES[server]))
             return
         await self.bot.send_message(channel, CHARACTER_OWNER.format(owner))
-
-    async def matches_overview(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Send an overview of matches for a given server"""
-        server = args[0]
-        if server not in SERVER_NAMES.keys():
-            await self.bot.send_message(channel, INVALID_SERVER)
-            return
-        if len(args) == 2:
-            day = args[1].strftime(DATE_FORMAT)
-        else:
-            day = datetime.now().strftime(DATE_FORMAT)
-        matches = self.db.get_matches_by_day_by_server(server, day)
-        if len(matches) == 0:
-            await self.bot.send_message(channel, NO_MATCHES_FOUND)
-            return
-        message = MATCH_OVERVIEW.format(day, SERVER_NAMES[server], build_string_from_matches(matches))
-        await self.bot.send_message(channel, message)
 
     async def get_results(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the list of known results for this match"""
@@ -618,117 +484,6 @@ class DiscordBot(object):
                         return False, False
         return command, args
 
-    async def build_calculator(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Build calculator controllable with the Discord Bot commands
-
-        Valid build calculator commands:
-        - create base name public
-        - select identifier/category/component/upgrades
-        - stats identifier
-        - show identifier
-        - search {name:} {owner:} {public:} {pw:} {pw2:}
-        """
-        command, args = args[0], args[1:]
-        if command in DiscordBot.BUILD_COMMANDS:
-            n_args, func = DiscordBot.BUILD_COMMANDS[command]
-            if len(args) in n_args:
-                try:
-                    await self.__getattribute__(func)(channel, user, args)
-                except Exception as e:
-                    await self.bot.send_message(channel, "An error occurred while processing your command.")
-                    self.raven.captureException()
-                return
-        await self.bot.send_message(channel, INVALID_ARGS)
-
-    async def build_create(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Create a new build in the database for the user
-
-        Command Arguments:
-            base: r2s, i2s, etc. as ship identifier
-            name: name of the build
-            public, optional: If the public flag is set, then the build
-                is created publicly. If the channel is not private, then
-                the build is set to be public by default.
-        """
-        base, name = args[0], args[1]
-        public = len(args) == 3 and args[2] == "public"
-        owner = generate_tag(user)
-        ship = Ship.from_base(base)
-        data = ship.serialize()
-        number = self.db.insert_build(owner, name, data, public)
-        if number is None:
-            await self.bot.send_message(channel, "You already have a build with that name.")
-            return
-        self.ship_cache[number] = (datetime.now(), ship)
-        await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
-
-    async def build_select(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Select a specific component or crew member for a given ship
-
-        Also checks ownership of the build. The build can only be
-        altered by its owner.
-        """
-        build, element = args
-        tag = generate_tag(user)
-        build = self.db.get_build_id(build, tag)
-        if not self.db.get_build_owner(build) == tag:
-            raise PermissionError("Shame on you. That build is not yours.")
-        if build in self.ship_cache:
-            _, ship = self.ship_cache[build]
-        else:
-            data = self.db.get_build_data(build)
-            ship = Ship.deserialize(data)
-        self.ship_cache[build] = (datetime.now(), ship)
-        if not isinstance(ship, Ship):
-            raise TypeError("Something went horribly wrong, sorry.")
-        result = ship.update_element(element, None)
-        data = ship.serialize()
-        self.db.update_build_data(build, data)
-        await self.bot.send_message(channel, result)
-
-    async def build_stats(self, channel: Channel, user: DiscordUser, args: tuple):
-        pass
-
-    async def build_show(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Show a build upon user request"""
-        build, = args
-        if not self.db.build_read_access(build, generate_tag(user)):
-            raise PermissionError("You do not have access to that build.")
-        if build in self.ship_cache:
-            _, ship = self.ship_cache[build]
-        else:
-            data = self.db.get_build_data(build)
-            ship = Ship.deserialize(data)
-        self.ship_cache[build] = (datetime.now(), ship)
-        name = self.db.get_build_name_id(build)
-        message = await build_string_from_ship(ship, name)
-        await self.bot.send_message(channel, message)
-
-    async def build_search(self, channel: Channel, user: DiscordUser, args: tuple):
-        pass
-
-    async def build_delete(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Delete a specific build owner by the user either by name or ID"""
-        build, = args
-        name = self.db.delete_build(build, generate_tag(user))
-        await self.bot.send_message(channel, BUILD_DELETE.format(name))
-
-    async def build_lookup(self, channel: Channel, user: DiscordUser, args: tuple):
-        path, = args
-        if path.startswith("crew"):
-            elems = path.split("/")
-            if len(elems) != 2:
-                raise ValueError("Invalid crew member path: `{}`. Use `crew/part_of_name`".format(path))
-            name = elems[1]
-            crew_dict = await lookup_crew(name)
-            message = await build_string_from_crew_dict(crew_dict)
-            await self.bot.send_message(channel, message)
-            return
-        raise NotImplementedError("This feature has not yet been implemented.")
-
     async def event(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
         """Random ship event bot command"""
         command = args[0]
@@ -869,7 +624,7 @@ class DiscordBot(object):
         exc = context["exception"] if "exceptexception" in context else Exception
         description = "**Message**: {}\n".format(context["message"]) + \
                       "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
-        embed = Embed(title=repr(type(exc)), colour=0xFF0000, description=description)
+        embed = Embed(title=str(exc), colour=0xFF0000, description=description)
         embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
         channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
         loop.create_task(self.bot.send_message(channel, embed=embed))
