@@ -85,18 +85,20 @@ def embed_from_ship(ship: Ship, name)->Embed:
         component = ship.components[key]
         if component is None or not isinstance(component, Component):
             continue
+        upgrades = ship.build_upgrade_string(component.upgrades, component.type)
         string = "{}: *{}* ({})\n".format(
-            key, component.name, ship.build_upgrade_string(component.upgrades, component.type))
+            key.capitalize(), component.name,
+            upgrades if upgrades != "" else "No upgrades")
         comps_field += string
     crew_field = str()
     for role, member in ship.crew.items():
         if member is None:
             member = (None, None, "Unknown")
         _, _, member = member
-        crew_field += "{}: *{}*".format(role, member)
+        crew_field += "{}: *{}*\n".format(role, member)
     embed = Embed(title=title, colour=0x646464)
-    embed.add_field(name="Components", value=comps_field)
-    embed.add_field(name="Crew", value=crew_field)
+    embed.add_field(name="Components", value=comps_field, inline=False)
+    embed.add_field(name="Crew", value=crew_field, inline=False)
     return embed
 
 
@@ -104,11 +106,15 @@ def embed_from_builds(builds: list, owner: str, private: bool) -> Embed:
     """Build a list of builds in embed form"""
     title = "Builds created by {}".format(owner.split("#")[0][1:])
     strings = list()
-    for build, name, public, data in builds:
+    omitted = False
+    for build, name, data, public in builds:
         if private is False and bool(public) is False:
+            omitted = True
             continue
         ship = Ship.deserialize(data)
         strings.append("__{}__: {} ({})".format(build, name, ship.name))
     description = "\n".join(strings)
-    return Embed(title=title, description=description, colour=0x646464)
-
+    embed = Embed(title=title, description=description, colour=0x646464)
+    if omitted is True:
+        embed.set_footer(text="Private builds have been omitted from results.")
+    return embed

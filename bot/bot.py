@@ -70,7 +70,7 @@ class DiscordBot(object):
         "strategy": ((0, 1, 2, 3), "strategy"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
-        "build": (range(2, 20), "build.calculator"),
+        "build": (range(1, 20), "build.calculator"),
         "event": ((1, 2), "event", True),
     }
 

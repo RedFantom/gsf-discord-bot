@@ -127,7 +127,7 @@ class Ship(object):
             return "Invalid component name identifier: `{}`.".format(name)
         if fqn_category not in data[self.ship_name]:
             return "Component category '{}' not available for ship '{}'".format(category, self.name)
-        category_list = data[self.ship_name][category]
+        category_list = data[self.ship_name][fqn_category]
         i = -1
         for j, component in enumerate(category_list):
             if component["Name"] == comp_name:
@@ -135,7 +135,7 @@ class Ship(object):
                 break
         if i == -1:
             return "Invalid component '{}' for ship '{}'".format(name, self.name)
-        component = Component(data[self.ship_name][category][i], i, category)
+        component = Component(data[self.ship_name][fqn_category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
         return "{} now set to {} with upgrades {}.".format(category, component.name, upgrades)
