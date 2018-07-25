@@ -14,8 +14,8 @@ CONTENT_LICENSE = (
     "Content License",
     "Any and all content produced by this Discord Bot, is copyrighted "
     "by RedFantom and licensed under:\n\n"
-    "Creative Commons - Attribution-NonCommercial-ShareAlike 4.0\n"
-    "Read the whole license [here](https://creativecommons.org/licenses/by-nc-sa/4.0)"
+    "*Creative Commons - Attribution-NonCommercial-ShareAlike 4.0*\n"
+    "Read the whole license [here](https://creativecommons.org/licenses/by-nc-sa/4.0)."
 )
 
 CODE_LICENSE = (
@@ -29,7 +29,7 @@ CODE_LICENSE = (
     "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the "
     "GNU General Publice License for more details.\n\n"
     "You should have received a copy of the GNU General Public License "
-    "along with this program. If not, see [gnu.org/licenses](http://www.gnu.org/licenses)"
+    "along with this program. If not, see [gnu.org/licenses](http://www.gnu.org/licenses)."
 )
 
 

@@ -16,7 +16,6 @@ from semantic_version import Version
 # Project Modules
 from data.servers import SERVERS
 from data.ships import ship_tier_letters
-from parsing.strategies import Strategy
 from utils.utils import get_assets_directory
 
 

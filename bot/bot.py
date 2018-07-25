@@ -20,6 +20,7 @@ from bot.messages import *
 from bot.static import *
 from bot.man import MANUAL
 from data.servers import SERVER_NAMES
+from data.maps import map_names
 from database import DatabaseHandler
 from parsing import scoreboards as sb
 from parsing.renderer import render_phase
@@ -804,8 +805,14 @@ class DiscordBot(object):
             await self.bot.send_message(channel, STRATEGY_DELETE.format(name))
 
         elif command == "show":
-            message = build_string_from_strategy(tag, strategy)
-            await self.bot.send_message(channel, message)
+            map_type, map_name = strategy.map
+            embed = await self.build_embed(
+                "{}: {}".format(tag.split("#")[0][1:], strategy.name),
+                strategy.description,
+                [("Phases", "\n".join("- {}".format(a) for a in strategy.phases)),
+                 ("Map", map_names[map_type][map_name])]
+            )
+            await self.bot.send_message(channel, embed=embed)
 
         elif command == "render":
             if len(args) != 3:
