@@ -112,3 +112,5 @@ Use the `purpose` command to find out more about why I am here.
 
 Use the `man` command to find out more about the specific commands.
 """
+
+EMBED_FOOTER = "Copyright (c) 2018 RedFantom, CC BY-NC-SA 4.0"

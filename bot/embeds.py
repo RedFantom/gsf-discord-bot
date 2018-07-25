@@ -10,14 +10,15 @@ import textwrap
 from discord import Embed
 from github import GitRelease
 # Project Modules
+from bot.static import EMBED_FOOTER
 from data.components import \
-    component_keys, components as component_fqn_keys, \
+    component_keys, \
     weapon_categories
 from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
+from parsing.shipops import TimeToKill
 from utils.utils import setup_logger
-
 
 logger = setup_logger("Embeds", "embeds.log")
 
@@ -177,10 +178,8 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
     return embed
 
 
-def get_value_string(statistic, value):
-    """
-    Get a nicely formatted string to insert into the value column of the Treeview based on the unit
-    """
+def get_value_string(statistic: str, value: float) -> str:
+    """Get a nicely formatted string with unit for a stat value"""
     category, string, unit = stats.statistics[statistic]
     if "%" in unit:
         value_string = "{:.1f}{}".format(value * 100, unit)
@@ -195,3 +194,20 @@ def get_value_string(statistic, value):
     else:
         value_string = "{:.1f} {}".format(value, unit)
     return textwrap.fill(value_string, 25).replace("^2", "²")
+
+
+def embed_from_ttk(ttk: TimeToKill, source_name: str, target_name: str, source: Ship, target: Ship, acc: bool) -> Embed:
+    """Build an embed from a TTK calculation result"""
+    title = "Time To Kill Calculation"
+    description = \
+        "**Source**: {} ({})\n".format(source_name, source.name) + \
+        "**Target**: {} ({})\n".format(target_name, target.name) + \
+        "**Distance**: {}m\n".format(ttk.distance * 100) + \
+        "Accuracy/Evasion **was{}** accounted for.".format("" if acc is True else " not")
+    embed = Embed(title=title, description=description, colour=0xff2600)
+    embed.add_field(
+        name="Results",
+        value="*Shots Required*: {:1d}\n".format(int(ttk.shots)) +
+              "*Time Required*: {:.1f}s\n".format(ttk.time))
+    embed.set_footer(text=EMBED_FOOTER)
+    return embed

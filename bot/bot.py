@@ -19,6 +19,7 @@ from bot.embeds import embed_from_release
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
+from bot.static import EMBED_FOOTER
 from data.servers import SERVER_NAMES
 from data.maps import map_names
 from database import DatabaseHandler
@@ -639,7 +640,7 @@ class DiscordBot(object):
             description = description[:2040] + "..."
         embed = Embed(title="**{}**".format(title), description=description, colour=colour)
         if footer is None:
-            footer = "Copyright (c) 2018 RedFantom, CC BY-NC-SA 4.0"
+            footer = EMBED_FOOTER
         embed.set_footer(text=footer)
         if image is not None:
             embed.set_image(url=await self.upload_image(image, title))

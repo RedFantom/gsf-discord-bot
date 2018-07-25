@@ -3,6 +3,7 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
+
 # Packages
 from discord import Channel, User as DiscordUser
 # Project Modules
@@ -10,6 +11,8 @@ from bot.embeds import *
 from bot.messages import *
 from parsing.ships import Ship, lookup_crew, lookup_component
 from parsing.shipstats import ShipStats
+from parsing.shipops import \
+    get_time_to_kill_acc, InfiniteShots, get_time_to_kill
 from utils import generate_tag
 
 BUILD_COMMANDS = {
@@ -21,6 +24,7 @@ BUILD_COMMANDS = {
     "delete": (1,),
     "lookup": (1,),
     "list": (0,),
+    "ttk": (2, 3,)
 }
 
 _list = list
@@ -81,7 +85,7 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     data = self.db.get_build_data(build)
     name = self.db.get_build_name_id(build)
     ship = Ship.deserialize(data)
-    stats = ShipStats(ship, None, None)
+    stats = ShipStats(ship)
     embed = embed_from_stats(stats, name)
     await self.bot.send_message(channel, embed=embed)
 
@@ -111,6 +115,7 @@ async def delete(self, channel: Channel, user: DiscordUser, args: tuple):
 
 
 async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
+    """Lookup either a crew member or component in rich embed"""
     path, = args
     elems = path.split("/")
     if len(elems) != 2:
@@ -142,6 +147,58 @@ async def list(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, "You have not created any builds.")
         return
     embed = embed_from_builds(builds, tag, channel.is_private)
+    await self.bot.send_message(channel, embed=embed)
+
+
+def get_mod_from_build(build_id: str)->tuple:
+    """Return the build id and float modifier separately"""
+    elems = build_id.split("(")
+    if len(elems) == 1:
+        return elems[0], None
+    build, mod = elems
+    mod = mod[:-1]
+    return build, mod
+
+
+async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
+    """Calculate Time To Kill between two builds"""
+    tag = generate_tag(user)
+    # Build may be specified as build_id(modifier)
+    if len(args) == 2:
+        args += ("30",)
+    source, target, distance = args
+    # Argument parsing, distance
+    if not distance.isdigit() and not "." in distance:
+        await self.bot.send_message(channel, "Distance argument should be an integer [hundreds of metres].")
+        return
+    (source, s_mod), (target, t_mod) = map(get_mod_from_build, (source, target))
+    logger.debug("Source, mod, target, mod: {}, {}, {}, {}".format(source, s_mod, target, t_mod))
+    if not all(map(str.isdigit, (source, target))):
+        await self.bot.send_message(channel, "Those are not valid build identifiers.")
+        return
+    build_access = lambda x: self.db.build_read_access(x, tag)
+    if not all(map(build_access, (source, target))):
+        await self.bot.send_message(channel, "You do not have read access to one of those builds.")
+        return
+    s_name, t_name = map(self.db.get_build_name_id, (source, target))
+    source, target = map(self.db.get_build_data, (source, target))
+    source, target = map(Ship.deserialize, (source, target))
+    distance = float(distance)
+    acc = not (s_mod is None or t_mod is None)
+    try:
+        if acc is False:
+            ttk = get_time_to_kill(source, target, distance)
+        else:
+            ttk = get_time_to_kill_acc(source, target, distance, float(s_mod), float(t_mod))
+    except InfiniteShots:
+        await self.bot.send_message(channel, "That scenario would take an incalculable amount of time. "
+                                             "Check whether your distance is given in hundreds of metres.")
+        return
+    except ZeroDivisionError:
+        await self.bot.send_message(
+            channel, "Argh! Division by zero! Are you trying to use `Ion Cannon` to kill something?")
+        return
+    embed = embed_from_ttk(ttk, s_name, t_name, source, target, acc)
     await self.bot.send_message(channel, embed=embed)
 
 

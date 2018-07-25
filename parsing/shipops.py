@@ -4,53 +4,122 @@ Contributors: Daethyra (Naiii) and Sprigellania (Zarainia)
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2016-2018 RedFantom
 """
-from parsing.ships import Ship, Component
-from parsing.shipstats import ShipStats
+# Standard Library
+from collections import namedtuple
 from math import ceil, floor
+# Project Modules
+from parsing.ships import Ship
+from parsing.shipstats import ShipStats
+from utils.utils import setup_logger
+
+RANGES = ["Weapon_Range_Point_Blank", "Weapon_Range_Mid", "Weapon_Range_Long"]
+DMG_MODS = ["pbRangeDamMulti", "midRangeDamMulti", "longRangeDamMulti"]
+ACC_MODS = ["pbRangeAccMulti", "midRangeAccMulti", "longRangeAccMulti"]
+SH_MOD, HULL_MOD = "Weapon_Shield_Damage_Multiplier", "Weapon_Hull_Damage_Multiplier"
+SH_PIERCING = "Weapon_Shield_Piercing"
+SPS = "Weapon_Rate_of_Fire"
+CRIT_CHANCE, CRIT_MOD = "Crit_Chance", "Crit_Damage_Multiplier"
+SH_HEALTH, HULL_HEALTH = "Shields_Max_Power_(Capacity)", "Max_Health"
 
 
-def get_ship_from_lineup(character_data, abilities):
-    """
-    :param character_data: a character data dictionary (of which one of
-    the keys must be "Ship Objects"
-    :param abilities: an abilities dictionary {ability: count}
-    :return: The Ship object from the character's line-up that matches
-             the given abilities, or None if no match was established.
-    """
+logger = setup_logger("shipops", "ships.log")
+
+TimeToKill = namedtuple("TimeToKill", ("shots", "time", "distance"))
+
+
+class InfiniteShots(ValueError):
     pass
 
 
-def get_time_to_kill(source, target, distance=None, source_buffs=None, target_buffs=None, weapon="PrimaryWeapon"):
-    """
-    :param source: A Ship instance for the attacking ship
-    :param target: A Ship instance for the target ship
-    :param distance: The distance to the target, assumes max when None
-    :param source_buffs: A tuple of str with the source ability buffs
-    :param target_buffs: A tuple of str with the target ability buffs
-    :param weapon: Weapon key (may also be PrimaryWeapon2, or even
-                   SecondaryWeapon (which is probably not very usable,
-                   but hey, it's possible))
-    :return: The estimated TTK, factoring in shield piercing and all other important statistics, float
-    """
-    if not isinstance(source, Ship) or not isinstance(target, Ship):
-        raise ValueError("Arguments are not valid Ship objects. Source: {}, Target: {}".
-                         format(repr(source), repr(target)))
-    # Process distance to target
-    if distance > 100:
-        # Distance is in 1000's
-        distance = distance / 100
-    source.components[weapon]["Stats"]
-    distance_pb = [""]
+def linear(point1: tuple, point2: tuple, x: float):
+    """Given a linear approximation using two points"""
+    (x1, y1), (x2, y2) = point1, point2
+    return y1 + (x - x1) * ((y2 - y1) / (x2 - x1))
+
+
+def get_range_adjusted_dmg(stats: dict, distance: float)->tuple:
+    """Return range adjusted base hull and base shield damage of weapon"""
+    pb, mid, long = ranges = tuple(map(stats.get, RANGES))
+    mods = tuple(map(stats.get, DMG_MODS))
+    base_dmg = stats["Weapon_Base_Damage"]
+    pb_dmg, mid_dmg, long_dmg = range_dmgs = tuple(map(lambda x: base_dmg * x, mods))
+    point1, point2, point3 = tuple(zip(ranges, range_dmgs))
+    if distance <= pb:
+        base_dmg = pb_dmg
+    elif pb < distance <= mid:
+        base_dmg = linear(point1, point2, distance)
+    elif mid < distance <= long:
+        base_dmg = linear(point2, point3, distance)
+    else:
+        raise InfiniteShots()
+    hull_mod, sh_mod = stats[HULL_MOD], stats[SH_MOD]
+    hull_dmg, sh_dmg = tuple(map(lambda x: base_dmg * x, (hull_mod, sh_mod)))
+    return hull_dmg, sh_dmg
+
+
+def get_range_adjusted_acc(stats: dict, distance: float)->float:
+    """Return range adjusted accuracy statistic"""
+    pb, mid, long = ranges = tuple(map(stats.get, RANGES))
+    mods = tuple(map(stats.get, ACC_MODS))
+    base_acc = stats["Weapon_Base_Accuracy"]
+    pb_acc, mid_acc, long_acc = range_accs = tuple(map(lambda x: base_acc * x, mods))
+    point1, point2, point3 = tuple(zip(ranges, range_accs))
+    if distance <= pb:
+        return pb_acc
+    elif pb < distance <= mid:
+        return linear(point1, point2, distance)
+    elif mid < distance <= long:
+        return linear(point2, point3, distance)
+    else:
+        raise InfiniteShots()
+
+
+def get_crit_adjusted_damage(stats: dict, hull_dmg: float, sh_dmg: float) -> tuple:
+    """Return crit damage for hull and shields and crit chance"""
+    chance, mod = map(stats.get, (CRIT_CHANCE, CRIT_MOD))
+    if mod < 1.0:
+        mod += 1.0
+    return tuple(map(lambda x: mod * x, (hull_dmg, sh_dmg))) + (chance,)
+
+
+def get_time_to_kill(source: Ship, target: Ship, distance: float, key="PrimaryWeapon") -> (TimeToKill, None):
+    """Calculate the time to kill of one ship against another"""
+    source, target = map(ShipStats, (source, target))
     # Get the base statistics
-    # Apply buffs and debuffs to both target and source
-    # Get the final statistics
+    if key not in source:
+        return None
+    hull_d_reg, sh_d_reg = get_range_adjusted_dmg(source[key], distance)
+    hull_d_crit, sh_d_crit, crit_chance = get_crit_adjusted_damage(source[key], hull_d_reg, sh_d_reg)
+    sh_piercing, sps = map(source[key].get, (SH_PIERCING, SPS))
+    target_hull, target_shields = map(target["Ship"].get, (HULL_HEALTH, SH_HEALTH))
     # Return get_time_to_kill_stats
-    i = {"key": 8, "value": 9}
-    i = {"key": {"key": {"key": 9}}}
+    avg_ttk, avg_shots = get_time_to_kill_stats(
+        hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
+        sh_piercing, target_hull, target_shields)
+    logger.debug("Input values: {}, {}, {}, {}, {}, {}, {}, {}, {}".format(
+        hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
+        sh_piercing, target_hull, target_shields))
+    logger.debug("Calculated result {}, {}, {}".format(avg_ttk, avg_shots, distance))
+    return TimeToKill(ceil(avg_shots), avg_ttk, distance)
 
 
-def get_time_to_kill_stats(regular_hull, critical_hull, regular_shields, critical_shields, shots_per_second,
-                           critical_chance, shield_piercing, target_hull_health, target_shield_health):
+def get_time_to_kill_acc(
+        source: Ship, target: Ship, distance: float, acc_mod: float, evs_mod: float,
+        key="PrimaryWeapon") -> (TimeToKill, None):
+    """Calculate the time to kill with evasion/accuracy correction"""
+    evs = target["Ship"]["Ship_Evasion"] + evs_mod
+    acc = get_range_adjusted_acc(source[key], distance) + acc_mod
+    hit = acc - evs
+    if hit == 0 or hit < 0:
+        raise InfiniteShots()
+    ttk = get_time_to_kill(source, target, distance, key)
+    ttk.time, ttk.shots = tuple(map(lambda x: x * hit, (ttk.time, ttk.shots)))
+    ttk.shots = ceil(ttk.shots)
+    return ttk
+
+
+def get_time_to_kill_stats(hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps,
+                           crit_chance, sh_piercing, target_hull, target_shields):
     """
     This code is based upon MATLAB code written by Close-shave.
 
@@ -60,38 +129,37 @@ def get_time_to_kill_stats(regular_hull, critical_hull, regular_shields, critica
     """
     # avg_h = reg_h * (1 - aCC) + crit_h * aCC;
     # avg_s = reg_s * (1 - aCC) + crit_s * aCC;
-    average_hull = regular_hull * (1 - critical_chance) + critical_hull * critical_chance
-    average_shields = regular_shields * (1 - critical_chance) + critical_shields * critical_chance
+    avg_h = hull_d_reg * (1 - crit_chance) + hull_d_crit * crit_chance
+    avg_s = sh_d_reg * (1 - crit_chance) + sh_d_crit * crit_chance
+    logger.debug("Average values: {:.1f}, {:.1f}".format(avg_h, avg_s))
     # if avg_h == 0;
     #    avg_shots = 'too long';
     #    avg_ttk = 'too long';
     #    return
     # end
-    if average_hull == 0:
-        return None
+    if avg_h == 0:
+        raise ZeroDivisionError
     # if floor(shields/(avg_s * (1 - aSP))) * aSP * avg_h >= hull
     #     shield_sh = ceil(hull/(avg_h * aSP));
     # else
     #     shield_sh = floor(shields/(avg_s * (1 - aSP)));
     # end
-    if (floor(target_shield_health / (average_shields * (1 - shield_piercing))) * shield_piercing * shield_piercing *
-                                                                                    average_hull <= target_hull_health):
-        shield_shot = ceil(target_hull_health / (average_hull * shield_piercing))
+    if floor(target_shields / (avg_s * (1 - sh_piercing))) * sh_piercing * avg_h >= target_hull:
+        shield_shot = ceil(target_hull / (avg_h * sh_piercing))
     else:
-        shield_shot = floor(target_shield_health / (average_shields * (1 - shield_piercing)))
+        shield_shot = floor(target_shields / (avg_s * (1 - sh_piercing)))
     # if floor(shields/(avg_s * (1 - aSP))) * aSP * avg_h >= hull
     #     hull_sh = 0;
     # else
     #     hull_sh = ceil(hull - floor(shields / (avg_s * (1 - aSP)))* aSP * avg_h - \
     #                                                    (1 - (shields - shield_sh * avg_s * (1 - aSP))/avg_s))/ avg_h
     # end
-    if (floor(target_shield_health / (average_shields * (1 - shield_piercing))) * shield_piercing * average_hull >=
-                                                                                                    target_hull_health):
+    if floor(target_shields / (avg_s * (1 - sh_piercing))) * sh_piercing * avg_h >= target_hull:
         hull_shot = 0
     else:
-        hull_shot = ceil(target_hull_health - floor(target_shield_health / (average_shields * (1 - shield_piercing)))
-                         * shield_piercing * average_hull - (1 - (target_shield_health - shield_shot * average_shields *
-                                                   (1 - shield_piercing)) / average_shields)) / average_hull
+        hull_shot = ceil(target_hull - floor(target_shields / (avg_s * (1 - sh_piercing)))
+                         * sh_piercing * avg_h - (1 - (target_shields - shield_shot * avg_s *
+                         (1 - sh_piercing)) / avg_s)) / avg_h
     # if floor(shields/(avg_s * (1 - aSP))) * aSP * avg_h >= hull
     #    border_sh = 0;
     # else
@@ -101,10 +169,9 @@ def get_time_to_kill_stats(regular_hull, critical_hull, regular_shields, critica
     #        border_sh = 0;
     #    end
     # end
-    if (floor(target_shield_health / (average_shields * (1 - shield_piercing))) * shield_piercing * average_hull >=
-            target_hull_health):
+    if floor(target_shields / (avg_s * (1 - sh_piercing))) * sh_piercing * avg_h >= target_hull:
         border_shot = 0
-    elif 1 - (target_shield_health - shield_shot * average_shields * (1 - shield_piercing)) / hull_shot > 0:
+    elif 1 - (target_shields - shield_shot * avg_s * (1 - sh_piercing)) / hull_shot > 0:
         border_shot = 1
     else:
         # This could be combined into a single if/else
@@ -112,6 +179,6 @@ def get_time_to_kill_stats(regular_hull, critical_hull, regular_shields, critica
     # avg_shots = shield_sh + border_sh + hull_sh;
     # avg_ttk = avg_shots / sps;
     average_shots = shield_shot + border_shot + hull_shot
-    average_ttk = average_shots / shots_per_second
+    average_ttk = average_shots / sps
     # end
-    return average_ttk
+    return average_ttk, average_shots

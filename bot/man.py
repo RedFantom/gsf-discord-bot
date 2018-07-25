@@ -261,10 +261,10 @@ MANUAL = {
     ),
     "build ttk": (
         "build ttk",
-        [("killer", "ID number of build that is the one doing the shooting", False, None),
-         ("victim", "ID number of build that is the victim", False, None)],
+        [("source", "ID number of build that is the one doing the shooting", False, None),
+         ("target", "ID number of build that is the victim", False, None)],
         "Perform a Time-To-Kill calculation based upon the damage dealt "
-        "by the PrimaryWeapon of the killer build onto the victim build. "
+        "by the PrimaryWeapon of the source build onto the target build. "
         "Shield piercing and other statistics are accounted for. Can "
         "only be performed on builds owned by you or builds that are "
         "public.\n"

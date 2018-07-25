@@ -28,22 +28,18 @@ class ShipStats(object):
         "Cooldown_Time": "Cooldown",
     }
 
-    def __init__(self, ship, ships_data, companions_data):
+    def __init__(self, ship):
         """
         :param ship: Ship object
-        :param ships_data: ships.db contents
-        :param companions_data: companions.db contents
         """
         if not isinstance(ship, Ship):
             raise ValueError("ShipStats can only be initialized with a Ship object")
         self.stats = {}
         self.ship = ship
-        if ships_data is None:
-            with open(os.path.join(get_assets_directory(), "ships.db"), "rb") as fi:
-                ships_data = pickle.load(fi)
-        if companions_data is None:
-            with open(os.path.join(get_assets_directory(), "companions.db"), "rb") as fi:
-                companions_data = pickle.load(fi)
+        with open(os.path.join(get_assets_directory(), "ships.db"), "rb") as fi:
+            ships_data = pickle.load(fi)
+        with open(os.path.join(get_assets_directory(), "companions.db"), "rb") as fi:
+            companions_data = pickle.load(fi)
         self.ships_data = ships_data.copy()
         self.companions_data = companions_data.copy()
         self.calculate_ship_statistics()
