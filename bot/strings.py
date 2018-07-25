@@ -4,15 +4,12 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-from ast import literal_eval
 from datetime import datetime
 # Project Modules
 from bot.messages import MATCHES_ROW
 from data.servers import SERVER_NAMES
 from data.components import component_keys
-from data.maps import map_names
 from parsing.ships import Ship, Component
-from parsing.strategies import Strategy
 from utils import UNKNOWN_MAP, UNKNOWN_END, MAP_NAMES
 from utils.utils import TIME_FORMAT
 
@@ -118,33 +115,6 @@ async def build_string_from_ship(ship: Ship, name: str):
         _, _, member = member
         crew += "- {}: {}\n".format(role, member)
     string = string.format(name, ship.name, components, crew)
-    return message.format(string)
-
-
-async def build_string_from_crew_dict(crew_dict: dict) -> str:
-    """
-    Build a human readable message string from a crew member dictionary
-    """
-    message = "```markdown\n{}\n```"
-    string = "# {} ({})\n" \
-             "Ability: {}\n" \
-             "{}\n\n" \
-             "Passive: {}\n" \
-             "{}\n\n" \
-             "Passive: {}\n" \
-             "{}\n"
-    role = crew_dict["Category"]
-    name = crew_dict["Name"]
-    ability = crew_dict["AbilityName"]
-    passive1 = crew_dict["PassiveName"]
-    passive2 = crew_dict["SecondaryPassiveName"]
-    abilityd = crew_dict["AbilityDescription"]
-    passive1d = crew_dict["PassiveDescription"]
-    passive2d = crew_dict["SecondaryPassiveDescription"]
-    string = string.format(
-        name, role, ability, justify_with_indent(abilityd),
-        passive1, justify_with_indent(passive1d),
-        passive2, justify_with_indent(passive2d))
     return message.format(string)
 
 
