@@ -3,40 +3,35 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
-AUTHOR = """
-Thank the Maker! Someone reading my copyright information.
 
-Copyright (C) 2018 RedFantom
+AUTHOR_EMBED = (
+    "Author and copyright information",
+    "Thank the maker! Someone reading my copyright information.\n\n"
+    "Copyright (c) 2018 RedFantom"
+)
 
-```markdown
-# Content License
+CONTENT_LICENSE = (
+    "Content License",
+    "Any and all content produced by this Discord Bot, is copyrighted "
+    "by RedFantom and licensed under:\n\n"
+    "Creative Commons - Attribution-NonCommercial-ShareAlike 4.0\n"
+    "Read the whole license [here](https://creativecommons.org/licenses/by-nc-sa/4.0)"
+)
 
-Any and all content produced by this Discord Bot, produced from 
-information sent by GSF Parser users, is copyrighted by RedFantom
-and licensed under:
+CODE_LICENSE = (
+    "Code License",
+    "This program is free software: you can redistribute it and/or "
+    "modify it under the terms of the GNU General Public License as "
+    "published by the Free Software Foundation, version 3 of the "
+    "License.\n\n"
+    "This program is distributed in the hope that it will be useful, "
+    "but WITHOUT ANY WARRANTY; without even the implied warranty of"
+    "MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the "
+    "GNU General Publice License for more details.\n\n"
+    "You should have received a copy of the GNU General Public License "
+    "along with this program. If not, see [gnu.org/licenses](http://www.gnu.org/licenses)"
+)
 
-Creative Commons - Attribution-NonCommercial-ShareAlike
-For more information, check: 
-<https://creativecommons.org/licenses/by-nc-sa/4.0/>
-```
-
-```markdown
-# Code License
-
-This program is free software: you can redistribute it and/or modify
-it under the terms of the GNU General Public License as published by
-the Free Software Foundation, either version 3 of the License, or
-(at your option) any later version.
-
-This program is distributed in the hope that it will be useful,
-but WITHOUT ANY WARRANTY; without even the implied warranty of
-MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-GNU General Public License for more details.
-
-You should have received a copy of the GNU General Public License
-along with this program.  If not, see <http://www.gnu.org/licenses/>.
-```
-"""
 
 PURPOSE = """
 ```markdown
