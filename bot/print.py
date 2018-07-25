@@ -12,7 +12,7 @@ from .messages import *
 from .func import get_download_link, get_server_status
 
 
-async def manual(self, channel: Channel, author: DiscordUser, args: tuple):
+async def manual(self, channel: Channel, user: DiscordUser, args: tuple):
     """Send the DiscordBot manual to a channel"""
     if len(args) == 0:
         args = ("commands",)

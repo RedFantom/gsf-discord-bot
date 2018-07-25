@@ -56,9 +56,9 @@ class DiscordBot(object):
         "help": ((0,), "print.help"),
         "link": ((0,), "print.link"),
         # User Commands
-        "register": ((0,), "register_user"),
-        "unregister": ((0,), "unregister_user"),
-        "forgot_code": ((0,), "forgot_code"),
+        "register": ((0,), "user.register"),
+        "unregister": ((0,), "user.unregister"),
+        "forgot_code": ((0,), "user.forgot_code"),
         # Data Retrieval
         "period": ((1, 2), "period_overview"),
         "day": ((0, 1), "day_overview"),
@@ -283,39 +283,6 @@ class DiscordBot(object):
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
         await self.bot.send_message(channel, INVALID_COMMAND)
-
-    async def register_user(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Register a new user into the database"""
-        tag = generate_tag(user)
-        self.logger.debug("Initializing registration of a user: {}".format(tag))
-        if self.db.get_auth_code(tag) is not None:
-            await self.bot.send_message(channel, ALREADY_REGISTERED)
-            self.logger.debug("{} is already registered.".format(tag))
-            return
-        code = generate_code()
-        message = UPON_REGISTER.format(code)
-        self.logger.debug("Sending registration message to {}.".format(tag))
-        await self.bot.send_message(user, message)
-        self.logger.info("Registering new user {}.".format(tag))
-        self.db.insert_user(generate_tag(user), hash_auth(code))
-        self.logger.debug("Sending public registration message to {}.".format(channel.name))
-        await self.bot.send_message(channel, UPON_REGISTER_PUBLIC)
-
-    async def unregister_user(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Remove a user fully from the database"""
-        tag = generate_tag(user)
-        self.db.delete_user(tag)
-        self.logger.info("Unregistered {}.".format(tag))
-        await self.bot.send_message(channel, UNREGISTER_PUBLIC)
-        await self.bot.send_message(user, UNREGISTER)
-
-    async def forgot_code(self, channel: Channel, user: DiscordUser, args: tuple):
-        """Generate a new access code for the user"""
-        tag = generate_tag(user)
-        self.logger.info("Generating new access code for {}.".format(tag))
-        code = generate_code()
-        self.db.update_auth_code(tag, code)
-        await self.bot.send_message(user, NEW_CODE.format(code))
 
     async def day_overview(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send an overview for a specific day"""
