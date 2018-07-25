@@ -3,15 +3,23 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
+# Standard Library
+from collections import OrderedDict
+import textwrap
 # Packages
 from discord import Embed
 from github import GitRelease
 # Project Modules
-from data.components import component_keys
+from data.components import \
+    component_keys, components as component_fqn_keys, \
+    weapon_categories
 from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
+from utils.utils import setup_logger
 
+
+logger = setup_logger("Embeds", "embeds.log")
 
 component_colors = {
     "PrimaryWeapon": 0xffa500,
@@ -80,7 +88,7 @@ def embed_from_manual(entry: tuple) -> Embed:
     return embed
 
 
-def embed_from_ship(ship: Ship, name)->Embed:
+def embed_from_ship(ship: Ship, name) -> Embed:
     """Build an embed from a Ship with component and crew details"""
     title = "__{}__ ({})".format(name, ship.name)
     comps_field = str()
@@ -132,6 +140,58 @@ def embed_from_release(release: GitRelease) -> Embed:
     return embed
 
 
-def embed_from_stats(shipstats: ShipStats) -> Embed:
+def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
     """Build a rich embed from a ShipStats instance"""
-    pass
+    fields = OrderedDict()
+    for category in stats.categories:
+        fields[category] = str()
+    # Ship Statistics
+    for stat, val in sorted(shipstats["Ship"].items()):
+        if stat not in stats.statistics:
+            continue
+        value_string = get_value_string(stat, val)
+        category, stat_name, _ = stats.statistics[stat]
+        if category not in fields:
+            logger.error("Statistic '{}' category not in fields".format(stat))
+            continue
+        fields[category] += "*{}*: {}\n".format(stat_name, value_string)
+    for weapon in weapon_categories:
+        if weapon not in shipstats:
+            continue
+        weapon_dict = OrderedDict()
+        for category in stats.weapon_categories:
+            weapon_dict[category] = str()
+        for stat, val in sorted(shipstats[weapon].items()):
+            if stat not in stats.statistics:
+                continue
+            category, stat_name, _ = stats.statistics[stat]
+            value_string = get_value_string(stat, val)
+            weapon_dict[category] += "*{}*: {}\n".format(stat_name, value_string)
+        fields[weapon] = str()
+        for category, string in weapon_dict.items():
+            fields[weapon] += "**{}**\n{}\n".format(category, string)
+    title = "{}: Statistics".format(name)
+    embed = Embed(title=title, colour=0x4286f4)
+    for name, value in fields.items():
+        embed.add_field(name="__**{}**__".format(name.replace("_", " ")), value=value, inline=False)
+    return embed
+
+
+def get_value_string(statistic, value):
+    """
+    Get a nicely formatted string to insert into the value column of the Treeview based on the unit
+    """
+    category, string, unit = stats.statistics[statistic]
+    if "%" in unit:
+        value_string = "{:.1f}{}".format(value * 100, unit)
+    elif unit == "bool":
+        value_string = "False" if value == 0.0 else "True"
+    elif unit == "p":
+        value_string = "{:.0f} {}".format(value, unit)
+    elif "m/s" in unit:
+        value_string = "{:.1f} {}".format(value * 10, unit)
+    elif unit == "m":
+        value_string = "{} {}".format(value * 100, unit)
+    else:
+        value_string = "{:.1f} {}".format(value, unit)
+    return textwrap.fill(value_string, 25).replace("^2", "²")

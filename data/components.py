@@ -104,3 +104,10 @@ ship_key_to_shorthand = {
 }
 
 shorthand_to_ship_key = {value: key for key, value in ship_key_to_shorthand.items()}
+
+weapon_categories = [
+    "PrimaryWeapon",
+    "PrimaryWeapon2",
+    "SecondaryWeapon",
+    "SecondaryWeapon2"
+]

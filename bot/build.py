@@ -76,10 +76,13 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     if not self.db.build_read_access(build, generate_tag(user)):
         await self.bot.send_message(channel, "You do not have access to that build.")
         return
+    if not channel.is_private:
+        await self.bot.send_message(channel, "I only want to do this in PM due to the large statistics list.")
     data = self.db.get_build_data(build)
+    name = self.db.get_build_name_id(build)
     ship = Ship.deserialize(data)
     stats = ShipStats(ship, None, None)
-    embed = embed_from_stats(stats)
+    embed = embed_from_stats(stats, name)
     await self.bot.send_message(channel, embed=embed)
 
 
