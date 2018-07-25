@@ -66,7 +66,7 @@ MANUAL = {
     ),
     "results": (
         "results",
-        [("server", "Three-letter server code"), False, None,
+        [("server", "Three-letter server code", False, None),
          ("date", "Date of the match", False, None),
          ("start", "Start time of the match", False, None)],
         "Display the registered results of a specific match in a table "
