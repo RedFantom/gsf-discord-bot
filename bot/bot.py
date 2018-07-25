@@ -189,8 +189,8 @@ class DiscordBot(object):
             command = DiscordBot.COMMANDS[command]
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
-            if command[1] in globals():
-                func = globals()[command[1]]
+            if command[1] in locals():
+                func = locals()[command[1]]
                 arguments = (self, *arguments)
             else:
                 func = self.__getattribute__(command[1])
@@ -825,7 +825,7 @@ class DiscordBot(object):
         exc = context["exception"] if "exceptexception" in context else Exception
         description = "**Message**: {}\n".format(context["message"]) + \
                       "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
-        embed = Embed(title=repr(type(exc)), colour=0xFF0000, description=description)
+        embed = Embed(title=repr(exc), colour=0xFF0000, description=description)
         embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
         channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
         loop.create_task(self.bot.send_message(channel, embed=embed))
