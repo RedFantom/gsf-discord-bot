@@ -192,10 +192,12 @@ class DiscordBot(object):
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
             await func(*arguments)
-        except Exception:
+        except Exception as e:
             await self.bot.send_message(
                 message.channel, "Sorry, I encountered an error. It has been reported.")
             self.raven.captureException()
+            self.exception_handler(
+                self.loop, {"exception": e, "message": str(e)})
 
     def run(self, token: str):
         """Run the Bot loop"""
@@ -781,6 +783,7 @@ class DiscordBot(object):
         command = args[0]
         if command != "list" and len(args) == 1:
             await self.bot.send_message(channel, INVALID_ARGS)
+            return
         tag = generate_tag(user)
 
         if command == "list":
