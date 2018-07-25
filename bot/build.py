@@ -122,7 +122,7 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, embed=embed)
     else:
         category, name = elems
-        component = await lookup_component(category, name)
+        component = lookup_component(category, name)
         if component is None:
             await self.bot.send_message(channel, INVALID_COMPONENT_PATH)
             return
