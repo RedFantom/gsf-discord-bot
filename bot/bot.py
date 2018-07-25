@@ -17,7 +17,6 @@ from raven import Client as RavenClient
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
-from bot import print
 from data.servers import SERVER_NAMES
 from data.maps import map_names
 from database import DatabaseHandler
@@ -189,11 +188,13 @@ class DiscordBot(object):
             command = DiscordBot.COMMANDS[command]
             mess = command[2] if len(command) == 3 else False
             arguments = (channel, author, args) if not mess else (channel, author, args, message)
-            if command[1] in locals():
-                func = locals()[command[1]]
+            func_name = command[1]
+            if "." in func_name:
+                exec("from bot.{} import {}".format(*func_name.split(".")))
+                func = locals()[func_name.split(".")[1]]
                 arguments = (self, *arguments)
             else:
-                func = self.__getattribute__(command[1])
+                func = self.__getattribute__(func_name)
             await func(*arguments)
         except Exception as e:
             await self.bot.send_message(
@@ -825,7 +826,7 @@ class DiscordBot(object):
         exc = context["exception"] if "exceptexception" in context else Exception
         description = "**Message**: {}\n".format(context["message"]) + \
                       "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
-        embed = Embed(title=repr(exc), colour=0xFF0000, description=description)
+        embed = Embed(title=str(exc), colour=0xFF0000, description=description)
         embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
         channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
         loop.create_task(self.bot.send_message(channel, embed=embed))
