@@ -136,10 +136,10 @@ async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):
         n_args = BUILD_COMMANDS[command]
         if len(args) in n_args:
             try:
-                await locals()[command](channel, user, args)
+                await globals()[command](channel, user, args)
             except Exception as e:
                 await self.bot.send_message(channel, "An error occurred while processing your command.")
                 self.raven.captureException()
-                self.exception_handler()
+                self.exception_handler(self.loop, {"exception": e, "message": str(e)})
             return
     await self.bot.send_message(channel, INVALID_ARGS)
