@@ -47,7 +47,6 @@ async def create(self, channel: Channel, user: DiscordUser, args: tuple):
     if number is None:
         await self.bot.send_message(channel, "You already have a build with that name.")
         return
-    self.ship_cache[number] = (datetime.now(), ship)
     await self.bot.send_message(channel, BUILD_CREATE.format(name, ship.name, number))
 
 
@@ -62,13 +61,10 @@ async def select(self, channel: Channel, user: DiscordUser, args: tuple):
     tag = generate_tag(user)
     build = self.db.get_build_id(build, tag)
     if not self.db.get_build_owner(build) == tag:
-        raise PermissionError("Shame on you. That build is not yours.")
-    if build in self.ship_cache:
-        _, ship = self.ship_cache[build]
-    else:
-        data = self.db.get_build_data(build)
-        ship = Ship.deserialize(data)
-    self.ship_cache[build] = (datetime.now(), ship)
+        await self.bot.send_message(channel, "Shame on you. That build is not yours.")
+        return
+    data = self.db.get_build_data(build)
+    ship = Ship.deserialize(data)
     if not isinstance(ship, Ship):
         raise TypeError("Something went horribly wrong, sorry.")
     result = ship.update_element(element, None)
@@ -86,12 +82,8 @@ async def show(self, channel: Channel, user: DiscordUser, args: tuple):
     build, = args
     if not self.db.build_read_access(build, generate_tag(user)):
         raise PermissionError("You do not have access to that build.")
-    if build in self.ship_cache:
-        _, ship = self.ship_cache[build]
-    else:
-        data = self.db.get_build_data(build)
-        ship = Ship.deserialize(data)
-    self.ship_cache[build] = (datetime.now(), ship)
+    data = self.db.get_build_data(build)
+    ship = Ship.deserialize(data)
     name = self.db.get_build_name_id(build)
     embed = embed_from_ship(ship, name)
     await self.bot.send_message(channel, embed=embed)

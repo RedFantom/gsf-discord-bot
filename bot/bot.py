@@ -116,23 +116,7 @@ class DiscordBot(object):
         self.loop = loop
         self.loop.create_task(self.server_status_monitor())
         self.loop.create_task(self.matches_monitor())
-        self.ship_cache = dict()
-        self.loop.create_task(self.cleanup_cache())
         self.raven = self.open_raven_client()
-
-    async def cleanup_cache(self):
-        """
-        Clean-up the ship cache
-
-        The ship_cache attribute stores recently accessed Ship objects
-        so they do not have to be deserialized continuously. They are
-        removed from the cache (and thus memory) after ten minutes.
-        """
-        for key, (last, _) in self.ship_cache.copy().items():
-            if (datetime.now() - last).total_seconds() > 600:
-                del self.ship_cache[key]
-        await asyncio.sleep(300)
-        self.loop.create_task(self.cleanup_cache())
 
     def setup_commands(self):
         """Create the bot commands"""

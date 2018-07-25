@@ -19,8 +19,9 @@ for faction, faction_data in data.items():
             crew[name]["Faction"] = faction
             crew[name]["Category"] = role
 
-with open("crew.db", "wb") as fo:
+with open("crew.db", "wb") as fo, open("crew.txt", "w") as plain:
     pickle.dump(crew, fo)
+    plain.write(pformat(crew))
 
 with open("ships.db", "rb") as fi:
     data = pickle.load(fi)
