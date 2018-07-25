@@ -34,7 +34,7 @@ MANUAL = {
     # Data Retrieval
     "day": (
         "day",
-        ("date", "Optional, assumes today if not given"),
+        [("date", "Date to build overview for", True, "today")],
         "Display the amount of matches registered for each server on "
         "any given day in a table format."
     ),

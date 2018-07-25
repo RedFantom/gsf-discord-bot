@@ -66,7 +66,9 @@ def embed_from_manual(entry: tuple) -> Embed:
     command, arguments, description = entry
     title = "Command Manual: {}".format(command)
     embed = Embed(title=title, description=description, colour=0xFFFFFF)
-    for (name, descr) in arguments:
+    for name, descr, optional, default in arguments:
         field = "__Argument__: {}".format(name)
+        if optional is True:
+            field = "{} [{}]".format(field, default)
         embed.add_field(name=field, value=descr)
     return embed
