@@ -20,5 +20,5 @@ def embed_from_crew_dict(member: dict) -> Embed:
     colour = 0xb90505 if member["Faction"] == "Imperial" else 0x085195
     embed = Embed(title=title, description=description, colour=colour, image=image)
     for header, (name, value) in zip(("Ability", "Passive", "Passive"), fields):
-        embed.add_field(name="{}: {}".format(header, name), value=value)
+        embed.add_field(name="{}: {}".format(header, name), value=value, inline=False)
     return embed

@@ -117,6 +117,7 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
         crew_dict = await lookup_crew(name)
         embed = embed_from_crew_dict(crew_dict)
         await self.bot.send_message(channel, embed=embed)
+        return
     raise NotImplementedError("This feature has not yet been implemented.")
 
 
