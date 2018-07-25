@@ -148,18 +148,6 @@ async def build_string_from_crew_dict(crew_dict: dict) -> str:
     return message.format(string)
 
 
-def build_string_from_strategy(tag: str, strategy: Strategy):
-    """Build a human-readable string with the details of a strategy"""
-    name = tag.split("#")[0][1:]
-    template = "```markdown\n{}\n```"
-    details = "# {} by {}\n".format(strategy.name.replace("strategy_", ""), name)
-    for phase_name in strategy.phases.keys():
-        details += "- {}\n".format(phase_name)
-    map_type, map_name = strategy.map
-    details += "{}".format(map_names[map_type][map_name])
-    return template.format(details)
-
-
 def justify_with_indent(string: str, length: int = 80, indent: int = 4)->str:
     words = string.split(" ")
     total, line = str(), str()
