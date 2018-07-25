@@ -103,12 +103,13 @@ class Ship(object):
     def update_crew_member(self, path: str):
         """Update the crew member of a specific role"""
         elems = path.split("/")
-        if len(elems) != 2:
-            return "Crew member path should be two elements: `role/name`."
-        member = lookup_crew(elems[1])
-        category, name = member["Category"], member["Name"]
+        if len(elems) != 3:
+            return "Crew member path should be three elements: `crew/role/name`."
+        _, role, name = elems
+        member = lookup_crew(name)
         if member is None:
             return "Invalid crew member name or category identifier"
+        category, name = member["Category"], member["Name"]
         self[category] = (self.faction, category, name)
         return "Crew member for {} now set to {}.".format(category, name)
 
@@ -146,7 +147,6 @@ class Ship(object):
         :param item: Component or Crew category
         :param value: Component instance or Crew member name
         """
-        print("[Ship] Setting {} to {} for Ship {}".format(item, value, self.ship_name))
         item = self.process_key(item)
         if item in self.components:
             self.components[item] = value
@@ -184,7 +184,7 @@ class Ship(object):
             item = item.lower()
         elif item in component_short_hand:
             return component_short_hand[item]
-        if item not in self.components:
+        if item not in self.components and item not in self.crew:
             return None
         return item
 
