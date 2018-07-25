@@ -58,7 +58,7 @@ systems = {
     "telemetry": "Targeting Telemetry",
     "bo": "Blaster Overcharge",
     "blaster": "Blaster Overcharge",
-    "booster": "Booster Overcharge",
+    "booster": "Booster Recharge",
     "cc": "Combat Command",
     "combat": "Combat Command",
     "command": "Combat Command",
