@@ -7,6 +7,7 @@ Copyright (C) 2018 RedFantom
 from datetime import datetime
 # Packages
 from discord import Channel, User as DiscordUser
+from discord.errors import HTTPException
 # Project Modules
 from bot.embeds import *
 from bot.messages import *

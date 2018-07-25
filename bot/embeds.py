@@ -90,6 +90,8 @@ def embed_from_ship(ship: Ship, name)->Embed:
             key.capitalize(), component.name,
             upgrades if upgrades != "" else "No upgrades")
         comps_field += string
+    if comps_field == "":
+        comps_field = "No components selected."
     crew_field = str()
     for role, member in ship.crew.items():
         if member is None:

@@ -139,7 +139,9 @@ class Ship(object):
         component = Component(data[self.ship_name][fqn_category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        return "{} now set to {} with upgrades {}.".format(category, component.name, upgrades)
+        upgrades = "out any upgrades." if upgrades == "" else " upgrades {}".format(upgrades)
+        return "{} now set to {} with{}.".format(
+            category.capitalize(), component.name, upgrades)
 
     def __setitem__(self, item: str, value):
         """
