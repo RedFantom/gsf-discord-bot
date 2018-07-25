@@ -64,11 +64,11 @@ def embed_from_component(component: dict) -> Embed:
 def embed_from_manual(entry: tuple) -> Embed:
     """Build a manual embed"""
     command, arguments, description = entry
-    title = "Command Manual: {}".format(command)
+    title = "Command Manual: `{}`".format(command)
     embed = Embed(title=title, description=description, colour=0xFFFFFF)
     for name, descr, optional, default in arguments:
-        field = "__Argument__: {}".format(name)
+        field = "__Argument__: `{}`".format(name)
         if optional is True:
-            field = "{} [{}]".format(field, default)
+            field = "{} [`{}`]".format(field, default)
         embed.add_field(name=field, value=descr)
     return embed
