@@ -48,11 +48,14 @@ def embed_from_crew_dict(member: dict) -> Embed:
 
 def embed_from_component(component: dict) -> Embed:
     """Build embed with fields from component dict"""
+    letters = {0: "L", 1: "R"}
     title = "{}: {}".format(component["Category"], component["Name"])
     description = truncate(component["Description"])
     colour = component_colors[component["Category"]]
     embed = Embed(title=title, description=description, colour=colour)
-    for choice in component["TalentTree"]:
-        for talent in choice:
-            embed.add_field(name=talent["Name"], value=talent["Description"], inline=len(choice) == 2)
+    for i, choice in enumerate(component["TalentTree"]):
+        for j, talent in enumerate(choice):
+            header = str(i + 1) if len(choice) == 1 else "{}{}".format(i + 1, letters[j])
+            title = "__{}__: {}".format(header, talent["Name"])
+            embed.add_field(name=title, value=talent["Description"], inline=False)
     return embed
