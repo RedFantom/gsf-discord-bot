@@ -7,7 +7,7 @@ Copyright (C) 2018 RedFantom
 from discord import Embed
 
 
-async def embed_from_crew_dict(member: dict) -> Embed:
+def embed_from_crew_dict(member: dict) -> Embed:
     """Build embed fields from crew dict"""
     title = member["Category"] + ": " + member["Name"]
     description = member["Description"]
