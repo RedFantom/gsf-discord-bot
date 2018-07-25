@@ -133,10 +133,10 @@ async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):
     """
     command, args = args[0], args[1:]
     if command in BUILD_COMMANDS:
-        n_args, func = BUILD_COMMANDS[command]
+        n_args = BUILD_COMMANDS[command]
         if len(args) in n_args:
             try:
-                await locals()[func](channel, user, args)
+                await locals()[command](channel, user, args)
             except Exception as e:
                 await self.bot.send_message(channel, "An error occurred while processing your command.")
                 self.bot.exception_handler()
