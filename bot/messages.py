@@ -138,3 +138,5 @@ STRATEGY_DELETE = "Strategy '{}' deleted successfully."
 INVALID_PHASE_NAME = "Strategy '{}' does not have phase '{}'."
 
 EMBED_PERMISSION_ERROR = "I do not have permission to post embeds in this server :disappointed:."
+
+INVALID_COMPONENT_PATH = "That is not a valid component path. Check `$man build_global` for more information."

@@ -22,5 +22,38 @@ for faction, faction_data in data.items():
 with open("crew.db", "wb") as fo:
     pickle.dump(crew, fo)
 
-with open("crew.txt", "w") as fo:
-    fo.write(pformat(crew))
+with open("ships.db", "rb") as fi:
+    data = pickle.load(fi)
+
+components = dict()
+
+component_keys = [
+    "PrimaryWeapon",
+    "SecondaryWeapon",
+    "ShieldProjector",
+    "Systems",
+    "Magazine",
+    "Engine",
+    "Sensor",
+    "Reactor",
+    "Thruster",
+    "Capacitor",
+    "Armor"
+]
+
+for ship_name, ship_data in data.items():
+    for category in ship_data:
+        if category in component_keys:
+            if category not in components:
+                components[category] = list()
+            components[category].extend(ship_data[category])
+final = dict()
+for category in components:
+    final[category] = dict()
+    for comp in components[category]:
+        final[category][comp["Name"]] = comp
+        final[category][comp["Name"]]["Category"] = category
+
+with open("components.db", "wb") as fo, open("components.txt", "w") as plain:
+    pickle.dump(final, fo)
+    plain.write(pformat(final))

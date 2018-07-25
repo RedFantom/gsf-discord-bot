@@ -144,3 +144,19 @@ upgrades = {
     "middle": [0, 1, (2, 0), (2, 1)],
     "minor": [0, 1, 2]
 }
+
+
+COMPONENTS = {
+    "PrimaryWeapon": primary,
+    "PrimaryWeapon2": primary,
+    "SecondaryWeapon": secondary,
+    "SecondaryWeapon2": secondary,
+    "ShieldProjector": shields,
+    "Systems": systems,
+    "Engine": engine,
+    "Thruster": thrusters,
+    "Reactor": reactor,
+    "Capacitor": capacitor,
+    "Magazine": magazine,
+    "Sensor": sensors,
+}

@@ -8,11 +8,10 @@ from datetime import datetime
 # Packages
 from discord import Channel, User as DiscordUser
 # Project Modules
-from bot.embeds import embed_from_crew_dict
-from bot.func import lookup_crew
+from bot.embeds import embed_from_crew_dict, embed_from_component
 from bot.messages import *
 from bot.strings import build_string_from_ship
-from parsing.ships import Ship
+from parsing.ships import Ship, lookup_crew, lookup_component
 from utils import generate_tag
 
 BUILD_COMMANDS = {
@@ -109,16 +108,26 @@ async def delete(self, channel: Channel, user: DiscordUser, args: tuple):
 
 async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
     path, = args
+    elems = path.split("/")
+    if len(elems) != 2:
+        await self.bot.send_message(channel, "The lookup command requires a two element path.")
+        return
     if path.startswith("crew"):
-        elems = path.split("/")
-        if len(elems) != 2:
-            raise ValueError("Invalid crew member path: `{}`. Use `crew/part_of_name`".format(path))
         name = elems[1]
-        crew_dict = await lookup_crew(name)
+        crew_dict = lookup_crew(name)
+        if crew_dict is None:
+            await self.bot.send_message(channel, INVALID_COMPONENT_PATH)
+            return
         embed = embed_from_crew_dict(crew_dict)
         await self.bot.send_message(channel, embed=embed)
-        return
-    raise NotImplementedError("This feature has not yet been implemented.")
+    else:
+        category, name = elems
+        component = await lookup_component(category, name)
+        if component is None:
+            await self.bot.send_message(channel, INVALID_COMPONENT_PATH)
+            return
+        embed = embed_from_component(component)
+        await self.bot.send_message(channel, embed=embed)
 
 
 async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):
