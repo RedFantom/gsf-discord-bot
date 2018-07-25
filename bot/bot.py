@@ -5,6 +5,7 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
+import os
 from typing import *
 import traceback
 # Packages
@@ -14,6 +15,7 @@ from discord.ext import commands
 from discord import User as DiscordUser, Channel, Message, Embed
 from raven import Client as RavenClient
 # Project Modules
+from bot.embeds import embed_from_release
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
@@ -22,11 +24,32 @@ from data.maps import map_names
 from database import DatabaseHandler
 from parsing import scoreboards as sb
 from parsing.renderer import render_phase
-from parsing.ships import Ship
 from parsing.strategies import Strategy
 from server.discord import DiscordServer
 from utils import setup_logger, generate_tag
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
+
+
+class VersionTracker(object):
+    def __init__(self):
+        if not os.path.exists("latest"):
+            with open("latest", "w") as fo:
+                fo.write("None")
+        with open("latest") as fi:
+            self.version = fi.read().strip()
+        if self.version == "None":
+            self.set("v5.0.0")
+
+    def set(self, version: str):
+        with open("latest", "w") as fo:
+            fo.write(version)
+        self.version = version
+
+    def get(self):
+        return self.version
+
+    def __str__(self):
+        return self.version[1:]
 
 
 class DiscordBot(object):
@@ -116,7 +139,9 @@ class DiscordBot(object):
         self.loop = loop
         self.loop.create_task(self.server_status_monitor())
         self.loop.create_task(self.matches_monitor())
+        self.loop.create_task(self.github_monitor())
         self.raven = self.open_raven_client()
+        self.latest = VersionTracker()
 
     def setup_commands(self):
         """Create the bot commands"""
@@ -205,6 +230,34 @@ class DiscordBot(object):
                 await self.bot.send_message(channel, message)
         await asyncio.sleep(60)
         self.loop.create_task(self.server_status_monitor())
+
+    async def github_monitor(self):
+        """Monitor the release of a new version of the GSF Parser"""
+        try:
+            latest = get_latest_tag()
+            self.logger.debug("Latest tag: {}".format(latest))
+            repo = Github().get_user("RedFantom").get_repo("gsf-parser")
+            releases = repo.get_releases()
+            for release in releases:
+                if release.draft is True:
+                    continue
+                try:
+                    version = Version(release.tag_name[1:])
+                except ValueError:
+                    continue
+                if version != latest or version == Version(str(self.latest)):
+                    self.logger.debug("{} rejected.".format(version))
+                    continue
+                embed = embed_from_release(release)
+                for channel in self.validated_channels:
+                    await self.bot.send_message(channel, embed=embed)
+                self.latest.set(release.tag_name)
+        except Exception as e:
+            self.raven.captureException()
+            context = {"exception": e, "message": "Exception in github_monitor"}
+            self.exception_handler(self.loop, context)
+        await asyncio.sleep(1800)
+        self.loop.create_task(self.github_monitor())
 
     async def matches_monitor(self):
         """
@@ -579,8 +632,8 @@ class DiscordBot(object):
 
     async def build_embed(
             self, title: str, description: str,
-            fields: (List[Tuple[str]], None), footer: str=None,
-            image: Image.Image=None, colour: int=0x3AAA35)->Embed:
+            fields: (List[Tuple[str]], None), footer: str = None,
+            image: Image.Image = None, colour: int = 0x3AAA35) -> Embed:
         """Build a Discord Embed from the given parameters"""
         if len(description) > 2048:
             description = description[:2040] + "..."
@@ -595,7 +648,7 @@ class DiscordBot(object):
                 embed.add_field(name=name, value=content)
         return embed
 
-    async def upload_image(self, image: Image.Image, title: str)->str:
+    async def upload_image(self, image: Image.Image, title: str) -> str:
         """Upload an image to the GSF Parser server for use in embeds"""
         title = title.replace(" ", "_").replace(":", "_")
         path = "/var/www/discord.gsfparser.tk/images/{}.png".format(title)
@@ -613,7 +666,7 @@ class DiscordBot(object):
         channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
         loop.create_task(self.bot.send_message(channel, embed=embed))
 
-    def get_channel_by_name(self, name: str)->(Channel, None):
+    def get_channel_by_name(self, name: str) -> (Channel, None):
         """Search for a channel by name in available channels"""
         for channel in self.validated_channels:
             if channel.name == name:

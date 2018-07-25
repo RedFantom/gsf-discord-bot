@@ -8,3 +8,4 @@ dateparser
 pandas
 semantic_version
 pygithub
+raven

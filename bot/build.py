@@ -3,15 +3,13 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
-# Standard Library
-from datetime import datetime
 # Packages
 from discord import Channel, User as DiscordUser
-from discord.errors import HTTPException
 # Project Modules
 from bot.embeds import *
 from bot.messages import *
 from parsing.ships import Ship, lookup_crew, lookup_component
+from parsing.shipstats import ShipStats
 from utils import generate_tag
 
 BUILD_COMMANDS = {
@@ -66,8 +64,6 @@ async def select(self, channel: Channel, user: DiscordUser, args: tuple):
         return
     data = self.db.get_build_data(build)
     ship = Ship.deserialize(data)
-    if not isinstance(ship, Ship):
-        raise TypeError("Something went horribly wrong, sorry.")
     result = ship.update_element(element, None)
     data = ship.serialize()
     self.db.update_build_data(build, data)
@@ -75,14 +71,24 @@ async def select(self, channel: Channel, user: DiscordUser, args: tuple):
 
 
 async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
-    pass
+    """Show the statistics of a specific build"""
+    build, = args
+    if not self.db.build_read_access(build, generate_tag(user)):
+        await self.bot.send_message(channel, "You do not have access to that build.")
+        return
+    data = self.db.get_build_data(build)
+    ship = Ship.deserialize(data)
+    stats = ShipStats(ship, None, None)
+    embed = embed_from_stats(stats)
+    await self.bot.send_message(channel, embed=embed)
 
 
 async def show(self, channel: Channel, user: DiscordUser, args: tuple):
     """Show a build upon user request"""
     build, = args
     if not self.db.build_read_access(build, generate_tag(user)):
-        raise PermissionError("You do not have access to that build.")
+        await self.bot.send_message(channel, "You do not have access to that build.")
+        return
     data = self.db.get_build_data(build)
     ship = Ship.deserialize(data)
     name = self.db.get_build_name_id(build)

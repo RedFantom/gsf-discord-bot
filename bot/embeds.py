@@ -5,9 +5,12 @@ Copyright (C) 2018 RedFantom
 """
 # Packages
 from discord import Embed
+from github import GitRelease
 # Project Modules
 from data.components import component_keys
+from data import statistics as stats
 from parsing.ships import Ship, Component
+from parsing.shipstats import ShipStats
 
 
 component_colors = {
@@ -120,3 +123,15 @@ def embed_from_builds(builds: list, owner: str, private: bool) -> Embed:
     if omitted is True:
         embed.set_footer(text="Private builds have been omitted from results.")
     return embed
+
+
+def embed_from_release(release: GitRelease) -> Embed:
+    """Build a rich embed from a GitRelease"""
+    embed = Embed(title=release.title, description=release.body, colour=0x000000)
+    embed.set_footer(text="Get it from [here]({})".format(release.url))
+    return embed
+
+
+def embed_from_stats(shipstats: ShipStats) -> Embed:
+    """Build a rich embed from a ShipStats instance"""
+    pass

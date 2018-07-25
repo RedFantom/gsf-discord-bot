@@ -5,8 +5,6 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from io import BytesIO
-import os
-import _pickle as pickle  # cPickle
 import random
 # Packages
 from github import Github, GithubException
@@ -14,10 +12,8 @@ from PIL import Image
 import requests
 from semantic_version import Version
 # Project Modules
-from data.components import component_short_hand, ship_key_to_shorthand
 from data.servers import SERVERS
 from data.ships import ship_tier_letters
-from utils.utils import get_assets_directory
 
 
 BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
@@ -73,6 +69,18 @@ async def get_download_link()->(tuple, None):
     a tuple that can be passed directly to the GITHUB_LINKS message
     formatter.
     """
+    version = get_latest_tag()
+    if version is None:
+        return None
+    tag = "v{}.{}.{}".format(version.major, version.minor, version.patch)
+    links = list()
+    for ext in EXTENSIONS:
+        links.append(BASE_LINK.format(tag=tag, ext=ext))
+    return (tag,) + tuple(links)
+
+
+def get_latest_tag()->(None, Version):
+    """Return the latest Version of the GSF Parser"""
     github = Github()
     user = github.get_user("RedFantom")
     repo = user.get_repo("gsf-parser")
@@ -88,11 +96,7 @@ async def get_download_link()->(tuple, None):
         except ValueError:
             continue
     version = max(versions)
-    tag = "v{}.{}.{}".format(version.major, version.minor, version.patch)
-    links = list()
-    for ext in EXTENSIONS:
-        links.append(BASE_LINK.format(tag=tag, ext=ext))
-    return (tag,) + tuple(links)
+    return version
 
 
 async def get_random_ship(category: str = None):

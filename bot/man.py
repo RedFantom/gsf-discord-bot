@@ -151,22 +151,17 @@ MANUAL = {
         "`type` limits the choices to a single ship type (`Fighter`, "
         "`Gunship`, `Scout` or `Bomber`)."
     ),
-    "build":
-        "```markdown\n"
-        "Command: build\n"
-        "Arguments:\n"
-        "- command: create, delete, select, search, show, stats, lookup, ttk\n"
-        "- additional arguments for each specific command\n"
-        "\n"
-        "This command is used to manipulate the build calculator. Use the\n"
-        "build calculator to design builds and share them and view the\n"
-        "statistics of a build. All build data is up-to-date with nuGSF.\n"
-        "\n"
-        "Each command requires its own arguments. Check the manuals of\n"
-        "build_commands for more information on each individual command.\n"
-        "\n"
-        "Use the manual of build_global for general information.\n"
-        "```",
+    "build": (
+        "build",
+        ["varargs", "Variable amount of arguments", False, None],
+        "This command is used to manipulate the build calculator. Use "
+        "the build calculator to design and share builds as well as "
+        "view the statistics of a build. All build data is up-to-date "
+        "with nuGSF.\n\n"
+        "Each subcommand requires its own arguments. Check the manuals "
+        "of each of the subcommands by using `man \"build {command}\"."
+        "Use the manual of `build_global` for more information."
+    ),
     "build_global":
         "```markdown\n"
         "# Global build calculator definitions\n"
@@ -218,6 +213,63 @@ MANUAL = {
         "    the manual of build_search for more information.\n"
         "- ttk: Calculate the Time-To-Kill of one build against another.\n"
         "```",
+    "build create": (
+        "build create",
+        [("base", "Base ship identifier, see `man build_global`", False, None),
+         ("name", "Name of the new build, enclosed by quotes", False, None),
+         ("public", "Flag to allow others to view the build", True, "")],
+        "Create a new build in the build database of the Bot. The build "
+        "is based on teh ship which is specified using `base`."
+    ),
+    "build select": (
+        "build select",
+        [("build", "ID number of build to manipulate", False, None),
+         ("path", "Valid component or crew path to set", False, None)],
+        "Update one of the components or crew members in the build "
+        "specified. See `man build_global` for more information on "
+        "build paths."
+    ),
+    "build lookup": (
+        "build lookup",
+        [("path", "Component or crew member path to look up", False, None)],
+        "Show the details of a specific component or crew member in a "
+        "rich embed format."
+    ),
+    "build delete": (
+        "build delete",
+        [("build", "ID number of build to delete", False, None)],
+        "Delete a build that is owned by you from the database. "
+        "Deletion is immediate and cannot be undone."
+    ),
+    "build stats": (
+        "build stats",
+        [("build", "ID number of build to show stats for", False, None)],
+        "Show a list of numerical statistics of a build."
+    ),
+    "build show": (
+        "build show",
+        [("build", "ID number of build to show", False, None)],
+        "Show the components and creww members selected in a build in "
+        "a rich embed format."
+    ),
+    "build search": (
+        "build search",
+        [("*paths", "Build paths as search requirements, separated by `;`",
+            False, None)],
+        "Search for public builds with specific criteria. Upgrades in "
+        "component paths are disregarded when searching."
+    ),
+    "build ttk": (
+        "build ttk",
+        [("killer", "ID number of build that is the one doing the shooting", False, None),
+         ("victim", "ID number of build that is the victim", False, None)],
+        "Perform a Time-To-Kill calculation based upon the damage dealt "
+        "by the PrimaryWeapon of the killer build onto the victim build. "
+        "Shield piercing and other statistics are accounted for. Can "
+        "only be performed on builds owned by you or builds that are "
+        "public.\n"
+        "**Note**: Evasion is not considered in the calculation."
+    ),
     "strategy":
         "```markdown\n"
         "# Strategy Manager Companion for GSF Parser\n"

@@ -10,7 +10,6 @@ import pickle as pickle
 # Project Modules
 from data import abilities
 from data.components import *
-from data.crew import crew
 from data.ships import ship_names, ships_names_reverse, ship_tier_factions
 from utils.utils import get_assets_directory, setup_logger
 
