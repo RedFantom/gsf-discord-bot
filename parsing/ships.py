@@ -405,6 +405,8 @@ def identify_category(category: str)->(str, None):
 
 def identify_component(category: str, component: str)->(str, None):
     """Identify a component by its identifier"""
+    if category in component_types_reverse:
+        category = component_types_reverse[category]
     category = category.replace("2", str())
     shorthand = component.lower()
     category = getattr(abilities, category)
