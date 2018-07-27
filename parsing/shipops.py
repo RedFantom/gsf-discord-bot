@@ -24,7 +24,7 @@ SH_HEALTH, HULL_HEALTH = "Shields_Max_Power_(Capacity)", "Max_Health"
 
 logger = setup_logger("shipops", "ships.log")
 
-TimeToKill = namedtuple("TimeToKill", ("shots", "time", "distance", "weapon", "actives"))
+TimeToKill = namedtuple("TimeToKill", ("shots", "time", "distance", "weapon", "actives", "args"))
 
 
 class InfiniteShots(ValueError):
@@ -86,7 +86,8 @@ def get_crit_adjusted_damage(stats: dict, hull_dmg: float, sh_dmg: float) -> tup
 
 
 def get_time_to_kill(source: Ship, target: Ship, distance: float,
-                     source_act: list, target_act: list, key="PrimaryWeapon") -> (TimeToKill, None):
+                     source_act: list, target_act: list, key="PrimaryWeapon", hit=1.0
+                     ) -> (TimeToKill, None):
     """Calculate the time to kill of one ship against another"""
     actives = dict()
     if not isinstance(source, ShipStats) and not isinstance(target, ShipStats):  # acc optimization
@@ -100,17 +101,17 @@ def get_time_to_kill(source: Ship, target: Ship, distance: float,
     hull_d_crit, sh_d_crit, crit_chance = get_crit_adjusted_damage(source[key], hull_d_reg, sh_d_reg)
     sh_piercing, sps = map(source[key].get, (SH_PIERCING, SPS))
     target_hull, target_shields = map(target["Ship"].get, (HULL_HEALTH, SH_HEALTH))
+    target_hull, target_shields = map(lambda x: x / hit, (target_hull, target_shields / 2))
     bleedthrough = target["Ship"]["Shield_Bleed_Through"]
     sh_piercing = bleedthrough + sh_piercing - bleedthrough * sh_piercing
+    if source[key]["Weapon_Armor_Penetration"] == 0.0:
+        target_hull /= 1 - target["Ship"]["Ship_Damage_Reduction"]
     # Return get_time_to_kill_stats
-    avg_ttk, avg_shots = get_time_to_kill_stats(
-        hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
-        sh_piercing, target_hull, target_shields)
-    logger.debug("Input values: {}, {}, {}, {}, {}, {}, {}, {}, {}".format(
-        hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
-        sh_piercing, target_hull, target_shields))
+    args = (hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance, sh_piercing, target_hull, target_shields)
+    avg_ttk, avg_shots = get_time_to_kill_stats(*args)
+    logger.debug("Arguments: {}".format(args))
     logger.debug("Calculated result {}, {}, {}".format(avg_ttk, avg_shots, distance))
-    return TimeToKill(ceil(avg_shots), avg_ttk, distance, key, actives)
+    return TimeToKill(ceil(avg_shots), avg_ttk, distance, source.ship[key].name, actives, args)
 
 
 def get_time_to_kill_acc(
@@ -127,10 +128,7 @@ def get_time_to_kill_acc(
     if hit == 0 or hit < 0:
         logger.debug("Accuracy minus evasion is zero! {}, {}".format(acc, evs))
         raise InfiniteShots()
-    ttk = get_time_to_kill(source, target, distance, source_act, target_act, key=key)
-    time, shots = tuple(map(lambda x: x * hit, (ttk.time, ttk.shots)))
-    ttk = TimeToKill(time, ceil(shots), ttk.distance, ttk.weapon, actives)
-    return ttk
+    return get_time_to_kill(source, target, distance, source_act, target_act, key=key, hit=hit)
 
 
 def get_time_to_kill_stats(hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps,

@@ -204,16 +204,18 @@ def embed_from_ttk(ttk: TimeToKill, source_name: str, target_name: str, source: 
         "**Target**: {} ({})\n".format(target_name, target.name) + \
         "**Distance**: {}m\n".format(ttk.distance * 100) + \
         "**Weapon**: `{}`\n".format(ttk.weapon) + \
-        "Accuracy/Evasion **was{}** accounted for.".format("" if acc is True else " not")
+        "Accuracy/Evasion **was{}** accounted for.\n".format("" if acc is True else " not") + \
+        "**Effective target health**: {:.0f}, {:.0f}\n".format(ttk.args[-1], ttk.args[-2])
     embed = Embed(title=title, description=description, colour=0xff2600)
     embed.add_field(
         name="Results",
-        value="*Shots Required*: {:1d}\n".format(int(ttk.shots)) +
+        value="*Shots Required*: {}\n".format(ttk.shots) +
               "*Time Required*: {:.1f}s\n".format(ttk.time))
-    if not all(len(actives) == 0 for actives in ttk.actives):
+    if not all(len(actives) == 0 for actives in ttk.actives.values()):
         value = "".join("*{}*: {}\n".format(key.capitalize(), ", ".join(active_list))
                         for key, active_list in ttk.actives.items()
                         if len(active_list) != 0)
-        embed.add_field(name="Active Abilities", value=value, inline=False)
+        if value != "":
+            embed.add_field(name="Active Abilities", value=value, inline=False)
     embed.set_footer(text=EMBED_FOOTER)
     return embed

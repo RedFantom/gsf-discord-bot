@@ -185,7 +185,12 @@ async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, "Those are not valid build identifiers.")
         return
     build_access = lambda x: self.db.build_read_access(x, tag)
-    if not all(map(build_access, (source, target))):
+    try:
+        access = all(map(build_access, (source, target)))
+    except ValueError:
+        await self.bot.send_message(channel, "I do not recognize one of those builds.")
+        return
+    if not access:
         await self.bot.send_message(channel, "You do not have read access to one of those builds.")
         return
     # Load data required for calculations

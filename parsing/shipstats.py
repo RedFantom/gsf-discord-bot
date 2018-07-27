@@ -75,6 +75,7 @@ class ShipStats(object):
 
     def apply_comp_stats(self, comp: Component):
         """Apply the stats of a component in a category"""
+        logger.debug("Applying {}: {}".format(comp.category, comp.name))
         ctg = COMPONENT_TYPES[comp.category]
         data = self.ships_data[self.ship.ship_name][ctg][comp.index].copy()
         # Get the base statistics for this component
@@ -90,6 +91,7 @@ class ShipStats(object):
             # Apply statistics found in this upgrade
             target = upgrade.pop("Target", None)
             target = target if target != "Self" else ctg
+            upgrade.update(upgrade.pop("Stats", {}))
             self.apply_stats(target, upgrade)
         # Apply statistics of the base component
         self.apply_stats("Ship", base)
@@ -101,8 +103,7 @@ class ShipStats(object):
                 continue
             member_data = self.get_crew_member_data(*companion)
             for stats in (member_data["PassiveStats"], member_data["SecondaryPassiveStats"]):
-                for stat, value in stats.items():
-                    self.apply_stat_guess(stat, value)
+                self.apply_stats(None, stats)
 
     def apply_stats(self, target: (str, None), stats: dict):
         """Apply a dictionary of statistics"""
@@ -121,22 +122,20 @@ class ShipStats(object):
     def apply_stat_guess(self, stat: str, val: float):
         """Guess the correct dictionary for a statistic to be applied to"""
         stat, mul = self.is_multiplicative(stat)
-        # Ship statistics take priority
+        # Weapons
+        applied = False
+        for key in ("PrimaryWeapon", "PrimaryWeapon2"):
+            if key not in self.stats:
+                continue
+            if stat in self.stats[key]:
+                self.stats[key] = self.update_stat(self.stats[key], stat, mul, val)
+                applied = True
+        if applied is True:
+            return
+        # Ship Statistics
         if stat in self["Ship"]:
             self.stats["Ship"] = self.update_stat(self.stats["Ship"], stat, mul, val)
             return
-        # Weapons
-        for set in (("PrimaryWeapon", "PrimaryWeapon2"), ("SecondaryWeapon", "SecondaryWeapon2")):
-            applied = False
-            for key in set:
-                if key not in self.stats:
-                    continue
-                if stat in self.stats[key]:
-                    self.stats[key] = self.update_stat(self.stats[key], stat, mul, val)
-                    applied = True
-            if applied is True:
-                break
-        logger.error("Could not determine correct stats dict for: {}".format(stat))
 
     def apply_stat_ctg(self, category: str, stat: str, val: float):
         """Apply a statistic to a given category"""
@@ -195,8 +194,7 @@ class ShipStats(object):
                         self.apply_stat("Ship", stat, val)
                 elif target == "self":
                     for stat, val in upgrade.items():
-                        stat, mul = self.is_multiplicative(stat)
-                        active = self.update_stat(active, stat, mul, val)
+                        active = self.update_stat(active, stat, False, val)
                 else:
                     self.apply_stats(target, upgrade)
         # Apply component statistics that were updated with upgrades
