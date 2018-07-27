@@ -121,7 +121,7 @@ class Ship(object):
         fqn_category = identify_category(category)
         if fqn_category is None:
             return "Invalid component category identifier: `{}`.".format(category)
-        category = component_types_reverse[fqn_category]
+        category = COMP_TYPES_REVERSE[fqn_category]
         comp_name = identify_component(fqn_category, name)
         if name is None:
             return "Invalid component name identifier: `{}`.".format(name)
@@ -179,12 +179,12 @@ class Ship(object):
         from those used in this Ship.components dictionary, and thus,
         must be translated appropriately.
         """
-        if item in component_types_reverse:
-            return component_types_reverse[item]
+        if item in COMP_TYPES_REVERSE:
+            return COMP_TYPES_REVERSE[item]
         elif item.lower() in self.components:
             item = item.lower()
-        elif item in component_short_hand:
-            return component_short_hand[item]
+        elif item in COMP_SHORT_HAND:
+            return COMP_SHORT_HAND[item]
         if item not in self.components and item not in self.crew:
             return None
         return item
@@ -253,11 +253,11 @@ class Ship(object):
         string = str()
         for upgrade in abilities.upgrades[type]:
             if upgrades[upgrade] is True:
-                if isinstance(upgrade, tuple):
-                    _, side = upgrade
-                    string += "L" if side == 0 else "R"
+                level, side = upgrade
+                if (type == "major" and level < 3) or (type == "middle" and level < 2) or type == "minor":
+                    string += "{}".format(level + 1)
                     continue
-                string += str(upgrade + 1)
+                string += "L" if side == 0 else "R"
                 continue
         return string
 
@@ -267,13 +267,12 @@ class Ship(object):
         dictionary = dict()
         for level, letter in enumerate(upgrades):
             if letter.isdigit():
-                dictionary[level] = True
+                dictionary[(level, 0)] = True
                 continue
             # letter is a Letter!
             side = {"L": 0, "R": 1}[letter]
             dictionary[(level, side)] = True
         return dictionary
-
 
     @staticmethod
     def from_base(base: str):
@@ -306,9 +305,8 @@ class Component(object):
         self.category = category
         self.name = data["Name"]
         self.upgrades = {
-            0: False,
-            1: False,
-            2: False,
+            (0, 0): False,
+            (1, 0): False,
             (2, 0): False,
             (2, 1): False,
             (3, 0): False,
@@ -316,7 +314,7 @@ class Component(object):
             (4, 0): False,
             (4, 1): False
         }
-        for category in component_types.keys():
+        for category in COMPONENT_TYPES.keys():
             category = category.replace("2", str())
             if self.name in getattr(abilities, category).values():
                 for type in ["majors", "middle", "minors"]:
@@ -394,11 +392,11 @@ def lookup_component(category, name)->(dict, None):
 
 def identify_category(category: str)->(str, None):
     """Return a FQN category for a category identifier"""
-    if category in component_short_hand:
-        return component_short_hand[category]
-    if category in ship_key_to_shorthand.keys():
-        return component_short_hand[ship_key_to_shorthand[category]]
-    for full_name in component_short_hand.values():
+    if category in COMP_SHORT_HAND:
+        return COMP_SHORT_HAND[category]
+    if category in SHIP_KEY_TO_SH.keys():
+        return COMP_SHORT_HAND[SHIP_KEY_TO_SH[category]]
+    for full_name in COMP_SHORT_HAND.values():
         if full_name.lower().startswith(category.lower()):
             return full_name
     return None
@@ -406,8 +404,8 @@ def identify_category(category: str)->(str, None):
 
 def identify_component(category: str, component: str)->(str, None):
     """Identify a component by its identifier"""
-    if category in component_types_reverse:
-        category = component_types_reverse[category]
+    if category in COMP_TYPES_REVERSE:
+        category = COMP_TYPES_REVERSE[category]
     category = category.replace("2", str())
     shorthand = component.lower()
     category = getattr(abilities, category)

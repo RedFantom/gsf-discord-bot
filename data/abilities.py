@@ -140,9 +140,9 @@ middle = ["engine", "shields"]
 minors = ["reactor", "magazine", "thrusters", "sensors", "capacitor", "armor"]
 
 upgrades = {
-    "major": [0, 1, 2, (3, 0), (3, 1), (4, 0), (4, 1)],
-    "middle": [0, 1, (2, 0), (2, 1)],
-    "minor": [0, 1, 2]
+    "major": [(0, 0), (1, 0), (2, 0), (3, 0), (3, 1), (4, 0), (4, 1)],
+    "middle": [(0, 0), (1, 0), (2, 0), (2, 1)],
+    "minor": [(0, 0), (1, 0), (2, 0)]
 }
 
 

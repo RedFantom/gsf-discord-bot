@@ -10,7 +10,9 @@ from discord import Channel, User as DiscordUser
 from bot.embeds import *
 from bot.messages import *
 from parsing.ships import Ship, lookup_crew, lookup_component
-from parsing.shipstats import ShipStats
+from parsing.shipstats import \
+    ShipStats, \
+    ActiveNotSupported, ActiveNotFound, ActiveNotAvailable
 from parsing.shipops import \
     get_time_to_kill_acc, InfiniteShots, get_time_to_kill
 from utils import generate_tag
@@ -24,7 +26,7 @@ BUILD_COMMANDS = {
     "delete": (1,),
     "lookup": (1,),
     "list": (0,),
-    "ttk": (2, 3,)
+    "ttk": (2, 3, 4,)
 }
 
 _list = list
@@ -154,25 +156,31 @@ def get_mod_from_build(build_id: str)->tuple:
     """Return the build id and float modifier separately"""
     elems = build_id.split("(")
     if len(elems) == 1:
-        return elems[0], None
+        return elems[0], []
     build, mod = elems
-    mod = mod[:-1]
-    return build, mod
+    actives = [elem for elem in mod[:-1].split(",") if elem != ""]
+    return build, actives
 
 
 async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
     """Calculate Time To Kill between two builds"""
     tag = generate_tag(user)
-    # Build may be specified as build_id(modifier)
+    acc = False
+    if len(args) == 4:
+        acc = "e" in args[3] or "a" in args[4]
+        args = args[:3]
+    # Build may be specified as build_id(active,active,active)
     if len(args) == 2:
         args += ("30",)
+    railgun = "r" in args[1]
+    if railgun is True:
+        args = (args[0], args[1], "100")
     source, target, distance = args
     # Argument parsing, distance
-    if not distance.isdigit() and not "." in distance:
+    if not distance.isdigit() and "." not in distance:
         await self.bot.send_message(channel, "Distance argument should be an integer [hundreds of metres].")
         return
-    (source, s_mod), (target, t_mod) = map(get_mod_from_build, (source, target))
-    logger.debug("Source, mod, target, mod: {}, {}, {}, {}".format(source, s_mod, target, t_mod))
+    (source, s_actives), (target, t_actives) = map(get_mod_from_build, (source, target))
     if not all(map(str.isdigit, (source, target))):
         await self.bot.send_message(channel, "Those are not valid build identifiers.")
         return
@@ -180,16 +188,16 @@ async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
     if not all(map(build_access, (source, target))):
         await self.bot.send_message(channel, "You do not have read access to one of those builds.")
         return
+    # Load data required for calculations
     s_name, t_name = map(self.db.get_build_name_id, (source, target))
     source, target = map(self.db.get_build_data, (source, target))
     source, target = map(Ship.deserialize, (source, target))
     distance = float(distance)
-    acc = not (s_mod is None or t_mod is None)
+    # Calculate TTK and handle errors
     try:
-        if acc is False:
-            ttk = get_time_to_kill(source, target, distance)
-        else:
-            ttk = get_time_to_kill_acc(source, target, distance, float(s_mod), float(t_mod))
+        args = (source, target, distance, s_actives, t_actives)
+        func = get_time_to_kill if acc is False else get_time_to_kill_acc
+        ttk = func(*args)
     except InfiniteShots:
         await self.bot.send_message(channel, "That scenario would take an incalculable amount of time. "
                                              "Check whether your distance is given in hundreds of metres.")
@@ -197,6 +205,22 @@ async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
     except ZeroDivisionError:
         await self.bot.send_message(
             channel, "Argh! Division by zero! Are you trying to use `Ion Cannon` to kill something?")
+        return
+    except ActiveNotAvailable:
+        await self.bot.send_message(
+            channel, "One of those actives is not available on the ship you requested it on.")
+        return
+    except ActiveNotSupported:
+        await self.bot.send_message(
+            channel, "That active ability is not supported by the calculator.")
+        return
+    except ActiveNotFound:
+        await self.bot.send_message(
+            channel, "One of the active abilities either does not exist or has not been implemented.")
+        return
+    except Exception as e:
+        await self.bot.send_message(channel, "And... That's an error. Sorry.")
+        self.exception_handler(self.loop, {"message": "Error while doing TTK calculation", "exception": e})
         return
     embed = embed_from_ttk(ttk, s_name, t_name, source, target, acc)
     await self.bot.send_message(channel, embed=embed)
@@ -217,11 +241,6 @@ async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):
     if command in BUILD_COMMANDS:
         n_args = BUILD_COMMANDS[command]
         if len(args) in n_args:
-            try:
-                await globals()[command](self, channel, user, args)
-            except Exception as e:
-                await self.bot.send_message(channel, "An error occurred while processing your command.")
-                self.raven.captureException()
-                self.exception_handler(self.loop, {"exception": e, "message": str(e)})
+            await globals()[command](self, channel, user, args)
             return
     await self.bot.send_message(channel, INVALID_ARGS)

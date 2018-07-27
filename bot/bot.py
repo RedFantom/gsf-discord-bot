@@ -140,7 +140,7 @@ class DiscordBot(object):
         self.loop = loop
         self.loop.create_task(self.server_status_monitor())
         self.loop.create_task(self.matches_monitor())
-        self.loop.create_task(self.github_monitor())
+        # self.loop.create_task(self.github_monitor())
         self.raven = self.open_raven_client()
         self.latest = VersionTracker()
 

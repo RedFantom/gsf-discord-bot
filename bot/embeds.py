@@ -12,8 +12,8 @@ from github import GitRelease
 # Project Modules
 from bot.static import EMBED_FOOTER
 from data.components import \
-    component_keys, \
-    weapon_categories
+    COMPONENT_KEYS, \
+    WEAPON_CATEGORIES
 from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
@@ -93,7 +93,7 @@ def embed_from_ship(ship: Ship, name) -> Embed:
     """Build an embed from a Ship with component and crew details"""
     title = "__{}__ ({})".format(name, ship.name)
     comps_field = str()
-    for key in component_keys:
+    for key in COMPONENT_KEYS:
         component = ship.components[key]
         if component is None or not isinstance(component, Component):
             continue
@@ -156,7 +156,7 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
             logger.error("Statistic '{}' category not in fields".format(stat))
             continue
         fields[category] += "*{}*: {}\n".format(stat_name, value_string)
-    for weapon in weapon_categories:
+    for weapon in WEAPON_CATEGORIES:
         if weapon not in shipstats:
             continue
         weapon_dict = OrderedDict()
@@ -203,11 +203,17 @@ def embed_from_ttk(ttk: TimeToKill, source_name: str, target_name: str, source: 
         "**Source**: {} ({})\n".format(source_name, source.name) + \
         "**Target**: {} ({})\n".format(target_name, target.name) + \
         "**Distance**: {}m\n".format(ttk.distance * 100) + \
+        "**Weapon**: `{}`\n".format(ttk.weapon) + \
         "Accuracy/Evasion **was{}** accounted for.".format("" if acc is True else " not")
     embed = Embed(title=title, description=description, colour=0xff2600)
     embed.add_field(
         name="Results",
         value="*Shots Required*: {:1d}\n".format(int(ttk.shots)) +
               "*Time Required*: {:.1f}s\n".format(ttk.time))
+    if not all(len(actives) == 0 for actives in ttk.actives):
+        value = "".join("*{}*: {}\n".format(key.capitalize(), ", ".join(active_list))
+                        for key, active_list in ttk.actives.items()
+                        if len(active_list) != 0)
+        embed.add_field(name="Active Abilities", value=value, inline=False)
     embed.set_footer(text=EMBED_FOOTER)
     return embed

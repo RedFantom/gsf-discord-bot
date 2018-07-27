@@ -5,7 +5,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2016-2018 RedFantom
 """
 
-component_types = {
+COMPONENT_TYPES = {
     "primary": "PrimaryWeapon",
     "primary2": "PrimaryWeapon2",
     "secondary": "SecondaryWeapon",
@@ -21,9 +21,9 @@ component_types = {
     "capacitor": "Capacitor"
 }
 
-component_types_reverse = {value: key for key, value in component_types.items()}
+COMP_TYPES_REVERSE = {value: key for key, value in COMPONENT_TYPES.items()}
 
-component_strings = {
+COMPONENT_STR = {
     "PrimaryWeapon": "Primary Weapon",
     "PrimaryWeapon2": "Primary Weapon II",
     "SecondaryWeapon": "Secondary Weapon",
@@ -39,7 +39,7 @@ component_strings = {
     "Capacitor": "Capacitor"
 }
 
-component_keys = [
+COMPONENT_KEYS = [
     "primary",
     "primary2",
     "secondary",
@@ -55,7 +55,7 @@ component_keys = [
     "capacitor"
 ]
 
-components = [
+COMPONENTS = [
     "PrimaryWeapon",
     "PrimaryWeapon2",
     "SecondaryWeapon",
@@ -71,7 +71,7 @@ components = [
     "Capacitor"
 ]
 
-component_short_hand = {
+COMP_SHORT_HAND = {
     "pw": "PrimaryWeapon",
     "p2": "PrimaryWeapon2",
     "sw": "SecondaryWeapon",
@@ -87,7 +87,7 @@ component_short_hand = {
     "c": "Capacitor",
 }
 
-ship_key_to_shorthand = {
+SHIP_KEY_TO_SH = {
     "primary": "pw",
     "primary2": "p2",
     "secondary": "sw",
@@ -103,9 +103,9 @@ ship_key_to_shorthand = {
     "capacitor": "c"
 }
 
-shorthand_to_ship_key = {value: key for key, value in ship_key_to_shorthand.items()}
+SH_TO_SHIP_KEY = {value: key for key, value in SHIP_KEY_TO_SH.items()}
 
-weapon_categories = [
+WEAPON_CATEGORIES = [
     "PrimaryWeapon",
     "PrimaryWeapon2",
     "SecondaryWeapon",

@@ -7,14 +7,25 @@ Copyright (C) 2016-2018 RedFantom
 # Standard Library
 import os
 import _pickle as pickle
-from pprint import pprint
 # Project Modules
-from data.components import component_types, component_types_reverse, components
+from data.actives import ACTIVES
+from data.components import COMPONENT_TYPES, COMP_TYPES_REVERSE, COMPONENTS
 from parsing.ships import Ship, Component
 from utils.utils import get_assets_directory, setup_logger
 
-
 logger = setup_logger("ShipStats", "stats.log")
+
+
+class ActiveNotFound(KeyError):
+    pass
+
+
+class ActiveNotSupported(ValueError):
+    pass
+
+
+class ActiveNotAvailable(KeyError):
+    pass
 
 
 class ShipStats(object):
@@ -42,121 +53,161 @@ class ShipStats(object):
             companions_data = pickle.load(fi)
         self.ships_data = ships_data.copy()
         self.companions_data = companions_data.copy()
-        self.calculate_ship_statistics()
+        self.calc_ship_stats()
 
-    def calculate_ship_statistics(self):
+    def calc_ship_stats(self):
         """Calculate the statistics of the Ship Object"""
         self.stats.clear()
         self.stats["Ship"] = self.ships_data[self.ship.ship_name]["Stats"].copy()
-        # Go over components
-        for category in components:
-            category = component_types_reverse[category]
-            # The categories are gone over in a certain order
+        self.calc_comp_stats()
+        self.calc_crew_stats()
+
+    def calc_comp_stats(self):
+        """Calculate component stats and apply them"""
+        for category in COMPONENTS:
+            category = COMP_TYPES_REVERSE[category]
             if category not in self.ship.components:
                 continue
             component = self.ship.components[category]
-            # If component is None, then the component is not correctly set
-            if component is None:
+            if component is None:  # Component not set for this ship
                 continue
-            if not isinstance(component, Component):
-                raise TypeError()
-            category = component_types[category]
-            # Get the data belonging to the component
-            component_data = self.ships_data[self.ship.ship_name][category][component.index].copy()
-            # Go over the upgrades for the component first
-            base_stats = component_data["Base"]["Stats"].copy()
-            if base_stats == {}:
-                base_stats = component_data["Base"]
-            self.stats[category] = component_data["Stats"].copy() if component_data["Stats"] != {} else base_stats
-            for upgrade, state in component.upgrades.items():
-                # Check the state first for efficiency
-                if state is False:
-                    continue
-                # The upgrade can either be an index, or a tuple of indexes
-                # The TalentTree of the component is built of lists
-                if isinstance(upgrade, tuple):
-                    # Tuple (upgrade_index, side_index)
-                    upgrade_index, side_index = upgrade
-                    upgrade_data = component_data["TalentTree"][upgrade_index][side_index].copy()
-                else:
-                    # upgrade_index
-                    upgrade_data = component_data["TalentTree"][upgrade][0].copy()
-                if not isinstance(upgrade_data, dict):
-                    raise ValueError(
-                        "upgrade_data was not a dict for category '{}' and upgrade index '{}': {}".format(
-                            category, upgrade, upgrade_data
-                        )
-                    )
-                # upgrade_data now contains a dictionary of data of the upgrade
-                upgrade_data["Target"] = upgrade_data["Target"].replace("0x00", "")
-                # Go over the statistics of the upgrade
-                for stat, value in upgrade_data["Stats"].items():
-                    statistic, multiplicative = ShipStats.is_multiplicative(stat)
-                    if upgrade_data["Target"] == "":
-                        if statistic in self.ALIASES:
-                            statistic = self.ALIASES[statistic]
-                        if statistic in base_stats:
-                            base_stats = ShipStats.update_statistic(
-                                base_stats, statistic, multiplicative, value
-                            )
-                        elif statistic in self.stats["Ship"]:
-                            self.stats["Ship"] = ShipStats.update_statistic(
-                                self.stats["Ship"], statistic, multiplicative, value
-                            )
-                        else:
-                            logger.error("Invalid statistic: {}".format(statistic))
-                    elif upgrade_data["Target"] == "Self":
-                        self.stats[category] = ShipStats.update_statistic(
-                            self.stats[category], statistic, multiplicative, value
-                        )
-                    elif upgrade_data["Target"] == "PrimaryWeapons" or upgrade_data["Target"] == "SecondaryWeapons":
-                        key = upgrade_data["Target"][:-1]
-                        for key in (key, key+"2"):
-                            if key not in self.stats:
-                                continue
-                            self.stats[key] = ShipStats.update_statistic(
-                                self.stats[key], statistic, multiplicative, value
-                            )
-                    else:
-                        raise ValueError("Unknown upgrade target found: {}".format(upgrade_data["Target"]))
-            # These are the statistics to go over
-            component_stats = base_stats
-            for stat, value in component_stats.items():
-                if not isinstance(value, (int, float)):
-                    continue
-                # Process the statistic name
-                statistic, multiplicative = ShipStats.is_multiplicative(stat)
-                # Perform the calculation
-                for category_to_update in self.stats.keys():
-                    if category == "Capacitor" and "PrimaryWeapon" not in category_to_update:
-                        continue  # Exception for Capacitors as data is missing
-                    if statistic not in self.stats[category_to_update]:
-                        continue
-                    self.stats[category_to_update] = ShipStats.update_statistic(
-                        self.stats[category_to_update], statistic, multiplicative, value
-                    )
-        # Go over Crew
+            self.apply_comp_stats(component)
+
+    def apply_comp_stats(self, comp: Component):
+        """Apply the stats of a component in a category"""
+        ctg = COMPONENT_TYPES[comp.category]
+        data = self.ships_data[self.ship.ship_name][ctg][comp.index].copy()
+        # Get the base statistics for this component
+        base = data["Base"]["Stats"]
+        base.update(data["Stats"])
+        base["Cooldown"] = data["Base"]["Cooldown"]
+        self.stats[ctg] = base.copy()
+        # Apply enabled upgrades
+        for u in (u for u in comp.upgrades.keys() if comp.upgrades[u] is True):
+            i, s = u  # index, side
+            upgrade = data["TalentTree"][i][s].copy()
+            upgrade["Target"] = upgrade["Target"].replace("0x00", "")  # Inconsistency in data files
+            # Apply statistics found in this upgrade
+            target = upgrade.pop("Target", None)
+            target = target if target != "Self" else ctg
+            self.apply_stats(target, upgrade)
+        # Apply statistics of the base component
+        self.apply_stats("Ship", base)
+
+    def calc_crew_stats(self):
+        """Apply Crew Passive ability stats to self"""
         for category, companion in self.ship.crew.items():
             if category == "CoPilot" or companion is None:
                 continue
             member_data = self.get_crew_member_data(*companion)
             for stats in (member_data["PassiveStats"], member_data["SecondaryPassiveStats"]):
                 for stat, value in stats.items():
-                    statistic, multiplicative = ShipStats.is_multiplicative(stat)
-                    for category in self.stats.keys():
-                        if statistic not in self.stats[category]:
-                            continue
-                        self.stats[category] = ShipStats.update_statistic(
-                            self.stats[category], statistic, multiplicative, value
-                        )
-        pprint(self.stats)
+                    self.apply_stat_guess(stat, value)
+
+    def apply_stats(self, target: (str, None), stats: dict):
+        """Apply a dictionary of statistics"""
+        for stat, val in stats.items():
+            self.apply_stat(target, stat, val)
+
+    def apply_stat(self, target: (str, None), stat: str, val: float):
+        """Apply a statistic to a specific target"""
+        if stat in self.ALIASES:
+            stat = self.ALIASES[stat]
+        if target is None:
+            self.apply_stat_guess(stat, val)
+        else:
+            self.apply_stat_ctg(target, stat, val)
+
+    def apply_stat_guess(self, stat: str, val: float):
+        """Guess the correct dictionary for a statistic to be applied to"""
+        stat, mul = self.is_multiplicative(stat)
+        # Ship statistics take priority
+        if stat in self["Ship"]:
+            self.stats["Ship"] = self.update_stat(self.stats["Ship"], stat, mul, val)
+            return
+        # Weapons
+        for set in (("PrimaryWeapon", "PrimaryWeapon2"), ("SecondaryWeapon", "SecondaryWeapon2")):
+            applied = False
+            for key in set:
+                if key not in self.stats:
+                    continue
+                if stat in self.stats[key]:
+                    self.stats[key] = self.update_stat(self.stats[key], stat, mul, val)
+                    applied = True
+            if applied is True:
+                break
+        logger.error("Could not determine correct stats dict for: {}".format(stat))
+
+    def apply_stat_ctg(self, category: str, stat: str, val: float):
+        """Apply a statistic to a given category"""
+        if category == "":
+            category = "Ship"
+        elif category[-1] == "s":
+            category = category[:-1]
+            for ctg in (category, category + "2"):
+                self.apply_stat_ctg(ctg, stat, val)
+            return
+        if category not in self.stats:
+            return
+        stat, mul = self.is_multiplicative(stat)
+        self.stats[category] = self.update_stat(self.stats[category], stat, mul, val)
+
+    def apply_actives(self, actives: list) -> list:
+        """Apply a list of active abilities to self"""
+        applied = list()
+        for active in actives:
+            # Name matching
+            active_dict, key = False, None
+            for key, dict in ACTIVES.items():
+                if key.startswith(active):
+                    active_dict = dict
+                    break
+                initials = "".join(l for l in key if l.isupper())
+                if initials.lower() == active.lower():
+                    active_dict = dict
+                    break
+            if active_dict is False:
+                raise ActiveNotFound()
+            elif active_dict is None:
+                raise ActiveNotSupported()
+            self.apply_active(key, active_dict)
+            applied.append(key)
+        return applied
+
+    def apply_active(self, name: str, active: dict):
+        """Apply an active ability to self"""
+        talent_tree = active.pop("TalentTree", None)
+        # Apply upgradess first
+        if talent_tree is not None:
+            if name not in (component.name for component in self.ship.components.values() if component is not None):
+                raise ActiveNotAvailable()
+            component = list(component for component in self.ship.components.values()
+                             if component is not None and component.name == name)[0]
+            assert isinstance(component, Component)
+            upgrades = (upgrade for upgrade in component.upgrades if component.upgrades[upgrade] is True)
+            for upgrade in upgrades:
+                assert upgrade in talent_tree
+                upgrade = talent_tree[upgrade]
+                assert isinstance(upgrade, dict)
+                target = upgrade.pop("Target", None)
+                if target is None:
+                    for stat, val in upgrade.items():
+                        self.apply_stat("Ship", stat, val)
+                elif target == "self":
+                    for stat, val in upgrade.items():
+                        stat, mul = self.is_multiplicative(stat)
+                        active = self.update_stat(active, stat, mul, val)
+                else:
+                    self.apply_stats(target, upgrade)
+        # Apply component statistics that were updated with upgrades
+        self.apply_stats(None, active)
 
     """
     Functions to process statistics
     """
 
     @staticmethod
-    def update_statistic(statistics, statistic, multiplicative, value):
+    def update_stat(statistics: dict, statistic: str, multiplicative: bool, value: float):
         """
         Update a statistic in a dictionary
         :param statistics: statistics dictionary
@@ -189,7 +240,7 @@ class ShipStats(object):
         category_data = [item for item in faction_data if category in item][0][category]
         member_data = [item for item in category_data if item["Name"] == name][0]
         return member_data.copy()
-    
+
     # Dictionary like functions
 
     def __getitem__(self, item):
@@ -205,4 +256,3 @@ class ShipStats(object):
         """Iterator for all of the statistics and their values"""
         for key, value in self.stats.items():
             yield key, value
-

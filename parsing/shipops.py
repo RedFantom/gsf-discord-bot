@@ -24,7 +24,7 @@ SH_HEALTH, HULL_HEALTH = "Shields_Max_Power_(Capacity)", "Max_Health"
 
 logger = setup_logger("shipops", "ships.log")
 
-TimeToKill = namedtuple("TimeToKill", ("shots", "time", "distance"))
+TimeToKill = namedtuple("TimeToKill", ("shots", "time", "distance", "weapon", "actives"))
 
 
 class InfiniteShots(ValueError):
@@ -61,8 +61,11 @@ def get_range_adjusted_acc(stats: dict, distance: float)->float:
     """Return range adjusted accuracy statistic"""
     pb, mid, long = ranges = tuple(map(stats.get, RANGES))
     mods = tuple(map(stats.get, ACC_MODS))
+    logger.debug("Accuracy mods: {}, {}, {}".format(*mods))
     base_acc = stats["Weapon_Base_Accuracy"]
-    pb_acc, mid_acc, long_acc = range_accs = tuple(map(lambda x: base_acc * x, mods))
+    logger.debug("Base accuracy: {}".format(base_acc))
+    pb_acc, mid_acc, long_acc = range_accs = tuple(map(lambda x: base_acc + x, mods))
+    logger.debug("Accuracies: {}, {}, {}".format(*range_accs))
     point1, point2, point3 = tuple(zip(ranges, range_accs))
     if distance <= pb:
         return pb_acc
@@ -82,9 +85,14 @@ def get_crit_adjusted_damage(stats: dict, hull_dmg: float, sh_dmg: float) -> tup
     return tuple(map(lambda x: mod * x, (hull_dmg, sh_dmg))) + (chance,)
 
 
-def get_time_to_kill(source: Ship, target: Ship, distance: float, key="PrimaryWeapon") -> (TimeToKill, None):
+def get_time_to_kill(source: Ship, target: Ship, distance: float,
+                     source_act: list, target_act: list, key="PrimaryWeapon") -> (TimeToKill, None):
     """Calculate the time to kill of one ship against another"""
-    source, target = map(ShipStats, (source, target))
+    actives = dict()
+    if not isinstance(source, ShipStats) and not isinstance(target, ShipStats):  # acc optimization
+        source, target = ShipStats(source), ShipStats(target)
+        actives["source"] = source.apply_actives(source_act)
+        actives["target"] = target.apply_actives(target_act)
     # Get the base statistics
     if key not in source:
         return None
@@ -92,6 +100,8 @@ def get_time_to_kill(source: Ship, target: Ship, distance: float, key="PrimaryWe
     hull_d_crit, sh_d_crit, crit_chance = get_crit_adjusted_damage(source[key], hull_d_reg, sh_d_reg)
     sh_piercing, sps = map(source[key].get, (SH_PIERCING, SPS))
     target_hull, target_shields = map(target["Ship"].get, (HULL_HEALTH, SH_HEALTH))
+    bleedthrough = target["Ship"]["Shield_Bleed_Through"]
+    sh_piercing = bleedthrough + sh_piercing - bleedthrough * sh_piercing
     # Return get_time_to_kill_stats
     avg_ttk, avg_shots = get_time_to_kill_stats(
         hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
@@ -100,21 +110,26 @@ def get_time_to_kill(source: Ship, target: Ship, distance: float, key="PrimaryWe
         hull_d_reg, hull_d_crit, sh_d_reg, sh_d_crit, sps, crit_chance,
         sh_piercing, target_hull, target_shields))
     logger.debug("Calculated result {}, {}, {}".format(avg_ttk, avg_shots, distance))
-    return TimeToKill(ceil(avg_shots), avg_ttk, distance)
+    return TimeToKill(ceil(avg_shots), avg_ttk, distance, key, actives)
 
 
 def get_time_to_kill_acc(
-        source: Ship, target: Ship, distance: float, acc_mod: float, evs_mod: float,
+        source: Ship, target: Ship, distance: float, source_act: list, target_act: list,
         key="PrimaryWeapon") -> (TimeToKill, None):
     """Calculate the time to kill with evasion/accuracy correction"""
-    evs = target["Ship"]["Ship_Evasion"] + evs_mod
-    acc = get_range_adjusted_acc(source[key], distance) + acc_mod
+    source, target = map(ShipStats, (source, target))
+    actives = dict()
+    actives["source"] = source.apply_actives(source_act)
+    actives["target"] = source.apply_actives(target_act)
+    evs = target["Ship"]["Ship_Evasion"]
+    acc = get_range_adjusted_acc(source[key], distance)
     hit = acc - evs
     if hit == 0 or hit < 0:
+        logger.debug("Accuracy minus evasion is zero! {}, {}".format(acc, evs))
         raise InfiniteShots()
-    ttk = get_time_to_kill(source, target, distance, key)
-    ttk.time, ttk.shots = tuple(map(lambda x: x * hit, (ttk.time, ttk.shots)))
-    ttk.shots = ceil(ttk.shots)
+    ttk = get_time_to_kill(source, target, distance, source_act, target_act, key=key)
+    time, shots = tuple(map(lambda x: x * hit, (ttk.time, ttk.shots)))
+    ttk = TimeToKill(time, ceil(shots), ttk.distance, ttk.weapon, actives)
     return ttk
 
 
