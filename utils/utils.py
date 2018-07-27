@@ -7,6 +7,7 @@ Copyright (C) 2018 RedFantom
 import os
 import sys
 import logging
+import logging.handlers
 from datetime import datetime
 from hashlib import sha256
 # Packages
@@ -38,7 +39,7 @@ def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger
     """Initialize a Logger with a file handler"""
     file_path = os.path.join(get_log_directory(), file_name)
     logger = logging.Logger(name, level=level)
-    file = logging.FileHandler(file_path)
+    file = logging.handlers.RotatingFileHandler(file_path)
     stdout = logging.StreamHandler(sys.stdout)
     logger.addHandler(file if STDOUT is False else stdout)
     fmt = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
