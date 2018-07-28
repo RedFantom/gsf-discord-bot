@@ -138,7 +138,7 @@ class Ship(object):
         component = Component(data[self.ship_name][fqn_category][i], i, category)
         component.upgrades.update(Ship.parse_upgrade_string(upgrades))
         self[category] = component
-        upgrades = "out any upgrades." if upgrades == "" else " upgrades {}".format(upgrades)
+        upgrades = "out any upgrades" if upgrades == "" else " upgrades {}".format(upgrades)
         return "{} now set to {} with{}.".format(
             category.capitalize(), component.name, upgrades)
 

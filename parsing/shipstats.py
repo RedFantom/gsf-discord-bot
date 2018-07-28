@@ -93,8 +93,6 @@ class ShipStats(object):
         data = self.ships_data[self.ship.ship_name][ctg][comp.index].copy()
         # Get the base statistics for this component
         base = data["Base"]["Stats"].copy()
-        if comp.name == "Seismic Mines":
-            logger.debug("{}".format(list(base.keys())))
         base.update(data["Stats"])
         base["Cooldown"] = data["Base"]["Cooldown"]
         self.stats[ctg] = base.copy()
@@ -291,6 +289,8 @@ class ShipStats(object):
         range_muls = map(lambda x: self.stats[weapon].get(mul_key.format(x)), ("pb", "mid", "long"))
         for range_key, range_mul in zip(("Pb", "Mid", "Long"), range_muls):
             value = base * range_mul if "Acc" not in key else base + range_mul
+            if "Dam" in key and value == 0.0:
+                value = base
             self.stats[weapon][key.format(range_key)] = value
 
     def calc_power_mode_corrected_stats(self, key: str, mod: str, base: str):

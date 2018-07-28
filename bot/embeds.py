@@ -158,21 +158,25 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
             weapon_stats[stat] = get_value_string(stat, val)
         field_name = "{}: {}".format(weapon, shipstats.ship[weapon].name).replace("2", "")
         fields[field_name] = stats.PRIMARY_WEAPON_STATS_STRING.format(**weapon_stats)
-    for weapon in ShipStats.SECONDARY_WEAPON:
+    for weapon in ShipStats.SECONDARY_WEAPON + ("Systems",):
         if weapon not in shipstats:
             continue
         weapon_stats = dict()
         for stat, val in shipstats[weapon].items():
             weapon_stats[stat] = get_value_string(stat, val)
-        field_name = "{}: {}".format(weapon, "Rocket Pods")
-        if shipstats.ship[weapon].name.__contains__("Rocket Pod"):
-            fields[field_name] = stats.PRIMARY_WEAPON_STATS_STRING.format(**weapon_stats)
-        elif shipstats.ship[weapon].name.__contains__("Mine"):
+        field_name = "{}: {}".format(weapon, shipstats.ship[weapon].name).replace("2", "")
+        weapon_name = shipstats.ship[weapon].name
+        if "Rocket Pod" in weapon_name:
+            fields[field_name] = stats.PRIMARY_WEAPON_STATS_STRING.format(**weapon_stats) + \
+                                 stats.AMMO_STRING.format(**weapon_stats)
+        elif "Mine" in weapon_name:
             fields[field_name] = build_mine_string(shipstats[weapon])
-        elif shipstats.ship[weapon].name.__contains__("Railgun"):
+        elif "Railgun" in weapon_name:
             fields[field_name] = stats.RAILGUN_STATS_STRING.format(**weapon_stats)
-        else:
+        elif "Missile" in weapon_name:
             fields[field_name] = stats.MISSILE_STATS_STRING.format(**weapon_stats)
+        else:
+            logger.debug("{}".format(weapon_name))
     title = "{}: Statistics".format(name)
     embed = Embed(title=title, colour=0x4286f4)
     for name, value in fields.items():

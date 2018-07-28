@@ -106,6 +106,8 @@ STATISTICS = {
     'Mine_Slow': ("", "", "bool"),
     'Mine_Slow_Duration': ("", "", "s"),
     'Mine_Slow_Effect': ("", "", "%"),
+    "Mine_Explosion_Damage_Shields": ("", "", "i"),
+    "Mine_Explosion_Damage_Hull": ("", "", "i")
 }
 
 STATISTICS.update({
@@ -176,9 +178,28 @@ PRIMARY_WEAPON_STATS_STRING = \
     "*Firing Arc*: {Weapon_Firing_Arc}\n" \
     "*Tracking Penalty*: {trackingAccuracyLoss}\n"
 
-MISSILE_STATS_STRING = \
-    ""
+AMMO_STRING = "*Ammo*: {Ammo_Pool_Size}\n"
 
-MINE_STATS_STRING = \
-    ""
+MISSILE_STATS_STRING = \
+    "*Hull Damage*: {Weapon_Damage_Long_Hull}p\n" \
+    "*Shield Damage*: {Weapon_Damage_Long_Shields}p\n" \
+    "*Armor Penetration*: {Weapon_Armor_Penetration}\n" \
+    "*Shield Piercing*: {Weapon_Shield_Piercing}\n" \
+    "*Firing Arc*: {Weapon_Firing_Arc}\n" \
+    "*Lock-on Range* {Weapon_Range_Long}\n"  \
+    "*Lock-on Time*: {Weapon_Lock_On_Time}\n" \
+    "*Reload Time*: {Weapon_Reload_Time}\n" \
+    "*Ammo_Pool_Size*: {Weapon_Ammo}"
+
+RAILGUN_STATS_STRING = \
+    "*Hull Damage*: {Weapon_Damage_Long_Hull}p\n" \
+    "*Shield Damage*: {Weapon_Damage_Long_Shields}p\n" \
+    "*Armor Penetration*: {Weapon_Armor_Penetration}\n" \
+    "*Shield Piercing*: {Weapon_Shield_Piercing}\n" \
+    "*Accuracy (normal, point blank)*: {Weapon_Base_Accuracy}, {Weapon_Accuracy_Pb}\n" \
+    "*Tracking Penalty*: {trackingAccuracyLoss}\n" \
+    "*Firing Arc*: {Weapon_Firing_Arc}\n" \
+    "*Range (normal, point blank)*: {Weapon_Range_Long}, {Weapon_Range_Point_Blank}m\n" \
+    "*Charge-up Time*: {Weapon_Charge_Up_Time}\n" \
+    "*Cooldown*: {Weapon_Reload_Time}"
 

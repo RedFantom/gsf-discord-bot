@@ -155,7 +155,7 @@ def build_mine_string(mine: dict):
     'Mine_Slow_Effect': 0.0
     """
     string = \
-        "*Maximum amount of mines*: {Mine_count}\n" \
+        "*Maximum amount of mines*: {Mine_Count}\n" \
         "*Lifespan*: {Mine_Lifespan}\n" \
         "*Cooldown*: {Cooldown}\n" \
         "*Trigger Radius*: {Mine_Range}\n" \
@@ -169,9 +169,9 @@ def build_mine_string(mine: dict):
         string += "*Crit Chance*: {Mine_Crit_Chance}\n"
     if "Mine_Shield_Piercing" in mine and mine["Mine_Shield_Piercing"] != 0.0:
         string += "*Shield Piercing*: {Mine_Shield_Piercing}\n"
-    if "Mine_Slow" in mine and mine["Mine_Slow"] == 1.0:
+    if "Mine_Slow" in mine and bool(mine["Mine_Slow"]):
         string += "*Slow Effect*: {Mine_Slow_Effect} for {Mine_Slow_Duration}\n"
-    if "Mine_DOT" in mine and  mine["Mine_DOT"] == 1.0:
+    if "Mine_DOT" in mine and bool(mine["Mine_DOT"]):
         string += "*DOT Effect*: {Mine_DOT_Damage} of damage over {Mine_DOT_Duration}\n"
     mine = {key: get_value_string(key, val) for key, val in mine.items()}
     return string.format(**mine)
