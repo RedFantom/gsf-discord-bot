@@ -107,3 +107,4 @@ ENV/
 discord
 database.db
 latest
+assets/plain

@@ -5,15 +5,14 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 from collections import OrderedDict
-import textwrap
 # Packages
 from discord import Embed
 from github import GitRelease
 # Project Modules
 from bot.static import EMBED_FOOTER
+from bot.strings import build_mine_string, get_value_string
 from data.components import \
-    COMPONENT_KEYS, \
-    WEAPON_CATEGORIES
+    COMPONENT_KEYS
 from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
@@ -144,56 +143,41 @@ def embed_from_release(release: GitRelease) -> Embed:
 def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
     """Build a rich embed from a ShipStats instance"""
     fields = OrderedDict()
-    for category in stats.categories:
-        fields[category] = str()
-    # Ship Statistics
-    for stat, val in sorted(shipstats["Ship"].items()):
-        if stat not in stats.statistics:
-            continue
-        value_string = get_value_string(stat, val)
-        category, stat_name, _ = stats.statistics[stat]
-        if category not in fields:
-            logger.error("Statistic '{}' category not in fields".format(stat))
-            continue
-        fields[category] += "*{}*: {}\n".format(stat_name, value_string)
-    for weapon in WEAPON_CATEGORIES:
+    stats_ship = shipstats["Ship"].copy()
+    for stat, val in stats_ship.items():
+        stats_ship[stat] = get_value_string(stat, val)
+    fields["Hull and Shields"] = stats.HULL_AND_SHIELDS_STATS_STRING.format(**stats_ship)
+    fields["Engine"] = stats.ENGINE_STATS_STRING.format(**stats_ship)
+    fields["Weapons"] = stats.WEAPON_STATS_STRING.format(**stats_ship)
+    fields["Sensors"] = stats.SENSOR_STATS_STRING.format(**stats_ship)
+    for weapon in ShipStats.PRIMARY_WEAPON:
         if weapon not in shipstats:
             continue
-        weapon_dict = OrderedDict()
-        for category in stats.weapon_categories:
-            weapon_dict[category] = str()
-        for stat, val in sorted(shipstats[weapon].items()):
-            if stat not in stats.statistics:
-                continue
-            category, stat_name, _ = stats.statistics[stat]
-            value_string = get_value_string(stat, val)
-            weapon_dict[category] += "*{}*: {}\n".format(stat_name, value_string)
-        fields[weapon] = str()
-        for category, string in weapon_dict.items():
-            fields[weapon] += "**{}**\n{}\n".format(category, string)
+        weapon_stats = shipstats[weapon].copy()
+        for stat, val in weapon_stats.items():
+            weapon_stats[stat] = get_value_string(stat, val)
+        field_name = "{}: {}".format(weapon, shipstats.ship[weapon].name).replace("2", "")
+        fields[field_name] = stats.PRIMARY_WEAPON_STATS_STRING.format(**weapon_stats)
+    for weapon in ShipStats.SECONDARY_WEAPON:
+        if weapon not in shipstats:
+            continue
+        weapon_stats = dict()
+        for stat, val in shipstats[weapon].items():
+            weapon_stats[stat] = get_value_string(stat, val)
+        field_name = "{}: {}".format(weapon, "Rocket Pods")
+        if shipstats.ship[weapon].name.__contains__("Rocket Pod"):
+            fields[field_name] = stats.PRIMARY_WEAPON_STATS_STRING.format(**weapon_stats)
+        elif shipstats.ship[weapon].name.__contains__("Mine"):
+            fields[field_name] = build_mine_string(shipstats[weapon])
+        elif shipstats.ship[weapon].name.__contains__("Railgun"):
+            fields[field_name] = stats.RAILGUN_STATS_STRING.format(**weapon_stats)
+        else:
+            fields[field_name] = stats.MISSILE_STATS_STRING.format(**weapon_stats)
     title = "{}: Statistics".format(name)
     embed = Embed(title=title, colour=0x4286f4)
     for name, value in fields.items():
         embed.add_field(name="__**{}**__".format(name.replace("_", " ")), value=value, inline=False)
     return embed
-
-
-def get_value_string(statistic: str, value: float) -> str:
-    """Get a nicely formatted string with unit for a stat value"""
-    category, string, unit = stats.statistics[statistic]
-    if "%" in unit:
-        value_string = "{:.1f}{}".format(value * 100, unit)
-    elif unit == "bool":
-        value_string = "False" if value == 0.0 else "True"
-    elif unit == "p":
-        value_string = "{:.0f} {}".format(value, unit)
-    elif "m/s" in unit:
-        value_string = "{:.1f} {}".format(value * 10, unit)
-    elif unit == "m":
-        value_string = "{} {}".format(value * 100, unit)
-    else:
-        value_string = "{:.1f} {}".format(value, unit)
-    return textwrap.fill(value_string, 25).replace("^2", "²")
 
 
 def embed_from_ttk(ttk: TimeToKill, source_name: str, target_name: str, source: Ship, target: Ship, acc: bool) -> Embed:

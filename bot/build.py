@@ -89,7 +89,7 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     ship = Ship.deserialize(data)
     stats = ShipStats(ship)
     embed = embed_from_stats(stats, name)
-    await self.bot.send_message(channel, embed=embed)
+    await self.bot.send_message(user, embed=embed)
 
 
 async def show(self, channel: Channel, user: DiscordUser, args: tuple):

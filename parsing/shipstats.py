@@ -39,6 +39,16 @@ class ShipStats(object):
         "Cooldown_Time": "Cooldown",
     }
 
+    PRIMARY_WEAPON = ("PrimaryWeapon", "PrimaryWeapon2")
+    SECONDARY_WEAPON = ("SecondaryWeapon", "SecondaryWeapon2")
+
+    MODE_CORRECTED = [
+        ("Shield_Strength_{}", "Shield_Strength_Modifier_at_{}_Power", "Shields_Max_Power_(Capacity)"),
+        ("Engine_Speed_{}", "Engine_Speed_Modifier_at_{}_Power", "Engine_Base_Speed")
+    ]
+
+    POWER_POOLS = ["Engine", "Weapon", "Shield"]
+
     def __init__(self, ship):
         """
         :param ship: Ship object
@@ -59,6 +69,9 @@ class ShipStats(object):
         """Calculate the statistics of the Ship Object"""
         self.stats.clear()
         self.stats["Ship"] = self.ships_data[self.ship.ship_name]["Stats"].copy()
+        for key, value in self.stats["Ship"].copy().items():
+            key = key.replace("_(OBSOLETE?)", "")
+            self.stats["Ship"][key] = value
         self.calc_comp_stats()
         self.calc_crew_stats()
 
@@ -72,14 +85,16 @@ class ShipStats(object):
             if component is None:  # Component not set for this ship
                 continue
             self.apply_comp_stats(component)
+        self.calc_compound_stats()
 
     def apply_comp_stats(self, comp: Component):
         """Apply the stats of a component in a category"""
-        logger.debug("Applying {}: {}".format(comp.category, comp.name))
         ctg = COMPONENT_TYPES[comp.category]
         data = self.ships_data[self.ship.ship_name][ctg][comp.index].copy()
         # Get the base statistics for this component
-        base = data["Base"]["Stats"]
+        base = data["Base"]["Stats"].copy()
+        if comp.name == "Seismic Mines":
+            logger.debug("{}".format(list(base.keys())))
         base.update(data["Stats"])
         base["Cooldown"] = data["Base"]["Cooldown"]
         self.stats[ctg] = base.copy()
@@ -155,6 +170,9 @@ class ShipStats(object):
         """Apply a list of active abilities to self"""
         applied = list()
         for active in actives:
+            if len(active) == 2 and active[0].lower() == "F" and active[1].isdigit():
+                self.apply_power_mode(active)
+                continue
             # Name matching
             active_dict, key = False, None
             for key, dict in ACTIVES.items():
@@ -171,6 +189,7 @@ class ShipStats(object):
                 raise ActiveNotSupported()
             self.apply_active(key, active_dict)
             applied.append(key)
+        self.calc_compound_stats()
         return applied
 
     def apply_active(self, name: str, active: dict):
@@ -198,11 +217,89 @@ class ShipStats(object):
                 else:
                     self.apply_stats(target, upgrade)
         # Apply component statistics that were updated with upgrades
-        self.apply_stats(None, active)
+        target = active.pop("Target", None)
+        self.apply_stats(target, active)
 
-    """
-    Functions to process statistics
-    """
+    def apply_power_mode(self, mode: str):
+        """Apply a power mode to the statistics"""
+        pass
+
+    def calc_compound_stats(self):
+        """Calculate a set of specific weapon statistics"""
+        for weapon in ShipStats.PRIMARY_WEAPON + ShipStats.SECONDARY_WEAPON:
+            if weapon not in self.stats or "Mine" in self.ship[weapon].name:
+                continue
+            stats = self.stats[weapon].copy()
+            base_dmg = stats["Weapon_Base_Damage"]
+            hull_mul = stats["Weapon_Hull_Damage_Multiplier"]
+            shield_mul = stats["Weapon_Shield_Damage_Multiplier"]
+            self.calc_primary_stats_range(
+                weapon, "Weapon_Damage_{}_Shields", base_dmg * shield_mul, "{}RangeDamMulti")
+            self.calc_primary_stats_range(
+                weapon, "Weapon_Damage_{}_Hull", base_dmg * hull_mul, "{}RangeDamMulti")
+            base_acc = stats["Weapon_Base_Accuracy"]
+            self.calc_primary_stats_range(
+                weapon, "Weapon_Accuracy_{}", base_acc, "{}RangeAccMulti")
+        for weapon in ShipStats.SECONDARY_WEAPON:
+            pass
+        for args in ShipStats.MODE_CORRECTED:
+            self.calc_power_mode_corrected_stats(*args)
+        self.calc_engine_stats()
+        self.calc_high_regen_rates()
+        self.calc_turning_rates()
+        self.calc_mine_stats()
+
+    def calc_mine_stats(self):
+        """Calculate Mine statistics"""
+        for category in ("Systems", "SecondaryWeapon"):
+            if category not in self:
+                return
+            if not self.ship[category].name.__contains__("Mine"):
+                continue
+            if "Mine_Shield_Damage" not in self[category]:
+                self[category]["Mine_Explosion_Damage_Shields"] = \
+                    self[category]["Mine_Explosion_Damage_Hull"] = \
+                    self[category]["Mine_Explosion_Damage"]
+            self[category]["Mine_Explosion_Damage_Shields"] = \
+                self[category]["Mine_Explosion_Damage"] * \
+                self[category]["Mine_Shield_Damage"]
+            self[category]["Mine_Explosion_Damage_Hull"] = \
+                self[category]["Mine_Explosion_Damage"] * \
+                self[category]["Mine_Hull_Damage"]
+
+    def calc_engine_stats(self):
+        """Calculate custom engine statistics"""
+        self.stats["Ship"]["Booster_Speed"] = \
+            self.stats["Ship"]["Booster_Speed_Multiplier"] * \
+            self.stats["Ship"]["Engine_Base_Speed"]
+
+    def calc_turning_rates(self):
+        """Calculate turning rates for pitch and yaw"""
+        base = self.stats["Ship"]["Turn_Rate_Modifier"]
+        self.stats["Ship"]["Turning_Rate_Pitch"] = base * self.stats["Ship"]["Pitch"]
+        self.stats["Ship"]["Turning_Rate_Yaw"] = base * self.stats["Ship"]["Yaw"]
+
+    def calc_high_regen_rates(self):
+        """Calculate the high regeneration rates of the power pools"""
+        for pool in ShipStats.POWER_POOLS:
+            self.stats["Ship"]["Power_{}_Regen_Rate_High".format(pool)] = \
+                self.stats["Ship"]["Power_{}_Regen_Rate".format(pool)] * \
+                self.stats["Ship"]["Power_{}_Regen_High_Power_Multiplier".format(pool)]
+
+    def calc_primary_stats_range(self, weapon: str, key: str, base: float, mul_key: str):
+        """Apply a set of statistics with multipliers"""
+        range_muls = map(lambda x: self.stats[weapon].get(mul_key.format(x)), ("pb", "mid", "long"))
+        for range_key, range_mul in zip(("Pb", "Mid", "Long"), range_muls):
+            value = base * range_mul if "Acc" not in key else base + range_mul
+            self.stats[weapon][key.format(range_key)] = value
+
+    def calc_power_mode_corrected_stats(self, key: str, mod: str, base: str):
+        """Create power mode corrected stats"""
+        base = self.stats["Ship"][base]
+        for mode in ("Default", "Max", "Min"):
+            mode_key = mod.format(mode)
+            mode_mod = self.stats["Ship"][mode_key] if mode_key in self.stats["Ship"] else 1.0
+            self.stats["Ship"][key.format(mode)] = mode_mod * base
 
     @staticmethod
     def update_stat(statistics: dict, statistic: str, multiplicative: bool, value: float):
