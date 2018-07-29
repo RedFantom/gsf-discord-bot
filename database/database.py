@@ -64,6 +64,8 @@ class DatabaseHandler(object):
             r = True
         except sql.OperationalError as e:
             self.logger.error("Execution of command failed: {}.".format(e))
+            if str(e) == "unable to open database file":
+                raise
             r = False
         self.db.commit()
         self._db_lock.release()

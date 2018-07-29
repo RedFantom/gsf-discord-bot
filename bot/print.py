@@ -7,10 +7,11 @@ Copyright (C) 2018 RedFantom
 from discord import Channel, User as DiscordUser
 # Project Modules
 from bot.embeds import embed_from_manual
-from .man import MANUAL
-from .static import *
-from .messages import *
-from .func import get_download_link, get_server_status
+from bot.func import get_server_status
+from bot.github import get_download_link
+from bot.man import MANUAL
+from bot.messages import *
+from bot.static import *
 
 
 async def manual(self, channel: Channel, user: DiscordUser, args: tuple):

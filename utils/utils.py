@@ -12,6 +12,8 @@ from datetime import datetime
 from hashlib import sha256
 # Packages
 from discord import User
+# Project Modules
+from settings import settings
 
 
 DATE_FORMAT = "%Y-%m-%d"
@@ -35,9 +37,10 @@ def hash_auth(auth: str):
     return hasher.hexdigest()
 
 
-def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger:
+def setup_logger(name: str, file_name: str)->logging.Logger:
     """Initialize a Logger with a file handler"""
     file_path = os.path.join(get_log_directory(), file_name)
+    level = getattr(logging, settings["logging"]["level"])
     logger = logging.Logger(name, level=level)
     file = logging.handlers.RotatingFileHandler(file_path)
     stdout = logging.StreamHandler(sys.stdout)
@@ -50,7 +53,7 @@ def setup_logger(name: str, file_name: str, level=logging.DEBUG)->logging.Logger
 
 def get_log_directory():
     """Return an absolute path to the log directory"""
-    path = os.path.join("/", "var", "log", "discord")
+    path = os.path.join("/", "var", "log", "discord", settings["logging"]["folder"])
     if not os.path.exists(path):
         os.makedirs(path)
     return path

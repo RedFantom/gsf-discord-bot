@@ -10,6 +10,7 @@ from traceback import format_exc
 from database import DatabaseHandler
 from bot import DiscordBot
 from server import DiscordServer
+from settings import settings
 from utils.utils import setup_logger
 
 
@@ -33,12 +34,11 @@ async def run_bot(bot: DiscordBot, token: str):
 if __name__ == '__main__':
     loop = asyncio.get_event_loop()
     database = DatabaseHandler()
-    with open("discord", "r") as fi:
-        token = fi.readlines()[0].strip()
-    server = DiscordServer(database, loop, "discord.gsfparser.tk", 64731)
+    host, port = settings["server"]["domain"], settings["server"]["port"]
+    server = DiscordServer(database, loop, host, port)
     bot = DiscordBot(database, server, loop)
     loop.create_task(server.start())
-    loop.create_task(run_bot(bot, token))
+    loop.create_task(run_bot(bot, settings["discord"]["token"]))
     loop.set_exception_handler(bot.exception_handler)
     try:
         loop.run_forever()

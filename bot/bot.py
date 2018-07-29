@@ -5,52 +5,26 @@ Copyright (C) 2018 RedFantom
 """
 # Standard Library
 import asyncio
-import os
 from typing import *
 import traceback
 # Packages
 from dateparser import parse as parse_date
-import discord
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message, Embed, Server
+from discord import \
+    User as DiscordUser, Channel, Message, Embed, Server, Member
 from raven import Client as RavenClient
 # Project Modules
-from bot.embeds import embed_from_release
 from bot.func import *
+from bot.github import github_monitor
 from bot.strings import *
 from bot.messages import *
-from bot.static import EMBED_FOOTER
 from data.servers import SERVER_NAMES
-from data.maps import map_names
 from database import DatabaseHandler
 from parsing import scoreboards as sb
-from parsing.renderer import render_phase
-from parsing.strategies import Strategy
 from server.discord import DiscordServer
+from settings import settings
 from utils import setup_logger, generate_tag
 from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
-
-
-class VersionTracker(object):
-    def __init__(self):
-        if not os.path.exists("latest"):
-            with open("latest", "w") as fo:
-                fo.write("None")
-        with open("latest") as fi:
-            self.version = fi.read().strip()
-        if self.version == "None":
-            self.set("v5.0.0")
-
-    def set(self, version: str):
-        with open("latest", "w") as fo:
-            fo.write(version)
-        self.version = version
-
-    def get(self):
-        return self.version
-
-    def __str__(self):
-        return self.version[1:]
 
 
 class DiscordBot(object):
@@ -59,13 +33,8 @@ class DiscordBot(object):
     the man.py file.
     """
 
-    PREFIX = "$"
     DESCRIPTION = "A friendly bot to socially interact with GSF " \
                   "statistics and for research"
-    CHANNELS = ("general", "code", "bots", "bot", "parser", "exceptions")
-    CHANNELS_ENFORCED = True
-
-    OVERVIEW_CHANNELS = ("matches",)
 
     IMAGE_TYPES = ("png", "jpg", "bmp")
 
@@ -91,7 +60,7 @@ class DiscordBot(object):
         "character": ((2, 3), "find_character_owner"),
         "results": ((3,), "get_results"),
         "random": ((0, 1), "random_ship"),
-        "strategy": ((0, 1, 2, 3), "strategy"),
+        "strategy": ((0, 1, 2, 3), "strategy.strategy"),
         # Data Processing
         "scoreboard": ((0, 1), "parse_scoreboard", True),
         "build": (range(1, 20), "build.calculator"),
@@ -121,7 +90,7 @@ class DiscordBot(object):
 
     NOT_REGISTERED_ALLOWED = ["register", "event"]
 
-    EXCEPTION_CHANNEL = "exceptions"
+    EXCEPTION_CHANNEL = settings["exceptions"]["channel"]
 
     def __init__(self, database: DatabaseHandler, server: DiscordServer, loop: asyncio.BaseEventLoop):
         """
@@ -131,18 +100,17 @@ class DiscordBot(object):
         """
         with open("participants.txt") as fi:
             self.participants = [line.strip() for line in fi.readlines()]
-        self.bot = commands.Bot(self.PREFIX, description=self.DESCRIPTION)
+        self.bot = commands.Bot(settings["bot"]["prefix"], description=self.DESCRIPTION)
         self.db = database
         self.logger = setup_logger("DiscordBot", "bot.log")
         self.setup_commands()
         self.server = server
         self.overview_messages = dict()
         self.loop = loop
+        self.loop.create_task(github_monitor(self))
         self.loop.create_task(self.server_status_monitor())
         self.loop.create_task(self.matches_monitor())
-        # self.loop.create_task(self.github_monitor())
-        self.raven = self.open_raven_client()
-        self.latest = VersionTracker()
+        self.raven = None
 
     def setup_commands(self):
         """Create the bot commands"""
@@ -167,29 +135,9 @@ class DiscordBot(object):
         """
         try:
             author, channel, content = message.author, message.channel, message.content
-            if channel.is_private is True:  # Only certain commands allowed
-                valid = False
-                for command in DiscordBot.PRIVATE:
-                    if command in message.content:
-                        valid = True
-                        break
-                if valid is False:
-                    await self.bot.send_message(author, NOT_PRIVATE)
-                    return
             if await self.validate_message(message) is False:
                 return
-            elems = content.split("->")
-            if len(elems) == 2:
-                content = elems[0].strip()
-                message.content = content
-                if not channel.is_private:
-                    channel_name = elems[1].strip()
-                    assert isinstance(message.server, Server)
-                    for server_channel in message.server.channels:
-                        assert isinstance(server_channel, Channel)
-                        if server_channel.mention == channel_name:
-                            channel = server_channel
-                            break
+            message, channel = await self.process_redirect(message)
             command, args = await self.process_command(message)
             if command is None:
                 await self.invalid_command(channel, author)
@@ -208,7 +156,6 @@ class DiscordBot(object):
         except Exception as e:
             await self.bot.send_message(
                 message.channel, "Sorry, I encountered an error. It has been reported.")
-            self.raven.captureException()
             self.exception_handler(
                 self.loop, {"exception": e, "message": str(e)})
 
@@ -242,34 +189,6 @@ class DiscordBot(object):
         await asyncio.sleep(60)
         self.loop.create_task(self.server_status_monitor())
 
-    async def github_monitor(self):
-        """Monitor the release of a new version of the GSF Parser"""
-        try:
-            latest = get_latest_tag()
-            self.logger.debug("Latest tag: {}".format(latest))
-            repo = Github().get_user("RedFantom").get_repo("gsf-parser")
-            releases = repo.get_releases()
-            for release in releases:
-                if release.draft is True:
-                    continue
-                try:
-                    version = Version(release.tag_name[1:])
-                except ValueError:
-                    continue
-                if version != latest or version == Version(str(self.latest)):
-                    self.logger.debug("{} rejected.".format(version))
-                    continue
-                embed = embed_from_release(release)
-                for channel in self.validated_channels:
-                    await self.bot.send_message(channel, embed=embed)
-                self.latest.set(release.tag_name)
-        except Exception as e:
-            self.raven.captureException()
-            context = {"exception": e, "message": "Exception in github_monitor"}
-            self.exception_handler(self.loop, context)
-        await asyncio.sleep(1800)
-        self.loop.create_task(self.github_monitor())
-
     async def matches_monitor(self):
         """
         Monitor the matches running on each server
@@ -277,10 +196,12 @@ class DiscordBot(object):
         This runs as a coroutine, continuously monitoring the running
         matches on each server by receiving data from
         """
+        if settings["matches"]["monitor"] is False:
+            return
         try:
             message = build_matches_overview_string(self.server.matches.copy())
             message = MATCHES_TABLE.format(message, datetime.now().strftime("%H:%m:%S"))
-            for channel in self.overview_channels:
+            for channel in self.get_channels_by_name(settings["matches"]["channel"]):
                 if channel in self.overview_messages:
                     try:
                         await self.bot.edit_message(self.overview_messages[channel], message)
@@ -303,16 +224,6 @@ class DiscordBot(object):
         for server in self.bot.servers:
             for channel in server.channels:
                 if self.validate_channel(channel) is False:
-                    continue
-                channels.append(channel)
-        return channels
-
-    @property
-    def overview_channels(self) -> list:
-        channels = list()
-        for server in self.bot.servers:
-            for channel in server.channels:
-                if channel.name not in self.OVERVIEW_CHANNELS:
                     continue
                 channels.append(channel)
         return channels
@@ -445,12 +356,19 @@ class DiscordBot(object):
 
     async def validate_message(self, message: Message):
         """Check if this message is a valid command for the bot"""
+        if await self.validate_author(message) is False:
+            return False
+        if await self.validate_content(message) is False:
+            return False
+        if await self.validate_channel(message) is False:
+            return False
+        return True
+
+    async def validate_content(self, message: Message):
+        """Validate the content of a message"""
         author, channel, content = message.author, message.channel, message.content
-        if not self.validate_channel(channel):
+        if not (isinstance(content, str) and len(content) > 1 and content[0] == settings["bot"]["prefix"]):
             return False
-        if not (isinstance(content, str) and len(content) > 1 and content[0] == DiscordBot.PREFIX):
-            return False
-        # Validate that the user is registered and has contribute data recently
         tag = generate_tag(author)
         if not self.db.get_user_in_database(tag) and "register" not in content:
             await self.bot.send_message(channel, NOT_REGISTERED)
@@ -459,15 +377,55 @@ class DiscordBot(object):
         for command in self.NOT_REGISTERED_ALLOWED:
             if command in content:
                 return True
+        if channel.is_private is True and not any(command in content for command in DiscordBot.PRIVATE):
+            await self.bot.send_message(author, NOT_PRIVATE)
+            return False
+        return True
+
+    async def validate_channel(self, message: Message):
+        """Validate the channel the message was sent in as valid"""
+        channel = message.channel
+        assert isinstance(channel, Channel)
+        return channel in self.validated_channels
+
+    async def validate_author(self, message: Message):
+        """Determine whether a user is allowed to use the bot"""
+        author, server = message.author, message.server
+        if author == self.bot.user:
+            return False
+        assert isinstance(author, DiscordUser) and isinstance(server, Server)
+        if settings["bot"]["role"] is not None:
+            member = server.get_member(author.id)
+            assert isinstance(member, Member)
+            if settings["bot"]["role"] not in [role.name for role in member.roles]:
+                return False
         # if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
         #     await self.bot.send_message(channel, INACTIVE)
         #     return False
         return True
 
-    @staticmethod
-    def validate_channel(channel: Channel):
-        """Check if this message was sent in a valid channel for the Bot"""
-        return not (channel.name not in DiscordBot.CHANNELS and DiscordBot.CHANNELS_ENFORCED and not channel.is_private)
+    async def process_redirect(self, message: Message)->Tuple[Message, Channel]:
+        """
+        Determine if the message requests a redirect of channel
+
+        The Bot allows redirecting command results to channels that
+        would not normally allow bot commands. This can be done with the
+        `->` operator, mentioning a single channel after this marker.
+        """
+        content, channel = message.content, message.channel
+        elems = content.split("->")
+        if len(elems) == 2:
+            content = elems[0].strip()
+            message.content = content
+            if not channel.is_private:
+                channel_name = elems[1].strip()
+                assert isinstance(message.server, Server)
+                for server_channel in message.server.channels:
+                    assert isinstance(server_channel, Channel)
+                    if server_channel.mention == channel_name:
+                        channel = server_channel
+                        break
+        return message, channel
 
     async def process_command(self, message: Message):
         """Split the message into command and arguments"""
@@ -496,9 +454,9 @@ class DiscordBot(object):
         elements = message.split(" ")
         # The first element should be the command
         command, arguments = elements[0], elements[1:]
-        if not command.startswith(DiscordBot.PREFIX):  # Not a command
+        if not command.startswith(settings["bot"]["prefix"]):  # Not a command
             return None, None
-        command = command.replace(DiscordBot.PREFIX, str())
+        command = command.replace(settings["bot"]["prefix"], str())
         # The command is valid, so now the arguments for it must be parsed
         hold, args = str(), list()
         for element in arguments:
@@ -571,111 +529,32 @@ class DiscordBot(object):
                 fo.write("{}\n".format(name))
             fo.write("\n")
 
-    async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
-        """
-        Strategy manager for the Discord bot
-
-        Commands:
-        - list (default): List all the strategies owned by the user
-        - show {strategy}: Show the details of a specific strategy
-        - render {strategy}: Render a strategy's phases to PNG and show
-        - delete {strategy}: Delete a given strategy by name
-        """
-        if len(args) == 0:
-            args = ("list",)
-        command = args[0]
-        if command != "list" and len(args) == 1:
-            await self.bot.send_message(channel, INVALID_ARGS)
-            return
-        tag = generate_tag(user)
-
-        if command == "list":
-            strategies = self.db.get_strategies(tag)
-            if strategies is None or len(strategies) == 0:
-                await self.bot.send_message(channel, "You have uploaded no strategies.")
-                return
-            message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
-                user.mention, "\n".join(list("- {}".format(a) for a in strategies)))
-            await self.bot.send_message(channel, message)
-            return
-
-        name = args[1]
-        strategy = self.db.get_strategy_data(tag, name)
-        if strategy is None:
-            await self.bot.send_message(channel, UNKNOWN_STRATEGY)
-            return
-        strategy = Strategy.deserialize(strategy)
-
-        if command == "delete":
-            self.db.delete_strategy(tag, name)
-            await self.bot.send_message(channel, STRATEGY_DELETE.format(name))
-
-        elif command == "show":
-            map_type, map_name = strategy.map
-            embed = await self.build_embed(
-                "{}: {}".format(tag.split("#")[0][1:], strategy.name),
-                strategy.description,
-                [("Phases", "\n".join("- {}".format(a) for a in strategy.phases)),
-                 ("Map", map_names[map_type][map_name])]
-            )
-            await self.bot.send_message(channel, embed=embed)
-
-        elif command == "render":
-            if len(args) != 3:
-                await self.bot.send_message(channel, INVALID_ARGS)
-                return
-            phase_name = args[2]
-            if phase_name not in strategy.phases:
-                await self.bot.send_message(
-                    channel, INVALID_PHASE_NAME.format(name, phase_name))
-                return
-            phase = strategy[phase_name]
-            image = render_phase(phase)
-            name = tag.split("#")[0][1:]
-            title = "{} - {}: {}".format(name, strategy.name, phase.name)
-            embed = await self.build_embed(title, phase.description, None, image=image)
-            try:
-                await self.bot.send_message(channel, embed=embed)
-            except discord.errors.Forbidden:
-                await self.bot.send_message(channel, EMBED_PERMISSION_ERROR)
-        else:
-            await self.bot.send_message(channel, INVALID_ARGS)
-
-    async def build_embed(
-            self, title: str, description: str,
-            fields: (List[Tuple[str]], None), footer: str = None,
-            image: Image.Image = None, colour: int = 0x3AAA35) -> Embed:
-        """Build a Discord Embed from the given parameters"""
-        if len(description) > 2048:
-            description = description[:2040] + "..."
-        embed = Embed(title="**{}**".format(title), description=description, colour=colour)
-        if footer is None:
-            footer = EMBED_FOOTER
-        embed.set_footer(text=footer)
-        if image is not None:
-            embed.set_image(url=await self.upload_image(image, title))
-        if fields is not None:
-            for name, content in fields:
-                embed.add_field(name=name, value=content)
-        return embed
-
     async def upload_image(self, image: Image.Image, title: str) -> str:
         """Upload an image to the GSF Parser server for use in embeds"""
         title = title.replace(" ", "_").replace(":", "_")
-        path = "/var/www/discord.gsfparser.tk/images/{}.png".format(title)
+        path = "/var/www/{}/images/{}.png".format(settings["bot"]["http"], title)
         image.save(path)
-        return "http://discord.gsfparser.tk/images/{}.png".format(title)
+        return "{}/images/{}.png".format(settings["bot"]["http"], title)
 
     def exception_handler(self, loop: asyncio.AbstractEventLoop, context: dict):
         """Handle all exceptions raised in the asyncio tasks"""
-        self.raven.captureException()
-        exc = context["exception"] if "exceptexception" in context else Exception
-        description = "**Message**: {}\n".format(context["message"]) + \
-                      "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
-        embed = Embed(title=str(exc), colour=0xFF0000, description=description)
-        embed.set_footer(text="Exception report by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
-        channel = self.get_channel_by_name(self.EXCEPTION_CHANNEL)
-        loop.create_task(self.bot.send_message(channel, embed=embed))
+        self.logger.error(traceback.format_exc())
+        if not settings["exceptions"]["enabled"]:
+            return
+        if self.raven is None:
+            self.raven = RavenClient(settings["exceptions"]["raven"])
+        try:
+            self.raven.captureException()
+            exc = context["exception"] if "exception" in context else Exception
+            description = "**Message**: {}\n".format(context["message"]) + \
+                          "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
+            embed = Embed(title=str(exc), colour=0xFF0000, description=description)
+            channel = self.get_channel_by_name(settings["exceptions"]["channel"])
+            loop.create_task(self.bot.send_message(channel, embed=embed))
+        except Exception as e:
+            self.raven.captureException(
+                extra={"platform": settings["exceptions"]["platform"]})
+            self.logger.error(traceback.format_exc())
 
     def get_channel_by_name(self, name: str) -> (Channel, None):
         """Search for a channel by name in available channels"""
@@ -684,9 +563,10 @@ class DiscordBot(object):
                 return channel
         return None
 
-    @staticmethod
-    def open_raven_client():
-        with open("sentry") as fi:
-            link = fi.read().strip()
-        client = RavenClient(link)
-        return client
+    def get_channels_by_name(self, name: str) -> List[Channel]:
+        """Return a list of channels with a given channel name"""
+        channels = list()
+        for channel in self.validated_channels:
+            if channel.name == name:
+                channels.append(channel)
+        return channels

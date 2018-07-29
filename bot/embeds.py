@@ -8,6 +8,7 @@ from collections import OrderedDict
 # Packages
 from discord import Embed
 from github import GitRelease
+from PIL import Image
 # Project Modules
 from bot.static import EMBED_FOOTER
 from bot.strings import build_mine_string, get_value_string
@@ -17,6 +18,7 @@ from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
 from parsing.shipops import TimeToKill
+from parsing.strategies import Strategy, Phase
 from utils.utils import setup_logger
 
 logger = setup_logger("Embeds", "embeds.log")
@@ -206,4 +208,16 @@ def embed_from_ttk(ttk: TimeToKill, source_name: str, target_name: str, source: 
         if value != "":
             embed.add_field(name="Active Abilities", value=value, inline=False)
     embed.set_footer(text=EMBED_FOOTER)
+    return embed
+
+
+def embed_from_phase_render(tag: str, image: str, strategy: Strategy, phase: Phase) -> Embed:
+    """Build a Discord Embed from the given parameters"""
+    description = phase.description
+    title = "{} - {}: {}".format(tag, strategy.name, phase.name)
+    if len(description) > 2048:
+        description = description[:2040] + "..."
+    embed = Embed(title="**{}**".format(title), description=description, colour=0x3AAA35)
+    embed.set_footer(text=EMBED_FOOTER)
+    embed.set_image(url=image)
     return embed

@@ -1,5 +1,4 @@
 # GSF Discord Bot
-[![Build Status](https://travis-ci.com/RedFantom/gsf-discord-bot.svg?token=UBcv5ZyxSrELyQhSpadq&branch=master)](https://travis-ci.com/RedFantom/gsf-discord-bot)
 
 This Discord Bot is intended for use in Discord servers in use by the
 SWTOR:GSF Community. This bot works in conjunction with the 

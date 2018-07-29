@@ -7,17 +7,11 @@ Copyright (C) 2018 RedFantom
 from io import BytesIO
 import random
 # Packages
-from github import Github, GithubException
 from PIL import Image
 import requests
-from semantic_version import Version
 # Project Modules
 from data.servers import SERVERS
 from data.ships import ship_tier_letters
-
-
-BASE_LINK = "https://github.com/RedFantom/gsf-parser/releases/download/{tag}/GSF_Parser_{tag}.{ext}"
-EXTENSIONS = ("exe", "zip")
 
 
 async def get_server_status():
@@ -58,45 +52,6 @@ async def download_image(link: str)->Image.Image:
     offers the same interface as a file buffer created with open().
     """
     return Image.open(BytesIO(requests.get(link).content))
-
-
-async def get_download_link()->(tuple, None):
-    """
-    Build download link to the most recent version of the GSF Parser
-
-    Download the tags from the GitHub repository and select the most
-    recent one. Then the download links are built based on that. Returns
-    a tuple that can be passed directly to the GITHUB_LINKS message
-    formatter.
-    """
-    version = get_latest_tag()
-    if version is None:
-        return None
-    tag = "v{}.{}.{}".format(version.major, version.minor, version.patch)
-    links = list()
-    for ext in EXTENSIONS:
-        links.append(BASE_LINK.format(tag=tag, ext=ext))
-    return (tag,) + tuple(links)
-
-
-def get_latest_tag()->(None, Version):
-    """Return the latest Version of the GSF Parser"""
-    github = Github()
-    user = github.get_user("RedFantom")
-    repo = user.get_repo("gsf-parser")
-    try:
-        tags = repo.get_tags()
-    except GithubException:
-        return None
-    versions = list()
-    for tag in tags:
-        tag = tag.name[1:].replace("beta", "").replace("alpha", "").replace("_", "")
-        try:
-            versions.append(Version(tag))
-        except ValueError:
-            continue
-    version = max(versions)
-    return version
 
 
 async def get_random_ship(category: str = None):
