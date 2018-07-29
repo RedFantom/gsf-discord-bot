@@ -12,7 +12,7 @@ import traceback
 from dateparser import parse as parse_date
 import discord
 from discord.ext import commands
-from discord import User as DiscordUser, Channel, Message, Embed
+from discord import User as DiscordUser, Channel, Message, Embed, Server
 from raven import Client as RavenClient
 # Project Modules
 from bot.embeds import embed_from_release
@@ -167,8 +167,6 @@ class DiscordBot(object):
         """
         try:
             author, channel, content = message.author, message.channel, message.content
-            if author == self.bot.user:  # Don't process own messages
-                return
             if channel.is_private is True:  # Only certain commands allowed
                 valid = False
                 for command in DiscordBot.PRIVATE:
@@ -180,6 +178,18 @@ class DiscordBot(object):
                     return
             if await self.validate_message(message) is False:
                 return
+            elems = content.split("->")
+            if len(elems) == 2:
+                content = elems[0].strip()
+                message.content = content
+                if not channel.is_private:
+                    channel_name = elems[1].strip()
+                    assert isinstance(message.server, Server)
+                    for server_channel in message.server.channels:
+                        assert isinstance(server_channel, Channel)
+                        if server_channel.mention == channel_name:
+                            channel = server_channel
+                            break
             command, args = await self.process_command(message)
             if command is None:
                 await self.invalid_command(channel, author)
