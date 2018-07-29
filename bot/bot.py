@@ -223,9 +223,8 @@ class DiscordBot(object):
         channels = list()
         for server in self.bot.servers:
             for channel in server.channels:
-                if self.validate_channel(channel) is False:
-                    continue
-                channels.append(channel)
+                if channel.name in settings["bot"]["channels"]:
+                    channels.append(channel)
         return channels
 
     async def invalid_command(self, channel: Channel, user: DiscordUser):
