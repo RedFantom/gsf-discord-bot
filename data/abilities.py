@@ -16,20 +16,20 @@ primary = {
 }
 
 secondary = {
-    "protons": "Proton Torpedo",
-    "concussions": "Concussion Missile",
-    "thermites": "Thermite Torpedo",
+    "protons": "Proton Torpedoes",
+    "concussions": "Concussion Missiles",
+    "thermites": "Thermite Torpedoes",
     "clusters": "Cluster Missiles",
     "seekers": "Seeker Mines",
     "pods": "Rocket Pods",
-    "empm": "EMP Missile",
-    "ionm": "Ion Missile",
-    "probes": "Sabotage Probe",
+    "empm": "EMP Missiles",
+    "ionm": "Ion Missiles",
+    "probes": "Sabotage Probes",
     "seismics": "Seismic Mines",
     "slug": "Slug Railgun",
     "ion": "Ion Railgun",
     "plasma": "Plasma Railgun",
-    "interdiction": "Interdiction Missile",
+    "interdiction": "Interdiction Missiles",
 }
 
 engine = {
