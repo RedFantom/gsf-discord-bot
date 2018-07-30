@@ -8,12 +8,12 @@ from collections import OrderedDict
 # Packages
 from discord import Embed
 from github import GitRelease
-from PIL import Image
 # Project Modules
 from bot.static import EMBED_FOOTER
 from bot.strings import build_mine_string, get_value_string
 from data.components import \
     COMPONENT_KEYS
+from data import abilities
 from data import statistics as stats
 from parsing.ships import Ship, Component
 from parsing.shipstats import ShipStats
@@ -175,7 +175,7 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
             fields[field_name] = build_mine_string(shipstats[weapon])
         elif "Railgun" in weapon_name:
             fields[field_name] = stats.RAILGUN_STATS_STRING.format(**weapon_stats)
-        elif "Missile" in weapon_name:
+        elif weapon_name in abilities.secondary.values():
             fields[field_name] = stats.MISSILE_STATS_STRING.format(**weapon_stats)
         else:
             logger.debug("{}".format(weapon_name))
