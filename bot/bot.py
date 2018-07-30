@@ -88,7 +88,7 @@ class DiscordBot(object):
         "strategy",
     ]
 
-    NOT_REGISTERED_ALLOWED = ["register", "event"]
+    NOT_REGISTERED_ALLOWED = ["register", "event", "help", "setup", "link"]
 
     EXCEPTION_CHANNEL = settings["exceptions"]["channel"]
 
