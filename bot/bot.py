@@ -392,10 +392,14 @@ class DiscordBot(object):
         author, server = message.author, message.server
         if author == self.bot.user:
             return False
-        assert isinstance(author, DiscordUser) and isinstance(server, Server)
+        if not isinstance(author, DiscordUser):
+            return
         if settings["bot"]["role"] is not None:
+            if not isinstance(server, Server):
+                return False
             member = server.get_member(author.id)
-            assert isinstance(member, Member)
+            if member is None:
+                return False
             if settings["bot"]["role"] not in [role.name for role in member.roles]:
                 return False
         # if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
