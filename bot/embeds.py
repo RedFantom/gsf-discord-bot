@@ -175,7 +175,7 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
             fields[field_name] = build_mine_string(shipstats[weapon])
         elif "Railgun" in weapon_name:
             fields[field_name] = stats.RAILGUN_STATS_STRING.format(**weapon_stats)
-        elif weapon_name in abilities.secondary.values():
+        elif weapon_name in abilities.missiles:
             fields[field_name] = stats.MISSILE_STATS_STRING.format(**weapon_stats)
         else:
             logger.debug("{}".format(weapon_name))

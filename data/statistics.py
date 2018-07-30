@@ -186,10 +186,10 @@ MISSILE_STATS_STRING = \
     "*Armor Penetration*: {Weapon_Armor_Penetration}\n" \
     "*Shield Piercing*: {Weapon_Shield_Piercing}\n" \
     "*Firing Arc*: {Weapon_Firing_Arc}\n" \
-    "*Lock-on Range* {Weapon_Range_Long}\n"  \
+    "*Lock-on Range*: {Weapon_Range_Long}\n"  \
     "*Lock-on Time*: {Weapon_Lock_On_Time}\n" \
     "*Reload Time*: {Weapon_Reload_Time}\n" \
-    "*Ammo_Pool_Size*: {Weapon_Ammo}"
+    "*Ammo Pool Size*: {Ammo_Pool_Size}"
 
 RAILGUN_STATS_STRING = \
     "*Hull Damage*: {Weapon_Damage_Long_Hull}p\n" \

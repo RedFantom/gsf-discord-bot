@@ -160,3 +160,13 @@ COMPONENTS = {
     "Magazine": magazine,
     "Sensor": sensors,
 }
+
+missiles = [
+    "Interdiction Missiles",
+    "Proton Torpedoes",
+    "Thermite Torpedoes",
+    "Cluster Missiles",
+    "EMP Missiles",
+    "Ion Missiles",
+    "Sabotage Probes",
+]
