@@ -11,7 +11,7 @@ import traceback
 from dateparser import parse as parse_date
 from discord.ext import commands
 from discord import \
-    User as DiscordUser, Channel, Message, Embed, Server, Member
+    User as DiscordUser, Channel, Message, Embed, Server, PrivateChannel
 from raven import Client as RavenClient
 # Project Modules
 from bot.func import *
@@ -384,7 +384,8 @@ class DiscordBot(object):
     async def validate_channel(self, message: Message):
         """Validate the channel the message was sent in as valid"""
         channel = message.channel
-        assert isinstance(channel, Channel)
+        if isinstance(channel, PrivateChannel):
+            return True
         return channel in self.validated_channels
 
     async def validate_author(self, message: Message):
