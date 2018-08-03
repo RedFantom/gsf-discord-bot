@@ -4,8 +4,9 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Standard Library
-import os
 from datetime import datetime
+import os
+import traceback
 # Project Modules
 from utils import opencv
 from utils.utils import get_assets_directory, setup_logger
@@ -61,8 +62,7 @@ def get_allied(image: Image.Image)->bool:
 
 def is_scoreboard(image: Image.Image)->(tuple, None):
     """Use feature matching to check if image contains scoreboard"""
-    resolution = "{}x{}".format(*image.size)
-    folder = os.path.join(get_assets_directory(), "headers", resolution)
+    folder = os.path.join(get_assets_directory(), "headers")
     if not os.path.exists(folder):
         return None, None
     scales = os.listdir(folder)
@@ -81,7 +81,7 @@ def is_scoreboard(image: Image.Image)->(tuple, None):
 
 def crop_scoreboard(image: Image.Image, scale: float, loc: tuple)->Image.Image:
     """Crop a screenshot to just the scoreboard"""
-    path = os.path.join(get_assets_directory(), "headers", "{}x{}".format(*image.size), "{}.png".format(scale))
+    path = os.path.join(get_assets_directory(), "headers", "{}.png".format(scale))
     template = Image.open(path)
     (w, h), (x, y) = template.size, loc
     return image.crop((x, y + h, x + w, y + h + DEFAULT_TABLE_HEIGHT * scale))
@@ -172,7 +172,10 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bo
         for name, column in zip(columns, row):
             result = await perform_ocr(column, name)
             done += 1
-            message = await bot.edit_message(message, generate_progress_string(done/todo, start, i, name))
+            try:
+                message = await bot.edit_message(message, generate_progress_string(done/todo, start, i, name))
+            except Exception:
+                logger.error(traceback.format_exc())
             text.append(result)
         allied = get_allied(column)
         text.append(str(allied))

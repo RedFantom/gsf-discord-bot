@@ -202,4 +202,3 @@ RAILGUN_STATS_STRING = \
     "*Range (normal, point blank)*: {Weapon_Range_Long}, {Weapon_Range_Point_Blank}m\n" \
     "*Charge-up Time*: {Weapon_Charge_Up_Time}\n" \
     "*Cooldown*: {Weapon_Reload_Time}"
-
