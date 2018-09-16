@@ -15,16 +15,14 @@ from discord import \
 from raven import Client as RavenClient
 # Project Modules
 from bot.func import *
-from bot.github import github_monitor
 from bot.strings import *
 from bot.messages import *
 from data.servers import SERVER_NAMES
 from database import DatabaseHandler
-from parsing import scoreboards as sb
 from server.discord import DiscordServer
 from settings import settings
 from utils import setup_logger, generate_tag
-from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
+from utils.utils import DATE_FORMAT, TIME_FORMAT
 
 
 class DiscordBot(object):
@@ -42,7 +40,7 @@ class DiscordBot(object):
         # Help commands
         "man": ((0, 1), "print.manual"),
         "servers": ((0,), "print.servers"),
-        "author": ((0,), "print.author"),
+        "bot_author": ((0,), "print.author"),
         "privacy": ((0,), "print.privacy"),
         "purpose": ((0,), "print.purpose"),
         "setup": ((0,), "print.setup"),
