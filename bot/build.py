@@ -9,6 +9,7 @@ from discord import Channel, User as DiscordUser
 # Project Modules
 from bot.embeds import *
 from bot.messages import *
+from data.actives import ACTIVES
 from parsing.ships import Ship, lookup_crew, lookup_component
 from parsing.shipstats import \
     ShipStats, \
@@ -26,7 +27,8 @@ BUILD_COMMANDS = {
     "delete": (1,),
     "lookup": (1,),
     "list": (0,),
-    "ttk": (2, 3, 4,)
+    "ttk": (2, 3, 4,),
+    "actives": (0,)
 }
 
 _list = list
@@ -235,6 +237,16 @@ async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
         return
     embed = embed_from_ttk(ttk, s_name, t_name, source, target, acc)
     await self.bot.send_message(channel, embed=embed)
+
+
+async def actives(self, channel: Channel, user: DiscordUser, args: tuple):
+    """Print a list of active abilities available for enablement"""
+    await self.bot.send_message(
+        channel,
+        "My TTK calculations support the following active abilities:\n" +
+        "\n".join("{}: {}".format(
+            "".join(k[0].lower() for k in e.split()), e) for e in ACTIVES.keys()) +
+        "\nIn addition, you can use any power mode (like `F2`).")
 
 
 async def calculator(self, channel: Channel, user: DiscordUser, args: tuple):
