@@ -275,9 +275,9 @@ class Ship(object):
         return dictionary
 
     @staticmethod
-    def from_base(base: str):
+    def from_base(base: str) -> (object, None):
         if base not in ship_tier_factions:
-            raise ValueError("Invalid ship base identifier: {}".format(base))
+            return None
         name = ship_tier_factions[base]
         fqsn = ship_names[name]
         return Ship(fqsn)

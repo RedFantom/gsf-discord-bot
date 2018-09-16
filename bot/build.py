@@ -47,6 +47,11 @@ async def create(self, channel: Channel, user: DiscordUser, args: tuple):
     public = len(args) == 3 and args[2] == "public"
     owner = generate_tag(user)
     ship = Ship.from_base(base)
+    if ship is None:
+        await self.bot.send_message("That is not a valid ship base identifier. "
+                                    "Check your command for typos and argument "
+                                    "order.")
+        return
     data = ship.serialize()
     number = self.db.insert_build(owner, name, data, public)
     if number is None:
