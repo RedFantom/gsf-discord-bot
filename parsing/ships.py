@@ -291,8 +291,9 @@ class Ship(object):
         for cat in COMPONENTS:
             if cat not in ship.data:
                 continue
-            comp = random.choice(ship.data[cat])
-            ship[comp] = Component(comp, ship.data[cat].index(comp), cat)
+            index = random.randint(0, len(ship.data[cat]))
+            comp = ship.data[cat][index]
+            ship[comp] = Component(comp, index, cat)
         return ship
 
 
