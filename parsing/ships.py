@@ -293,7 +293,7 @@ class Ship(object):
                 continue
             index = random.randint(0, len(ship.data[cat]) - 1)
             comp = ship.data[cat][index]
-            ship[comp] = Component(comp, index, cat)
+            ship[cat] = Component(comp, index, cat)
         return ship
 
 
