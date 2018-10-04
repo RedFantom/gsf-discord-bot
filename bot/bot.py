@@ -14,11 +14,13 @@ from discord import \
     User as DiscordUser, Channel, Message, Embed, Server, PrivateChannel
 from raven import Client as RavenClient
 # Project Modules
+from bot.embeds import embed_from_ship
 from bot.func import *
 from bot.strings import *
 from bot.messages import *
 from data.servers import SERVER_NAMES
 from database import DatabaseHandler
+from parsing.ships import Ship
 from server.discord import DiscordServer
 from settings import settings
 from utils import setup_logger, generate_tag
@@ -472,9 +474,10 @@ class DiscordBot(object):
                     if name == member.name:
                         user = member
                 mention = user.mention if user is not None else name
-                ship = await get_random_ship()
+                ship = Ship.random()
                 await self.bot.send_message(
-                    channel, "{}, you are playing {}.".format(mention, ship))
+                    channel, "{}, you are playing {}.".format(mention, ship.name),
+                    embed=embed_from_ship(ship, "Random Build for {}".format(mention)))
         elif command == "dissolve":
             self.participants.clear()
             await self.bot.send_message(channel, "The participant list has been cleared.")

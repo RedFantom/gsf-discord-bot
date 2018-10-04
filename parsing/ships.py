@@ -7,6 +7,7 @@ Copyright (C) 2016-2018 RedFantom
 # Standard Library
 from os import path
 import pickle as pickle
+import random
 # Project Modules
 from data import abilities
 from data.components import *
@@ -281,6 +282,18 @@ class Ship(object):
         name = ship_tier_factions[base]
         fqsn = ship_names[name]
         return Ship(fqsn)
+
+    @staticmethod
+    def random():
+        """Generate a random Ship instance"""
+        base = random.choice(ship_tier_factions)
+        ship = Ship.from_base(base)
+        for cat in COMPONENTS:
+            if cat not in ship.data:
+                continue
+            comp = random.choice(ship.data[cat])
+            ship[comp] = Component(comp, ship.data[cat].index(comp), cat)
+        return ship
 
 
 class Component(object):
