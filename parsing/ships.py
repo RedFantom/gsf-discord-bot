@@ -288,11 +288,16 @@ class Ship(object):
         """Generate a random Ship instance"""
         base = random.choice(list(ship_tier_factions))
         ship = Ship.from_base(base)
+        names = ["Empty"]
         for cat in COMPONENTS:
             if cat not in ship.data:
                 continue
-            index = random.randint(0, len(ship.data[cat]) - 1)
-            comp = ship.data[cat][index]
+            name = "Empty"
+            while name in names:
+                index = random.randint(0, len(ship.data[cat]) - 1)
+                comp = ship.data[cat][index]
+                name = comp["Name"]
+            names.append(name)
             ship[cat] = Component(comp, index, cat)
         return ship
 

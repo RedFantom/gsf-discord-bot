@@ -90,7 +90,7 @@ def embed_from_manual(entry: tuple) -> Embed:
     return embed
 
 
-def embed_from_ship(ship: Ship, name) -> Embed:
+def embed_from_ship(ship: Ship, name, crew=True) -> Embed:
     """Build an embed from a Ship with component and crew details"""
     title = "__{}__ ({})".format(name, ship.name)
     comps_field = str()
@@ -99,6 +99,8 @@ def embed_from_ship(ship: Ship, name) -> Embed:
         if component is None or not isinstance(component, Component):
             continue
         upgrades = ship.build_upgrade_string(component.upgrades, component.type)
+        if crew is False:
+            upgrades = "Up to you"
         string = "{}: *{}* ({})\n".format(
             key.capitalize(), component.name,
             upgrades if upgrades != "" else "No upgrades")
@@ -113,7 +115,8 @@ def embed_from_ship(ship: Ship, name) -> Embed:
         crew_field += "{}: *{}*\n".format(role, member)
     embed = Embed(title=title, colour=0x646464)
     embed.add_field(name="Components", value=comps_field, inline=False)
-    embed.add_field(name="Crew", value=crew_field, inline=False)
+    if crew is True:
+        embed.add_field(name="Crew", value=crew_field, inline=False)
     return embed
 
 
