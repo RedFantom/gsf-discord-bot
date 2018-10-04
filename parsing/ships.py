@@ -291,7 +291,7 @@ class Ship(object):
         for cat in COMPONENTS:
             if cat not in ship.data:
                 continue
-            index = random.randint(0, len(ship.data[cat]))
+            index = random.randint(0, len(ship.data[cat]) - 1)
             comp = ship.data[cat][index]
             ship[comp] = Component(comp, index, cat)
         return ship
