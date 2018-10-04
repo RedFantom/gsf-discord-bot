@@ -286,7 +286,7 @@ class Ship(object):
     @staticmethod
     def random():
         """Generate a random Ship instance"""
-        base = random.choice(ship_tier_factions)
+        base = random.choice(list(ship_tier_factions))
         ship = Ship.from_base(base)
         for cat in COMPONENTS:
             if cat not in ship.data:
