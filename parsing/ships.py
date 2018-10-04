@@ -328,19 +328,7 @@ class Component(object):
             (4, 0): False,
             (4, 1): False
         }
-        for category in COMPONENT_TYPES.keys():
-            category = category.replace("2", str())
-            l = list(getattr(abilities, category).values())
-
-            if self.name in l or self.name[:-1] in l:
-                for type in ["majors", "middle", "minors"]:
-                    if category in getattr(abilities, type):
-                        self.type = type.replace("s", str())
-                        break
-                if hasattr(self, "type"):
-                    break
-        if not hasattr(self, "type"):
-            raise ValueError("Invalid component: {}".format(self.name))
+        self.type = abilities.TYPES[category]
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
