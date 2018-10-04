@@ -159,6 +159,7 @@ COMPONENTS = {
     "Capacitor": capacitor,
     "Magazine": magazine,
     "Sensor": sensors,
+    "Armor": armor,
 }
 
 missiles = [
@@ -183,5 +184,6 @@ TYPES = {
     "Reactor": "minor",
     "Capacitor": "minor",
     "Magazine": "minor",
-    "Sensor": "minor"
+    "Sensor": "minor",
+    "Armor": "minor",
 }
