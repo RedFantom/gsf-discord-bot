@@ -14,17 +14,17 @@ from discord import \
     User as DiscordUser, Channel, Message, Embed, Server, PrivateChannel
 from raven import Client as RavenClient
 # Project Modules
+from bot.embeds import embed_from_ship
 from bot.func import *
-from bot.github import github_monitor
 from bot.strings import *
 from bot.messages import *
 from data.servers import SERVER_NAMES
 from database import DatabaseHandler
-from parsing import scoreboards as sb
+from parsing.ships import Ship
 from server.discord import DiscordServer
 from settings import settings
 from utils import setup_logger, generate_tag
-from utils.utils import DATE_FORMAT, TIME_FORMAT, get_temp_file
+from utils.utils import DATE_FORMAT, TIME_FORMAT
 
 
 class DiscordBot(object):
@@ -42,7 +42,7 @@ class DiscordBot(object):
         # Help commands
         "man": ((0, 1), "print.manual"),
         "servers": ((0,), "print.servers"),
-        "author": ((0,), "print.author"),
+        "bot_author": ((0,), "print.author"),
         "privacy": ((0,), "print.privacy"),
         "purpose": ((0,), "print.purpose"),
         "setup": ((0,), "print.setup"),
@@ -62,7 +62,7 @@ class DiscordBot(object):
         "random": ((0, 1), "random_ship"),
         "strategy": ((0, 1, 2, 3), "strategy.strategy"),
         # Data Processing
-        "scoreboard": ((0, 1), "parse_scoreboard", True),
+        "scoreboard": ((0, 1), "scoreboards.parse", True),
         "build": (range(1, 20), "build.calculator"),
         "event": ((1, 2), "event", True),
     }
@@ -107,9 +107,9 @@ class DiscordBot(object):
         self.server = server
         self.overview_messages = dict()
         self.loop = loop
-        self.loop.create_task(github_monitor(self))
-        self.loop.create_task(self.server_status_monitor())
-        self.loop.create_task(self.matches_monitor())
+        # self.loop.create_task(github_monitor(self))
+        # self.loop.create_task(self.server_status_monitor())
+        # self.loop.create_task(self.matches_monitor())
         self.raven = None
 
     def setup_commands(self):
@@ -280,54 +280,6 @@ class DiscordBot(object):
         message = RANDOM_SHIP.format(ship)
         await self.bot.send_message(channel, message)
 
-    async def parse_scoreboard(self, channel: Channel, user: DiscordUser, args: tuple, message: Message):
-        """
-        Parse a scoreboard with OCR on user request
-
-        Downloads the image attached to the message by the user and then
-        parses it using the functions in scoreboards.py to generate
-        either a string table or a file.
-        """
-        if len(args) == 0:
-            args = ("table",)
-        type, = args
-        if type not in ("table", "excel", "csv",):
-            await self.bot.send_message(channel, INVALID_ARGS)
-            return
-        images = await self.get_images(message)
-        for name, image in images.items():
-            scale, location = sb.is_scoreboard(image)
-            if scale is None or location is None:
-                await self.bot.send_message(channel, NOT_A_SCOREBOARD)
-                return
-            to_edit = await self.bot.send_message(channel, "I'm working on it...")
-            results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
-            if "table" in args:
-                message = "```{}```".format(sb.format_results(results))
-                await self.bot.send_message(channel, message)
-            else:
-                df = sb.results_to_dataframe(results)
-                await self.send_dataframe(type, df, channel, user)
-
-    async def send_dataframe(self, type: str, df, channel: Channel, user: DiscordUser):
-        """
-        Send a Pandas DataFrame instance as a file to a channel
-        :param type: File type in ("excel", "csv")
-        :param df: DataFrame instance to send
-        :param channel: Channel to send the file to
-        :param user: User that requested the file conversion
-        """
-        if type == "excel":
-            path = get_temp_file(ext="xls", user=user)
-            sb.write_excel(df, path)
-        elif type == "csv":
-            path = get_temp_file(ext="csv", user=user)
-            df.to_csv(path)
-        else:
-            self.logger.error("Invalid scoreboard parsing type: {}".format(type))
-            return None
-        await self.bot.send_file(channel, path)
-
     async def get_images(self, message: Message, to_edit: Message = None) -> dict:
         """
         Download and return a list of Image objects from the attachments
@@ -356,10 +308,13 @@ class DiscordBot(object):
     async def validate_message(self, message: Message):
         """Check if this message is a valid command for the bot"""
         if await self.validate_author(message) is False:
+            self.logger.debug("Author failed validation: {}".format(message.author.display_name))
             return False
         if await self.validate_content(message) is False:
+            self.logger.debug("Content failed validation: {}".format(message.content))
             return False
         if await self.validate_channel(message) is False:
+            self.logger.debug("Channel failed validation: {}".format(message.channel.name))
             return False
         return True
 
@@ -519,9 +474,11 @@ class DiscordBot(object):
                     if name == member.name:
                         user = member
                 mention = user.mention if user is not None else name
-                ship = await get_random_ship()
+                ship = Ship.random()
                 await self.bot.send_message(
-                    channel, "{}, you are playing {}.".format(mention, ship))
+                    channel, "{}, you are playing {}.".format(mention, ship.name),
+                    embed=embed_from_ship(ship, "Random ({}, {})".format(
+                        name, datetime.now().strftime("%H:%M")), False))
         elif command == "dissolve":
             self.participants.clear()
             await self.bot.send_message(channel, "The participant list has been cleared.")
@@ -574,3 +531,12 @@ class DiscordBot(object):
             if channel.name == name:
                 channels.append(channel)
         return channels
+
+    async def build_embed(self, title, description, image: Image.Image)->Embed:
+        """Build a Discord Embed from the given parameters"""
+        if len(description) > 2048:
+            description = description[:2040] + "..."
+        embed = Embed(title="**{}**".format(title), description=description, colour=3844661)
+        embed.set_footer(text="Generated by GSF Parser Discord Bot. Copyright (c) 2018 RedFantom")
+        embed.set_image(url=await self.upload_image(image, title))
+        return embed

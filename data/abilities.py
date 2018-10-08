@@ -159,6 +159,7 @@ COMPONENTS = {
     "Capacitor": capacitor,
     "Magazine": magazine,
     "Sensor": sensors,
+    "Armor": armor,
 }
 
 missiles = [
@@ -170,3 +171,19 @@ missiles = [
     "Ion Missiles",
     "Sabotage Probes",
 ]
+
+TYPES = {
+    "PrimaryWeapon": "major",
+    "PrimaryWeapon2": "major",
+    "SecondaryWeapon": "major",
+    "SecondaryWeapon2": "major",
+    "ShieldProjector": "middle",
+    "Systems": "major",
+    "Engine": "middle",
+    "Thruster": "minor",
+    "Reactor": "minor",
+    "Capacitor": "minor",
+    "Magazine": "minor",
+    "Sensor": "minor",
+    "Armor": "minor",
+}

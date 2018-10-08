@@ -50,11 +50,6 @@ SA - Satele Shan - {satele_shan}
 ```
 """
 
-NOT_A_SCOREBOARD = "I do not recognize that image as a screenshot of a scoreboard.\n\n" \
-                   "If it is a scoreboard, please send this message to the Maker " \
-                   "to ask if support for this size and scale can be implemented. " \
-                   "You must include this image, as well as your Global UI Scaling Factor."
-
 MATCH_COUNT_DAY = """
 On {}, I registered the following amount of matches on each server:
 ```python

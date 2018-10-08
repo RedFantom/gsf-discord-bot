@@ -7,6 +7,7 @@ Copyright (C) 2016-2018 RedFantom
 # Standard Library
 from os import path
 import pickle as pickle
+import random
 # Project Modules
 from data import abilities
 from data.components import *
@@ -275,12 +276,30 @@ class Ship(object):
         return dictionary
 
     @staticmethod
-    def from_base(base: str):
+    def from_base(base: str) -> (object, None):
         if base not in ship_tier_factions:
-            raise ValueError("Invalid ship base identifier: {}".format(base))
+            return None
         name = ship_tier_factions[base]
         fqsn = ship_names[name]
         return Ship(fqsn)
+
+    @staticmethod
+    def random():
+        """Generate a random Ship instance"""
+        base = random.choice(list(ship_tier_factions))
+        ship = Ship.from_base(base)
+        names = ["Empty"]
+        for cat in COMPONENTS:
+            if cat not in ship.data:
+                continue
+            name = "Empty"
+            while name in names:
+                index = random.randint(0, len(ship.data[cat]) - 1)
+                comp = ship.data[cat][index]
+                name = comp["Name"]
+            names.append(name)
+            ship[cat] = Component(comp, index, cat)
+        return ship
 
 
 class Component(object):
@@ -314,17 +333,7 @@ class Component(object):
             (4, 0): False,
             (4, 1): False
         }
-        for category in COMPONENT_TYPES.keys():
-            category = category.replace("2", str())
-            if self.name in getattr(abilities, category).values():
-                for type in ["majors", "middle", "minors"]:
-                    if category in getattr(abilities, type):
-                        self.type = type.replace("s", str())
-                        break
-                if hasattr(self, "type"):
-                    break
-        if not hasattr(self, "type"):
-            raise ValueError("Invalid component: {}".format(self.name))
+        self.type = abilities.TYPES[category]
 
     def __setitem__(self, key, value):
         if isinstance(key, tuple):
