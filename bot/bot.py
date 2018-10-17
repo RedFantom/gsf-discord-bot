@@ -484,7 +484,7 @@ class DiscordBot(object):
                     channel, "{}, you are playing {}.".format(mention, ship.name),
                     embed=embed_from_ship(ship, "Random ({}, {})".format(
                         name, datetime.now().strftime("%H:%M")), False))
-        elif command == "dissolve":
+        elif command == "dissolve" and user.name == settings["bot"]["admin"]:
             self.participants.clear()
             await self.bot.send_message(channel, "The participant list has been cleared.")
         else:
