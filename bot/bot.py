@@ -454,17 +454,22 @@ class DiscordBot(object):
         command = args[0]
         if command == "participate":
             name = user.name
-            if len(args) == 2:
+            if len(args) == 2 and settings["bot"]["admin"] == user.name:
                 name = args[1]
             if name in self.participants:
                 await self.bot.send_message(channel, "You are already registered as a participant.")
                 return
             self.participants.append(name)
+            await self.bot.send_message(channel, "{} is now participating.".format(name))
         elif command == "quit":
-            if user.name not in self.participants:
+            name = user.name
+            if len(args) == 2 and settings["bot"]["admin"] == user.name:
+                name = args[1]
+            if name not in self.participants:
                 await self.bot.send_message(channel, "You are not participating.")
                 return
-            self.participants.remove(user.name)
+            self.participants.remove(name)
+            await self.bot.send_message(channel, "{} is now no longer participating.".format(name))
         elif command == "roll":
             for name in self.participants:
                 if name.strip() == "":
