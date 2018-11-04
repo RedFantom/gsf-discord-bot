@@ -94,7 +94,8 @@ shields = {
     "df": "Distortion Field",
     "distortion": "Distortion Field",
     "qcs": "Quick-Charge Shield",
-    "quick-charge": "Quick-Charge Shield"
+    "quick-charge": "Quick-Charge Shield",
+    "os": "Overcharged Shield",
 }
 
 reactor = {
