@@ -460,11 +460,13 @@ class DiscordBot(object):
                 await self.bot.send_message(channel, "You are already registered as a participant.")
                 return
             self.participants.append(name)
+            await self.bot.send_message(channel, "{}, you just joined the event!".format(user.mention))
         elif command == "quit":
             if user.name not in self.participants:
                 await self.bot.send_message(channel, "You are not participating.")
                 return
             self.participants.remove(user.name)
+            await self.bot.send_message(channel, "{}, you are no longer participating.".format(user.mention))
         elif command == "roll":
             for name in self.participants:
                 if name.strip() == "":
