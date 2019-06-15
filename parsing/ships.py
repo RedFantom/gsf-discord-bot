@@ -333,6 +333,8 @@ class Component(object):
             (4, 0): False,
             (4, 1): False
         }
+        if category not in abilities.TYPES:
+            category = COMPONENT_TYPES[category]
         self.type = abilities.TYPES[category]
 
     def __setitem__(self, key, value):
