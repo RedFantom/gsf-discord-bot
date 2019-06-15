@@ -273,12 +273,17 @@ class DiscordBot(object):
         if len(args) == 0:
             args = (None,)
         category, = args
-        ship = await get_random_ship(category)
-        if ship is None:
-            await self.bot.send_message(channel, INVALID_ARGS)
-            return
-        message = RANDOM_SHIP.format(ship)
-        await self.bot.send_message(channel, message)
+        if category == "build":
+            build = Ship.random()
+            message = embed_from_ship(build, "Random Build", True)
+            await self.bot.send_message(channel, "Your wish is my command.", embed=message)
+        else:
+            ship = await get_random_ship(category)
+            if ship is None:
+                await self.bot.send_message(channel, INVALID_ARGS)
+                return
+            message = RANDOM_SHIP.format(ship)
+            await self.bot.send_message(channel, message)
 
     async def get_images(self, message: Message, to_edit: Message = None) -> dict:
         """

@@ -149,7 +149,8 @@ MANUAL = {
         [("type", "Ship type you want a random choice from", True, "Any")],
         "Choose a random ship out of all the available ships. Argument "
         "`type` limits the choices to a single ship type (`Fighter`, "
-        "`Gunship`, `Scout` or `Bomber`)."
+        "`Gunship`, `Scout` or `Bomber`) or generates a fully random "
+        "build if `build` is used."
     ),
     "build": (
         "build",
