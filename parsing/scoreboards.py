@@ -178,19 +178,20 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bo
                 logger.error(traceback.format_exc())
             text.append(result)
         allied = get_allied(column)
-        text.append(str(allied))
+        text.append(allied)
         results.append(text)
     return results
 
 
 def format_results(results: list)->str:
     """Print the results in table format"""
-    formatter = " {:<22} | {:>5} | {:>7} | {:>6} | {:>6} | {:>3} | {:>10} | {:<6} \n"
-    header = formatter.format(*(tuple(column.capitalize() for column in columns) + ("Allied",)))
+    formatter = "  {:<22} | {:>5} | {:>7} | {:>6} | {:>6} | {:>3} | {:>10} \n"
+    header = formatter.format(*(tuple(column.capitalize() for column in columns)))
     separator = "-" * len(header) + "\n"
     string = header + separator
     for player in results:
-        string += formatter.format(*tuple(player))
+        friendly = "+" if player[-1] is True else "-"
+        string += "{}{}".format(friendly, formatter.format(*tuple(player[:-1]))[1:])
     return string
 
 
