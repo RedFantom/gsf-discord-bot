@@ -14,6 +14,7 @@ from discord import \
     User as DiscordUser, Channel, Message, Embed, Server, PrivateChannel
 from raven import Client as RavenClient
 # Project Modules
+from bot import DiscordBotException
 from bot.embeds import embed_from_ship
 from bot.func import *
 from bot.strings import *
@@ -154,6 +155,9 @@ class DiscordBot(object):
             else:
                 func = self.__getattribute__(func_name)
             await func(*arguments)
+        except DiscordBotException as e:
+            await self.bot.send_message(
+                message.channel, "There was an error processing your command.\n{}".format(e.message))
         except Exception as e:
             await self.bot.send_message(
                 message.channel, "Sorry, I encountered an error. It has been reported.")

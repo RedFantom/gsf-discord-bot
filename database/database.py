@@ -9,6 +9,7 @@ from datetime import datetime, timedelta
 import sqlite3 as sql
 from threading import Lock
 # Project Modules
+from bot import DiscordBotException
 from database import create, insert, select, delete
 from data.servers import SERVER_NAMES
 from parsing.ships import Ship
@@ -304,11 +305,12 @@ class DatabaseHandler(object):
         if len(results) == 0:
             if not required:
                 return None
-            raise ValueError("I cannot find that build. Have you used a number identifier if it is not your own build?")
+            raise DiscordBotException(
+                "I cannot find that build. Have you used a number identifier if it is not your own build?")
         if len(results) > 1:
             self.logger.error("Major issue detected: two builds with the same name and owner exist: {}, {}".
                               format(name, owner))
-            raise RuntimeError("This is a design flaw.")
+            raise DiscordBotException("This is a design flaw.")
         build, _ = results[0]
         return build
 
@@ -328,7 +330,7 @@ class DatabaseHandler(object):
             build = int(build)
         results = self.exec_query(select.GET_BUILD_OWNER.format(build=build))
         if len(results) == 0:
-            raise ValueError("That build does not exist.")
+            raise DiscordBotException("That build does not exist.")
         tag, = results[0]
         return tag
 
@@ -338,7 +340,7 @@ class DatabaseHandler(object):
     def build_read_access(self, build: (int, str), user: str):
         public = self.exec_query(select.GET_BUILD_PUBLIC.format(build=build))
         if len(public) == 0:
-            raise ValueError("That build does not exist.")
+            raise DiscordBotException("That build does not exist.")
         public, = public[0]
         owner = self.get_build_owner(build)
         return owner == user or public
@@ -361,24 +363,24 @@ class DatabaseHandler(object):
         """Return the name of a build"""
         build = int(name) if name.isdigit() else self.get_build_id(name, owner)
         if build is None:
-            raise ValueError("Invalid identifier or this build does not exist")
+            raise DiscordBotException("Invalid identifier or this build does not exist")
         if not self.build_read_access(build, owner):
-            raise PermissionError("You do not have read access to that build.")
+            raise DiscordBotException("You do not have read access to that build.")
         return self.get_build_name_id(build)
 
     def get_build_name_id(self, build):
         results = self.exec_query(select.GET_BUILD_NAME.format(build=build))
         if len(results) == 0:
-            raise ValueError("That build does not exist.")
+            raise DiscordBotException("That build does not exist.")
         name, = results[0]
         return name
 
     def delete_build(self, build: (int, str), owner: str):
         """Delete a build by a unique identifier"""
         if isinstance(build, str) and not build.isdigit():
-            raise TypeError("Builds can only be deleted with their identifiers")
+            raise DiscordBotException("Builds can only be deleted with their identifiers")
         if self.get_build_owner(build) != owner:
-            raise PermissionError("Shame on you. You are not the owner of that build.")
+            raise DiscordBotException("Shame on you. You are not the owner of that build.")
         name = self.get_build_name(build, owner)
         self.exec_command(delete.DELETE_BUILD_BY_ID.format(build=build))
         return name

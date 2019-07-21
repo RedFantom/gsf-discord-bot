@@ -8,7 +8,7 @@ import asyncio
 from traceback import format_exc
 # Project Modules
 from database import DatabaseHandler
-from bot import DiscordBot
+from bot.bot import DiscordBot
 from server import DiscordServer
 from settings import settings
 from utils.utils import setup_logger

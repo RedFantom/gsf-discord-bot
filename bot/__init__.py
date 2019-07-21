@@ -3,4 +3,11 @@ Author: RedFantom
 License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
-from bot.bot import DiscordBot
+
+
+class DiscordBotException(ValueError):
+    message = ""
+
+    def __init__(self, message, *args):
+        self.message = message
+        ValueError.__init__(self, *args)

@@ -8,6 +8,7 @@ Copyright (C) 2016-2018 RedFantom
 import os
 import _pickle as pickle
 # Project Modules
+from bot import DiscordBotException
 from data.actives import ACTIVES
 from data.components import COMPONENT_TYPES, COMP_TYPES_REVERSE, COMPONENTS
 from parsing.ships import Ship, Component
@@ -16,16 +17,19 @@ from utils.utils import get_assets_directory, setup_logger
 logger = setup_logger("ShipStats", "stats.log")
 
 
-class ActiveNotFound(KeyError):
-    pass
+class ActiveNotFound(DiscordBotException):
+    def __init__(self):
+        DiscordBotException.__init__(self, "I do not recognize that active ability identifier.")
 
 
-class ActiveNotSupported(ValueError):
-    pass
+class ActiveNotSupported(DiscordBotException):
+    def __init__(self):
+        DiscordBotException.__init__(self, "I inferred what active ability you mean, but it's not supported.")
 
 
-class ActiveNotAvailable(KeyError):
-    pass
+class ActiveNotAvailable(DiscordBotException):
+    def __init__(self):
+        DiscordBotException.__init__(self, "That active ability is not available on this build.")
 
 
 class ShipStats(object):
