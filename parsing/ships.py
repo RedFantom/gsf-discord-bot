@@ -277,6 +277,9 @@ class Ship(object):
 
     @staticmethod
     def from_base(base: str) -> (object, None):
+        base = base.upper()
+        if base.startswith("T"):
+            base = "i{}".format(base[1:])
         if base not in ship_tier_factions:
             return None
         name = ship_tier_factions[base]

@@ -53,7 +53,7 @@ INSERT_RESULT = """
 """
 
 INSERT_BUILD = """
-    INSERT OR IGNORE INTO Builds(owner, name, data, public) VALUES
+    INSERT INTO Builds(owner, name, data, public) VALUES
         ('{owner}', '{name}', '{data}', {public});
 """
 
