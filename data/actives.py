@@ -22,8 +22,10 @@ ACTIVES = {
     "Suppression": {"Weapon_Base_Accuracy": -0.20},
     "Wingman": {"Weapon_Base_Accuracy": 0.20},
     "Blaster Overcharge": {
+        # Base statistics
         "[Pc]Weapon_Rate_of_Fire": 0.25,
         "[Pc]Power_Weapon_Regen_Rate": 0.15,
+        # Statistics for each of the upgrades
         "TalentTree": {
             (0, 0): {},
             (1, 0): {"Crit_Chance": 0.08},
@@ -109,4 +111,39 @@ ACTIVES = {
             (2, 0): {"Engine_Speed_Multiplier": 0.10},
             (2, 1): {"Turn_Rate_Modifier": 0.10}
         }},
+    "Targeting Telemetry": {
+        "Weapon_Base_Accuracy": 0.10,
+        "Sensor_Detection_Radius": 50.0,
+        "TalentTree": {
+            (0, 0): {},
+            (1, 0): {"Sensor_Detection_Radius": 50.0},
+            (2, 0): {},
+            (3, 0): {},
+            (3, 1): {"Ship_Evasion": 0.08},
+            (4, 0): {"Crit_Chance": 0.08, "Crit_Damage_Multiplier": 0.25, "Target": "PrimaryWeapons"},
+            (4, 1): {
+                "[Pc]Weapon_Range_Long": 0.15,
+                "[Pc]Weapon_Range_Mid": 0.15,
+                "[Pc]Weapon_Range_Pb": 0.15,
+                "Target": "PrimaryWeapons"},
+        }
+    },
+    # Targeting Telemetry, but target in range of Dispel Radius
+    "Targeting Telemetry Range": {
+        "Weapon_Base_Accuracy": 0.10,
+        "Sensor_Detection_Radius": 50.0,
+        "TalentTree": {
+            (0, 0): {},
+            (1, 0): {"Sensor_Detection_Radius": 50.0},
+            (2, 0): {},
+            (3, 0): {"Weapon_Base_Accuracy": 0.05},  # -5% evasion on targets = +5% accuracy
+            (3, 1): {"Ship_Evasion": 0.08},
+            (4, 0): {"Crit_Chance": 0.08, "Crit_Damage_Multiplier": 0.25, "Target": "PrimaryWeapons"},
+            (4, 1): {
+                "[Pc]Weapon_Range_Long": 0.15,
+                "[Pc]Weapon_Range_Mid": 0.15,
+                "[Pc]Weapon_Range_Pb": 0.15,
+                "Target": "PrimaryWeapons"},
+        }
+    },
 }
