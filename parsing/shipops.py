@@ -124,7 +124,7 @@ def get_time_to_kill_acc(
     actives["target"] = source.apply_actives(target_act)
     evs = target["Ship"]["Ship_Evasion"]
     acc = get_range_adjusted_acc(source[key], distance)
-    hit = acc - evs
+    hit = min(acc - evs, 1)
     if hit == 0 or hit < 0:
         logger.debug("Accuracy minus evasion is zero! {}, {}".format(acc, evs))
         raise InfiniteShots()
