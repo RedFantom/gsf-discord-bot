@@ -35,7 +35,6 @@ secondary = {
 engine = {
     "spc": "Shield Power Converter",
     "wpc": "Weapon Power Converter",
-    "epc": "Engine Power Converter",
     "rotationals": "Rotational Thrusters",
     "kturn": "Koiogran Turn",
     "koiogran": "Koiogran Turn",
@@ -81,6 +80,7 @@ systems = {
 }
 
 shields = {
+    "epc": "Engine Power Converter",
     "cp": "Charged Plating",
     "sp": "Shield Projector",
     "projector": "Shield Projector",
