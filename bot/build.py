@@ -52,7 +52,7 @@ async def create(self, channel: Channel, user: DiscordUser, args: tuple):
     owner = generate_tag(user)
     ship = Ship.from_base(base)
     if ship is None:
-        await self.bot.send_message("That is not a valid ship base identifier. "
+        await self.bot.send_message(channel, "That is not a valid ship base identifier. "
                                     "Check your command for typos and argument "
                                     "order.")
         return
