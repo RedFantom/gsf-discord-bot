@@ -145,7 +145,7 @@ def embed_from_release(release: GitRelease) -> Embed:
     return embed
 
 
-def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
+def embed_from_stats(shipstats: ShipStats, name: str, actives: list = None) -> Embed:
     """Build a rich embed from a ShipStats instance"""
     fields = OrderedDict()
     stats_ship = shipstats["Ship"].copy()
@@ -182,7 +182,9 @@ def embed_from_stats(shipstats: ShipStats, name: str) -> Embed:
             fields[field_name] = stats.MISSILE_STATS_STRING.format(**weapon_stats)
         else:
             logger.debug("{}".format(weapon_name))
-    title = "{}: Statistics".format(name)
+    title = "Statistics: {}".format(name)
+    if actives is not None:
+        title += " ({})".format(", ".join(actives)).strip(", ")
     embed = Embed(title=title, colour=0x4286f4)
     for name, value in fields.items():
         embed.add_field(name="__**{}**__".format(name.replace("_", " ")), value=value, inline=False)

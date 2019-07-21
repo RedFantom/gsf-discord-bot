@@ -93,11 +93,16 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     if not channel.is_private and user.display_name != "RedFantom":
         await self.bot.send_message(channel, "I only want to do this in PM due to the large statistics list.")
         return
+    build, actives = get_mod_from_build(build)
     data = self.db.get_build_data(build)
     name = self.db.get_build_name_id(build)
-    ship = Ship.deserialize(data)
+    ship: Ship = Ship.deserialize(data)
     stats = ShipStats(ship)
-    embed = embed_from_stats(stats, name)
+    if len(actives) != 0:
+        actives = stats.apply_actives(actives)
+    else:
+        actives = None
+    embed = embed_from_stats(stats, name, actives)
     await self.bot.send_message(channel, embed=embed)
 
 
@@ -175,8 +180,8 @@ async def ttk(self, channel: Channel, user: DiscordUser, args: tuple):
     """Calculate Time To Kill between two builds"""
     tag = generate_tag(user)
     acc = False
-    if len(args) == 4:
-        acc = "e" in args[3] or "a" in args[4]
+    if len(args) >= 4:
+        acc = "evasion" in args
         args = args[:3]
     # Build may be specified as build_id(active,active,active)
     if len(args) == 2:
