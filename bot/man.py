@@ -154,14 +154,15 @@ MANUAL = {
     ),
     "build": (
         "build",
-        ["varargs", "Variable amount of arguments", False, None],
+        [("varargs", "Variable amount of arguments", False, None)],
         "This command is used to manipulate the build calculator. Use "
         "the build calculator to design and share builds as well as "
         "view the statistics of a build. All build data is up-to-date "
         "with nuGSF.\n\n"
         "Each subcommand requires its own arguments. Check the manuals "
         "of each of the subcommands by using `man \"build {command}\"."
-        "Use the manual of `build_global` for more information."
+        "Use the manual of `build_global` for more information and "
+        "`build_commands` for an overview of the available commands."
     ),
     "build_global":
         "```markdown\n"

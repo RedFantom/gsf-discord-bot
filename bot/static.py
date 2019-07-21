@@ -34,7 +34,6 @@ CODE_LICENSE = (
 
 
 PURPOSE = """
-```markdown
 My primary programming consists of collecting data in order to allow 
 users to interact socially with the statistics collected by the GSF
 Parser. However, with the collection of this data, a few interesting
@@ -54,11 +53,9 @@ these very questions! My code is open-source and available at GitHub.
 Note though, that if you use parts of my code, you will have to use the
 same license as my Maker used. Please use the `author` command to learn
 more about the GNU GPLv3.
-``` 
 """
 
 PRIVACY = """
-```markdown
 My primary programming is allowing social interaction of users with 
 statistical data, thus allowing free access to my database through a
 given set of commands. While your data is saved on a VPS that is not
@@ -75,11 +72,9 @@ collected includes:
 - Personal match data, including number of enemies damaged, deaths, 
   damage dealt and damage taken, linked to a specific character and
   match.
-```
 """
 
 SETUP = """
-```markdown
 Setting up the GSF Parser to work with this bot is really easy. It can
 be done in a few simple steps.
 
@@ -97,7 +92,6 @@ be done in a few simple steps.
    will be available through the `character` command.
 6. Restart the GSF Parser to resynchronize with the Discord Bot Server,
    sharing the results for the characters you have selected.
-```
 """
 
 HELP = """

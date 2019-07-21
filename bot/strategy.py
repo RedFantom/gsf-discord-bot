@@ -58,11 +58,11 @@ async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
 
     elif command == "show":
         map_type, map_name = strategy.map
-        embed = await self.build_embed(
+        embed = await self.build_embed(self,
             "{}: {}".format(tag.split("#")[0][1:], strategy.name),
-            strategy.description,
-            [("Phases", "\n".join("- {}".format(a) for a in strategy.phases)),
-             ("Map", map_names[map_type][map_name])])
+            strategy.description + "\n" +
+            "Phases" + "\n".join("- {}".format(a) for a in strategy.phases) +
+            "Map: " + map_names[map_type][map_name], None)
         await self.bot.send_message(channel, embed=embed)
 
     elif command == "render":
