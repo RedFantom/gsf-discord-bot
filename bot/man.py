@@ -160,7 +160,7 @@ MANUAL = {
         "view the statistics of a build. All build data is up-to-date "
         "with nuGSF.\n\n"
         "Each subcommand requires its own arguments. Check the manuals "
-        "of each of the subcommands by using `man \"build {command}\"."
+        "of each of the subcommands by using `man \"build {command}\"`."
         "Use the manual of `build_global` for more information and "
         "`build_commands` for an overview of the available commands."
     ),
