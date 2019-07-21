@@ -96,7 +96,7 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     build, actives = get_mod_from_build(build)
     data = self.db.get_build_data(build)
     name = self.db.get_build_name_id(build)
-    ship: Ship = Ship.deserialize(data)
+    ship = Ship.deserialize(data)
     stats = ShipStats(ship)
     if len(actives) != 0:
         actives = stats.apply_actives(actives)
