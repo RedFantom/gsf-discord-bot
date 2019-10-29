@@ -134,8 +134,8 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
     """Lookup either a crew member or component in rich embed"""
     path, = args
     elems = path.split("/")
-    if len(elems) != 2:
-        await self.bot.send_message(channel, "The lookup command requires a two element path.")
+    if len(elems) not in (2, 3):
+        await self.bot.send_message(channel, "The lookup command requires a two or three element path.")
         return
     if path.startswith("crew"):
         name = elems[1]

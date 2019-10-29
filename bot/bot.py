@@ -464,7 +464,7 @@ class DiscordBot(object):
         command = args[0]
         if command == "participate":
             name = user.name
-            if len(args) == 2:
+            if len(args) == 2 and settings["bot"]["admin"] == user.name:
                 name = args[1]
             if name in self.participants:
                 await self.bot.send_message(channel, "You are already registered as a participant.")
@@ -472,7 +472,10 @@ class DiscordBot(object):
             self.participants.append(name)
             await self.bot.send_message(channel, "{}, you just joined the event!".format(user.mention))
         elif command == "quit":
-            if user.name not in self.participants:
+            name = user.name
+            if len(args) == 2 and settings["bot"]["admin"] == user.name:
+                name = args[1]
+            if name not in self.participants:
                 await self.bot.send_message(channel, "You are not participating.")
                 return
             self.participants.remove(user.name)
@@ -491,7 +494,7 @@ class DiscordBot(object):
                     channel, "{}, you are playing {}.".format(mention, ship.name),
                     embed=embed_from_ship(ship, "Random ({}, {})".format(
                         name, datetime.now().strftime("%H:%M")), False))
-        elif command == "dissolve":
+        elif command == "dissolve" and user.name == settings["bot"]["admin"]:
             self.participants.clear()
             await self.bot.send_message(channel, "The participant list has been cleared.")
         else:
