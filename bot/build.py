@@ -138,7 +138,7 @@ async def lookup(self, channel: Channel, user: DiscordUser, args: tuple):
         await self.bot.send_message(channel, "The lookup command requires a two or three element path.")
         return
     if path.startswith("crew"):
-        name = elems[1]
+        name = elems[2]
         crew_dict = lookup_crew(name)
         if crew_dict is None:
             await self.bot.send_message(channel, INVALID_COMPONENT_PATH)
