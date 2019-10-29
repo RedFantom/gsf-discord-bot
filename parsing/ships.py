@@ -381,7 +381,7 @@ def lookup_crew(name: str)->(None, dict):
     name = name.lower()
     for member in crew.keys():
         # Now perform name matching
-        if name in member.lower():
+        if member.lower().startswith(name):
             return crew[member]
     return None
 
