@@ -4,7 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Packages
-from discord import Channel, User as DiscordUser
+from discord import Channel, User as DiscordUser, Embed
 # Project Modules
 from bot.embeds import embed_from_manual
 from bot.func import get_server_status
@@ -49,7 +49,11 @@ async def servers(self, channel: Channel, user: DiscordUser, args: tuple):
 
 async def bot_author(self, channel: Channel, user: DiscordUser, args: tuple):
     """Print the author information message as an embed"""
-    embed = await self.build_embed(*AUTHOR_EMBED, fields=[CONTENT_LICENSE, CODE_LICENSE], colour=0x0000FF)
+    title, description, footer = AUTHOR_EMBED
+    fields = [CONTENT_LICENSE, CODE_LICENSE]
+    embed = Embed(title=title, description=description, footer=footer)
+    for (title, content) in fields:
+        embed.add_field(name=title, value=content)
     await self.bot.send_message(channel, embed=embed)
 
 
