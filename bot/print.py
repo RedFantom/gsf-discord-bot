@@ -49,9 +49,9 @@ async def servers(self, channel: Channel, user: DiscordUser, args: tuple):
 
 async def bot_author(self, channel: Channel, user: DiscordUser, args: tuple):
     """Print the author information message as an embed"""
-    title, description, footer = AUTHOR_EMBED
+    title, description = AUTHOR_EMBED
     fields = [CONTENT_LICENSE, CODE_LICENSE]
-    embed = Embed(title=title, description=description, footer=footer)
+    embed = Embed(title=title, description=description)
     for (title, content) in fields:
         embed.add_field(name=title, value=content)
     await self.bot.send_message(channel, embed=embed)
