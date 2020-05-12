@@ -77,17 +77,28 @@ class DiscordBot(object):
     }
 
     PRIVATE = [
-        "forgot_code",
         "man",
         "servers",
-        "author",
+        "bot_author",
         "privacy",
         "purpose",
         "setup",
-        "link",
         "help",
-        "build",
+        "link",
+        "author",
+        "register",
+        "unregister",
+        "forgot_code",
+        "period",
+        "day",
+        "week",
+        "matches",
+        "character",
+        "results",
+        "random",
         "strategy",
+        "scoreboard",
+        "build"
     ]
 
     NOT_REGISTERED_ALLOWED = ["register", "event", "help", "setup", "link"]
