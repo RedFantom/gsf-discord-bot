@@ -76,7 +76,7 @@ async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
             return
         phase = strategy[phase_name]
         image = render_phase(phase)
-        url = await self.upload_image(image)
+        url = await self.upload_image(image, "{}: {}".format(strategy.name, phase_name))
         embed = embed_from_phase_render(tag, url, strategy, phase)
         try:
             await self.bot.send_message(channel, embed=embed)
