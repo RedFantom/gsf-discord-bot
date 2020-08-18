@@ -11,7 +11,8 @@ import traceback
 from dateparser import parse as parse_date
 from discord.ext import commands
 from discord import \
-    User as DiscordUser, Channel, Message, Embed, Server, PrivateChannel
+    User as DiscordUser, TextChannel as Channel, Message, Embed, Guild
+from discord.abc import PrivateChannel
 from raven import Client as RavenClient
 # Project Modules
 from bot import DiscordBotException
@@ -124,6 +125,7 @@ class DiscordBot(object):
         # self.loop.create_task(self.server_status_monitor())
         # self.loop.create_task(self.matches_monitor())
         self.raven = None
+        self.token = None
 
     def setup_commands(self):
         """Create the bot commands"""
@@ -167,16 +169,17 @@ class DiscordBot(object):
                 func = self.__getattribute__(func_name)
             await func(*arguments)
         except DiscordBotException as e:
-            await self.bot.send_message(
+            await self.send_message(
                 message.channel, "There was an error processing your command.\n{}".format(e.message))
         except Exception as e:
-            await self.bot.send_message(
+            await self.send_message(
                 message.channel, "Sorry, I encountered an error. It has been reported.")
             self.exception_handler(
                 self.loop, {"exception": e, "message": str(e)})
 
     def run(self, token: str):
         """Run the Bot loop"""
+        self.token = token
         try:
             self.bot.run(token)
         except KeyboardInterrupt:
@@ -201,7 +204,7 @@ class DiscordBot(object):
             messages.append(locals()["SERVER_{}".format(status).upper()].format(server))
         for message in messages:
             for channel in self.validated_channels:
-                await self.bot.send_message(channel, message)
+                await self.send_message(channel, message)
         await asyncio.sleep(60)
         self.loop.create_task(self.server_status_monitor())
 
@@ -220,14 +223,14 @@ class DiscordBot(object):
             for channel in self.get_channels_by_name(settings["matches"]["channel"]):
                 if channel in self.overview_messages:
                     try:
-                        await self.bot.edit_message(self.overview_messages[channel], message)
+                        await self.overview_messages[channel].edit(message)
                     except RuntimeError:
-                        await self.bot.login()
+                        await self.bot.login(token=self.token)
                     continue
-                async for message in self.bot.logs_from(channel, limit=1):
+                async for message in channel.history(limit=1):
                     if message.author.display_name == "GSF Parser":
                         self.overview_messages[channel] = message
-                self.overview_messages[channel] = await self.bot.send_message(channel, message)
+                self.overview_messages[channel] = await self.send_message(channel, message)
         except Exception:
             self.raven.captureException()
         await asyncio.sleep(30)
@@ -237,7 +240,7 @@ class DiscordBot(object):
     def validated_channels(self) -> list:
         """Generator for all valid channels this Bot is in"""
         channels = list()
-        for server in self.bot.servers:
+        for server in self.bot.guilds:
             for channel in server.channels:
                 if channel.name in settings["bot"]["channels"]:
                     channels.append(channel)
@@ -245,14 +248,14 @@ class DiscordBot(object):
 
     async def invalid_command(self, channel: Channel, user: DiscordUser):
         """Send the INVALID_COMMAND message to a user"""
-        await self.bot.send_message(channel, INVALID_COMMAND)
+        await self.send_message(channel, INVALID_COMMAND)
 
     async def find_character_owner(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the owner of a character to the channel"""
         server = args[0]
         server = server.upper()
         if server not in SERVER_NAMES.keys():
-            await self.bot.send_message(channel, INVALID_SERVER)
+            await self.send_message(channel, INVALID_SERVER)
             return
         if len(args[1:]) == 2:
             name = "{} {}".format(*args[1:])
@@ -260,9 +263,9 @@ class DiscordBot(object):
             name = args[1]
         owner = self.db.get_character_owner(server, name)
         if owner is None:
-            await self.bot.send_message(channel, UNKNOWN_CHARACTER.format(name, SERVER_NAMES[server]))
+            await self.send_message(channel, UNKNOWN_CHARACTER.format(name, SERVER_NAMES[server]))
             return
-        await self.bot.send_message(channel, CHARACTER_OWNER.format(owner))
+        await self.send_message(channel, CHARACTER_OWNER.format(owner))
 
     async def get_results(self, channel: Channel, user: DiscordUser, args: tuple):
         """Send the list of known results for this match"""
@@ -273,11 +276,11 @@ class DiscordBot(object):
         results = self.db.get_match_results(server, date, start)
         self.logger.debug("Results retrieved: {}".format(results))
         if len(results) == 0:
-            await self.bot.send_message(channel, NO_RESULTS)
+            await self.send_message(channel, NO_RESULTS)
             return
         message = RESULTS.format(start, date, server, build_string_from_results(results))
         self.logger.debug(message)
-        await self.bot.send_message(channel, message)
+        await self.send_message(channel, message)
 
     async def random_ship(self, channel: Channel, user: DiscordUser, args: tuple):
         """
@@ -292,14 +295,14 @@ class DiscordBot(object):
         if category == "build":
             build = Ship.random()
             message = embed_from_ship(build, "Random Build", True)
-            await self.bot.send_message(channel, "Your wish is my command.", embed=message)
+            await self.send_message(channel, "Your wish is my command.", embed=message)
         else:
             ship = await get_random_ship(category)
             if ship is None:
-                await self.bot.send_message(channel, INVALID_ARGS)
+                await self.send_message(channel, INVALID_ARGS)
                 return
             message = RANDOM_SHIP.format(ship)
-            await self.bot.send_message(channel, message)
+            await self.send_message(channel, message)
 
     async def get_images(self, message: Message, to_edit: Message = None) -> dict:
         """
@@ -312,16 +315,16 @@ class DiscordBot(object):
         todo = len(message.attachments)
         done = 1
         if to_edit is not None:
-            to_edit = await self.bot.edit_message(to_edit, DOWNLOADING_IMAGES.format(done, todo))
+            to_edit = await to_edit.edit(content=DOWNLOADING_IMAGES.format(done, todo))
         channel = message.channel
         results = dict()
         for attachment in message.attachments:
             if to_edit is not None:
-                to_edit = await self.bot.edit_message(to_edit, DOWNLOADING_IMAGES.format(done, todo))
+                to_edit = await to_edit.edit(content=DOWNLOADING_IMAGES.format(done, todo))
             link, name = attachment["url"], attachment["filename"]
             done += 1
             if not name.endswith(DiscordBot.IMAGE_TYPES):
-                await self.bot.send_message(channel, UNSUPPORTED_IMAGE_TYPE.format(name))
+                await self.send_message(channel, UNSUPPORTED_IMAGE_TYPE.format(name))
                 continue
             results[name] = await download_image(link)
         return results
@@ -346,14 +349,14 @@ class DiscordBot(object):
             return False
         tag = generate_tag(author)
         if not self.db.get_user_in_database(tag) and "register" not in content:
-            await self.bot.send_message(channel, NOT_REGISTERED)
+            await self.send_message(channel, NOT_REGISTERED)
             self.logger.debug("{} not in database.".format(tag))
             return False
         for command in self.NOT_REGISTERED_ALLOWED:
             if command in content:
                 return True
         if channel.is_private is True and not any(command in content for command in DiscordBot.PRIVATE):
-            await self.bot.send_message(author, NOT_PRIVATE)
+            await self.send_message(author, NOT_PRIVATE)
             return False
         return True
 
@@ -366,13 +369,13 @@ class DiscordBot(object):
 
     async def validate_author(self, message: Message):
         """Determine whether a user is allowed to use the bot"""
-        author, server = message.author, message.server
+        author, server = message.author, message.guild
         if author == self.bot.user:
             return False
         if not isinstance(author, DiscordUser):
             return
         if settings["bot"]["role"] is not None:
-            if not isinstance(server, Server):
+            if not isinstance(server, Guild):
                 return False
             member = server.get_member(author.id)
             if member is None:
@@ -380,7 +383,7 @@ class DiscordBot(object):
             if settings["bot"]["role"] not in [role.name for role in member.roles]:
                 return False
         # if self.db.get_user_in_database(tag) and not self.db.get_user_accessed_valid(tag):
-        #     await self.bot.send_message(channel, INACTIVE)
+        #     await self.send_message(channel, INACTIVE)
         #     return False
         return True
 
@@ -399,8 +402,8 @@ class DiscordBot(object):
             message.content = content
             if not channel.is_private:
                 channel_name = elems[1].strip()
-                assert isinstance(message.server, Server)
-                for server_channel in message.server.channels:
+                assert isinstance(message.guild, Guild)
+                for server_channel in message.guild.channels:
                     assert isinstance(server_channel, Channel)
                     if server_channel.mention == channel_name:
                         channel = server_channel
@@ -414,7 +417,7 @@ class DiscordBot(object):
         if command is None:
             return
         if command is False:
-            await self.bot.send_message(channel, UNKNOWN_DATE_FORMAT)
+            await self.send_message(channel, UNKNOWN_DATE_FORMAT)
             return
         if command not in DiscordBot.COMMANDS or len(arguments) not in DiscordBot.COMMANDS[command][0]:
             return None, None
@@ -478,38 +481,38 @@ class DiscordBot(object):
             if len(args) == 2 and settings["bot"]["admin"] == user.name:
                 name = args[1]
             if name in self.participants:
-                await self.bot.send_message(channel, "You are already registered as a participant.")
+                await self.send_message(channel, "You are already registered as a participant.")
                 return
             self.participants.append(name)
-            await self.bot.send_message(channel, "{}, you just joined the event!".format(user.mention))
+            await self.send_message(channel, "{}, you just joined the event!".format(user.mention))
         elif command == "quit":
             name = user.name
             if len(args) == 2 and settings["bot"]["admin"] == user.name:
                 name = args[1]
             if name not in self.participants:
-                await self.bot.send_message(channel, "You are not participating.")
+                await self.send_message(channel, "You are not participating.")
                 return
             self.participants.remove(user.name)
-            await self.bot.send_message(channel, "{}, you are no longer participating.".format(user.mention))
+            await self.send_message(channel, "{}, you are no longer participating.".format(user.mention))
         elif command == "roll":
             for name in self.participants:
                 if name.strip() == "":
                     continue
                 user = None
-                for member in message.server.members:
+                for member in message.guild.members:
                     if name == member.name:
                         user = member
                 mention = user.mention if user is not None else name
                 ship = Ship.random()
-                await self.bot.send_message(
+                await self.send_message(
                     channel, "{}, you are playing {}.".format(mention, ship.name),
                     embed=embed_from_ship(ship, "Random ({}, {})".format(
                         name, datetime.now().strftime("%H:%M")), False))
         elif command == "dissolve" and user.name == settings["bot"]["admin"]:
             self.participants.clear()
-            await self.bot.send_message(channel, "The participant list has been cleared.")
+            await self.send_message(channel, "The participant list has been cleared.")
         else:
-            await self.bot.send_message(channel, "I don't understand your meaning.")
+            await self.send_message(channel, "I don't understand your meaning.")
             return
         with open("participants.txt", "w") as fo:
             for name in self.participants:
@@ -537,7 +540,7 @@ class DiscordBot(object):
                           "**Traceback**:\n```python\n{}\n```".format(traceback.format_exc())
             embed = Embed(title=str(exc), colour=0xFF0000, description=description)
             channel = self.get_channel_by_name(settings["exceptions"]["channel"])
-            loop.create_task(self.bot.send_message(channel, embed=embed))
+            loop.create_task(self.send_message(channel, embed=embed))
         except Exception as e:
             self.raven.captureException(
                 extra={"platform": settings["exceptions"]["platform"]})
@@ -567,3 +570,7 @@ class DiscordBot(object):
         if image is not None:
             embed.set_image(url=await self.upload_image(image, title))
         return embed
+    
+    async def send_message(self, channel: Channel, message="", embed=None):
+        await channel.send(message, embed=embed)
+

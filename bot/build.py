@@ -6,7 +6,8 @@ Copyright (C) 2018 RedFantom
 
 # Packages
 from datetime import datetime
-from discord import Channel, User as DiscordUser
+from discord import TextChannel as Channel, User as DiscordUser
+from discord.abc import PrivateChannel
 from random import randint, seed
 # Project Modules
 from bot.embeds import *
@@ -91,7 +92,7 @@ async def stats(self, channel: Channel, user: DiscordUser, args: tuple):
     if not self.db.build_read_access(build, generate_tag(user)):
         await self.bot.send_message(channel, "You do not have access to that build.")
         return
-    if not channel.is_private and user.display_name != "RedFantom":
+    if not isinstance(channel, PrivateChannel) and user.display_name != "RedFantom":
         await self.bot.send_message(channel, "I only want to do this in PM due to the large statistics list.")
         return
     data = self.db.get_build_data(build)
@@ -162,7 +163,7 @@ async def list(self, channel: Channel, user: DiscordUser, args: tuple):
     if len(builds) == 0:
         await self.bot.send_message(channel, "You have not created any builds.")
         return
-    embed = embed_from_builds(builds, tag, channel.is_private)
+    embed = embed_from_builds(builds, tag, isinstance(channel, PrivateChannel))
     await self.bot.send_message(channel, embed=embed)
 
 
