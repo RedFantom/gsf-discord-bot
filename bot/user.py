@@ -4,7 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Packages
-from discord import Channel, User as DiscordUser
+from discord import TextChannel as Channel, User as DiscordUser
 # Project Modules
 from bot.messages import *
 from utils import generate_tag, generate_code, hash_auth

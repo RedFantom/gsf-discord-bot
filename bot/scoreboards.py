@@ -4,7 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Packages
-from discord import Channel, User as DiscordUser, Message
+from discord import TextChannel as Channel, User as DiscordUser, Message
 # Project Modules
 from parsing import scoreboards as sb
 from utils.utils import get_temp_file

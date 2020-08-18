@@ -6,7 +6,7 @@ Copyright (C) 2018 RedFantom
 # Standard Library
 from datetime import datetime
 # Packages
-from discord import Channel, User as DiscordUser
+from discord import TextChannel as Channel, User as DiscordUser
 # Project Modules
 from bot.messages import *
 from bot.strings import build_string_from_servers, build_string_from_matches

@@ -4,7 +4,7 @@ License: GNU GPLv3 as in LICENSE
 Copyright (C) 2018 RedFantom
 """
 # Pacakages
-from discord import Channel, User as DiscordUser
+from discord import TextChannel as Channel, User as DiscordUser
 import discord.errors
 # Project Modules
 from bot.embeds import embed_from_phase_render

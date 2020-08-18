@@ -5,10 +5,8 @@ Copyright (C) 2018 RedFantom
 """
 
 # Packages
-from datetime import datetime
 from discord import TextChannel as Channel, User as DiscordUser
 from discord.abc import PrivateChannel
-from random import randint, seed
 # Project Modules
 from bot.embeds import *
 from bot.messages import *
