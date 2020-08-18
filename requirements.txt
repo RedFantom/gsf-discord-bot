@@ -3,7 +3,7 @@ opencv-python==4.2.0.34
 numpy==1.18.3
 pytesseract==0.3.4
 discord.py==1.4.1
-requests==2.18.4
+requests==2.20.0
 dateparser==0.7.4
 pandas==1.0.3
 semantic_version==2.8.5
