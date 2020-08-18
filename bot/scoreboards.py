@@ -30,22 +30,22 @@ async def parse(self, channel: Channel, user: DiscordUser, args: tuple, message:
         args = ("table",)
     type, = args
     if type not in ("table", "excel", "csv",):
-        await self.bot.send_message(channel, INVALID_ARGS.format(type))
+        await self.send_message(channel, INVALID_ARGS.format(type))
         return
-    await self.bot.send_message(channel, "I'm evaluating your screenshot now.")
+    await self.send_message(channel, "I'm evaluating your screenshot now.")
     images = await self.get_images(message)
     for name, image in images.items():
         scale, location = sb.is_scoreboard(image)
         if scale is None or location is None:
-            await self.bot.send_message(channel, NOT_A_SCOREBOARD)
+            await self.send_message(channel, NOT_A_SCOREBOARD)
             return
         if scale < 1.0:
-            await self.bot.send_message(channel, SCOREBOARD_UI_SCALE)
-        to_edit = await self.bot.send_message(channel, "I'm working on it...")
+            await self.send_message(channel, SCOREBOARD_UI_SCALE)
+        to_edit = await self.send_message(channel, "I'm working on it...")
         results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
         if "table" in args:
             message = "```diff\n{}```".format(sb.format_results(results))
-            await self.bot.send_message(channel, message)
+            await self.send_message(channel, message)
         else:
             df = sb.results_to_dataframe(results)
             await send_dataframe(self, type, df, channel, user)

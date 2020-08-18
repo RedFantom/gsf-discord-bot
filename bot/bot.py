@@ -355,7 +355,7 @@ class DiscordBot(object):
         for command in self.NOT_REGISTERED_ALLOWED:
             if command in content:
                 return True
-        if channel.is_private is True and not any(command in content for command in DiscordBot.PRIVATE):
+        if isinstance(channel, PrivateChannel) and not any(command in content for command in DiscordBot.PRIVATE):
             await self.send_message(author, NOT_PRIVATE)
             return False
         return True
@@ -400,7 +400,7 @@ class DiscordBot(object):
         if len(elems) == 2:
             content = elems[0].strip()
             message.content = content
-            if not channel.is_private:
+            if not isinstance(channel, PrivateChannel):
                 channel_name = elems[1].strip()
                 assert isinstance(message.guild, Guild)
                 for server_channel in message.guild.channels:

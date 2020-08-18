@@ -106,7 +106,7 @@ async def github_monitor(self):
                 continue
             embed = embed_from_release(release)
             for channel in self.validated_channels:
-                await self.bot.send_message(channel, embed=embed)
+                await self.send_message(channel, embed=embed)
             latest.set(release.tag_name)
     except Exception as e:
         self.raven.captureException()

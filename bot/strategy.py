@@ -31,30 +31,30 @@ async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
         args = ("list",)
     command = args[0]
     if command != "list" and len(args) == 1:
-        await self.bot.send_message(channel, INVALID_ARGS)
+        await self.send_message(channel, INVALID_ARGS)
         return
     tag = generate_tag(user)
 
     if command == "list":
         strategies = self.db.get_strategies(tag)
         if strategies is None or len(strategies) == 0:
-            await self.bot.send_message(channel, "You have uploaded no strategies.")
+            await self.send_message(channel, "You have uploaded no strategies.")
             return
         message = "Strategies registered for {}:\n```markdown\n{}\n```".format(
             user.mention, "\n".join(list("- {}".format(a) for a in strategies)))
-        await self.bot.send_message(channel, message)
+        await self.send_message(channel, message)
         return
 
     name = args[1]
     strategy = self.db.get_strategy_data(tag, name)
     if strategy is None:
-        await self.bot.send_message(channel, UNKNOWN_STRATEGY)
+        await self.send_message(channel, UNKNOWN_STRATEGY)
         return
     strategy = Strategy.deserialize(strategy)
 
     if command == "delete":
         self.db.delete_strategy(tag, name)
-        await self.bot.send_message(channel, STRATEGY_DELETE.format(name))
+        await self.send_message(channel, STRATEGY_DELETE.format(name))
 
     elif command == "show":
         map_type, map_name = strategy.map
@@ -63,15 +63,15 @@ async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
             strategy.description + "\n" +
             "Phases" + "\n".join("- {}".format(a) for a in strategy.phases) +
             "Map: " + map_names[map_type][map_name], None)
-        await self.bot.send_message(channel, embed=embed)
+        await self.send_message(channel, embed=embed)
 
     elif command == "render":
         if len(args) != 3:
-            await self.bot.send_message(channel, INVALID_ARGS)
+            await self.send_message(channel, INVALID_ARGS)
             return
         phase_name = args[2]
         if phase_name not in strategy.phases:
-            await self.bot.send_message(
+            await self.send_message(
                 channel, INVALID_PHASE_NAME.format(name, phase_name))
             return
         phase = strategy[phase_name]
@@ -79,8 +79,8 @@ async def strategy(self, channel: Channel, user: DiscordUser, args: tuple):
         url = await self.upload_image(image, "{}: {}".format(strategy.name, phase_name))
         embed = embed_from_phase_render(tag, url, strategy, phase)
         try:
-            await self.bot.send_message(channel, embed=embed)
+            await self.send_message(channel, embed=embed)
         except discord.errors.Forbidden:
-            await self.bot.send_message(channel, EMBED_PERMISSION_ERROR)
+            await self.send_message(channel, EMBED_PERMISSION_ERROR)
     else:
-        await self.bot.send_message(channel, INVALID_ARGS)
+        await self.send_message(channel, INVALID_ARGS)
