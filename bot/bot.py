@@ -182,6 +182,7 @@ class DiscordBot(object):
         self.token = token
         try:
             self.bot.run(token)
+            self.loop.create_task(self.server_status_monitor())
         except KeyboardInterrupt:
             self.bot.close()
 
