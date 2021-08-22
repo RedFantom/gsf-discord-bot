@@ -114,10 +114,10 @@ async def perform_ocr(image: Image.Image, column: str)->(str, int, None):
         template = high_pass_invert(image, treshold)
         result = image_to_string(template, config="" if column in digits else WHITELIST)
         if is_number and not result.isdigit():  # Try again for numbers
-            result = image_to_string(template, config="-psm 10")
+            result = image_to_string(template, config="--psm 10")
         if is_number and not result.isdigit():
             template = template.filter(ImageFilter.GaussianBlur())
-            result = image_to_string(template, config="-psm 10")
+            result = image_to_string(template, config="--psm 10")
         if result == "" or (is_number and not result.isdigit()):
             continue
         logger.debug("Tesseract - {} - {} - {}".format(column, treshold, result))
