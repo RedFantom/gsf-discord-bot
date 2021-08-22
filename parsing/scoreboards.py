@@ -191,7 +191,7 @@ def format_results(results: list)->str:
     string = header + separator
     for player in results:
         friendly = "+" if player[-1] is True else "-"
-        string += "{}{}".format(friendly, formatter.format(*tuple(player[:-1]))[1:])
+        string += "{}{}".format(friendly, formatter.format(*tuple(map(str, player[:-1])))[1:])
     return string
 
 
