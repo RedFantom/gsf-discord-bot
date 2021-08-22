@@ -54,7 +54,7 @@ def template_match(image: Image.Image, template: Image.Image)->tuple:
     _, _, _, loc = cv.minMaxLoc(result)
     image = image.copy()  # Do not modify original
     image = image.crop((loc[0], loc[1], loc[0] + template.width, loc[1] + template.height))
-    return get_similarity(image, template) > 90, loc
+    return get_similarity(image, template) > 85, loc
 
 
 def get_similarity(template: Image.Image, to_match: Image.Image)->float:
