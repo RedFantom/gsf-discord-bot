@@ -174,7 +174,7 @@ async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, _,
             result = await perform_ocr(column, name)
             done += 1
             try:
-                message = await message.edit(content=generate_progress_string(done/todo, start, i, name))
+                await message.edit(content=generate_progress_string(done/todo, start, i, name))
             except Exception:
                 logger.error(traceback.format_exc())
             text.append(result)
