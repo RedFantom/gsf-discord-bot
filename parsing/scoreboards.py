@@ -68,7 +68,7 @@ def is_scoreboard(image: Image.Image)->(tuple, None):
         return None, None
     scales = os.listdir(folder)
     scale, location = None, None
-    for file in scales:
+    for file in sorted(scales, reverse=True):
         template = Image.open(os.path.join(folder, file))
         is_match, location = opencv.template_match(image, template)
         if not is_match:
