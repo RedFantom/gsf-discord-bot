@@ -41,7 +41,7 @@ async def parse(self, channel: Channel, user: DiscordUser, args: tuple, message:
             return
         if scale < 1.0:
             await self.send_message(channel, SCOREBOARD_UI_SCALE)
-        to_edit = await self.send_message(channel, "I'm working on it...")
+        to_edit = await channel.send("All right, that's a scoreboard. I'm working on it...")
         results = await sb.parse_scoreboard(image, scale, location, self.bot, to_edit)
         if "table" in args:
             message = "```diff\n{}```".format(sb.format_results(results))

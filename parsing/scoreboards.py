@@ -11,6 +11,7 @@ import traceback
 from utils import opencv
 from utils.utils import get_assets_directory, setup_logger
 # Packages
+import discord
 from pandas import DataFrame, ExcelWriter
 from PIL import Image, ImageFilter
 from pytesseract import image_to_string
@@ -161,7 +162,7 @@ def high_pass_invert(image: Image.Image, treshold: int)->Image.Image:
     return result
 
 
-async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, bot, message)->list:
+async def parse_scoreboard(image: Image.Image, scale: float, location: tuple, _, message: discord.Message)->list:
     """Perform OCR on a screenshot of a scoreboard"""
     start = datetime.now()
     split = split_scoreboard(image, scale, location)
