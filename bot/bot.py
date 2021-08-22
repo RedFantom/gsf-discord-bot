@@ -322,7 +322,7 @@ class DiscordBot(object):
         for attachment in message.attachments:
             if to_edit is not None:
                 to_edit = await to_edit.edit(content=DOWNLOADING_IMAGES.format(done, todo))
-            link, name = attachment["url"], attachment["filename"]
+            link, name = attachment.url, attachment.filename
             done += 1
             if not name.endswith(DiscordBot.IMAGE_TYPES):
                 await self.send_message(channel, UNSUPPORTED_IMAGE_TYPE.format(name))
